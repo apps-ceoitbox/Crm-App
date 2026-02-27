@@ -21,6 +21,7 @@ import {
     NotificationsScreen,
 } from '../screens';
 import EditCompanyScreen from '../screens/main/EditCompanyScreen';
+import { OverdueDetailScreen } from '../screens/details';
 
 const Stack = createNativeStackNavigator();
 
@@ -131,6 +132,10 @@ const MainStack = () => {
                     animation: 'slide_from_bottom',
                     presentation: 'fullScreenModal',
                 }}
+            />
+            <Stack.Screen
+                name={ROUTES.OVERDUE_DETAIL}
+                component={OverdueDetailScreen}
             />
         </Stack.Navigator>
     );

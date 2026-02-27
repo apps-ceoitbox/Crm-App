@@ -6,7 +6,7 @@
 // Base URL for the API
 // export const API_BASE_URL = 'https://crm.ceoitbox.com/api';
 // export const API_BASE_URL = 'https://gsvmdl68-3001.inc1.devtunnels.ms/api';
-export const API_BASE_URL = 'https://dmdk3dwt-3001.inc1.devtunnels.ms/api'; // Param for local development: http://localhost:3000/api
+export const API_BASE_URL = 'https://gsvmdl68-3001.inc1.devtunnels.ms/api'; // Param for local development: http://localhost:3000/api
 
 // API Endpoints
 export const API_ENDPOINTS = {
@@ -86,6 +86,7 @@ export const API_ENDPOINTS = {
     GET: '/settings',
     UPDATE: '/settings',
     CONFIG: '/system-config',
+    CALL_HISTORY: '/settings/calling-integration/call-history',
   },
 
   // Companies
@@ -114,6 +115,14 @@ export const API_ENDPOINTS = {
     REMOVE_ALL: '/device-tokens/all',
     TOGGLE: '/device-tokens/toggle-notifications',
     TEST: '/device-tokens/test',
+  },
+
+  // Reports
+  REPORTS: {
+    CRM_OVERVIEW: '/reports/crm-overview',
+    TEAM_PERFORMANCE: '/reports/team-performance',
+    FORECAST: '/reports/forecast',
+    SMART_CALL_DASHBOARD: '/settings/calling-integration/webhook-delivery-dashboard',
   },
 
   // AI Assistant

@@ -29,16 +29,20 @@ const CAT_ICONS = {
     Other: 'ellipsis-horizontal',
 };
 
-const SUB_CATEGORIES = ['Leads', 'Tasks', 'Companies'];
 const SUB_ICONS = {
     Leads: 'trending-up',
     Tasks: 'checkbox',
     Companies: 'grid',
+    Campaigns: 'megaphone-outline',
+    Broadcasts: 'mail-outline',
 };
 
 const CRM_TYPES = ['lead', 'task', 'company'];
 const MARKETING_TYPES = ['campaign', 'broadcast'];
 const OTHER_TYPES = ['system', 'announcement'];
+
+const CRM_SUBS = ['Leads', 'Tasks', 'Companies'];
+const MARKETING_SUBS = ['Campaigns', 'Broadcasts'];
 
 const getUnreadCount = (items) => (items || []).filter((n) => !n.read).length;
 
@@ -95,23 +99,50 @@ const NotificationsScreen = () => {
         markAllNotificationsAsRead,
     } = useNotification();
 
+    // Get sub-categories based on active main category
+    const currentSubCategories = useMemo(() => {
+        if (activeCat === 'CRM') return CRM_SUBS;
+        if (activeCat === 'Marketing') return MARKETING_SUBS;
+        return [];
+    }, [activeCat]);
+
+    // Update activeSub when category changes
+    const handleCatPress = (cat) => {
+        setActiveCat(cat);
+        if (cat === 'CRM') setActiveSub('Leads');
+        else if (cat === 'Marketing') setActiveSub('Campaigns');
+        else setActiveSub(null);
+    };
+
     const { crmNotifications, marketingNotifications, otherNotifications, filteredList } = useMemo(() => {
         const crm = (notifications || []).filter((n) => CRM_TYPES.includes(n.type));
         const marketing = (notifications || []).filter((n) => MARKETING_TYPES.includes(n.type));
         const other = (notifications || []).filter((n) => OTHER_TYPES.includes(n.type));
+
         const catList =
             activeCat === 'CRM'
                 ? crm
                 : activeCat === 'Marketing'
                     ? marketing
                     : other;
-        // Sub-filter by sub-category
-        const list = catList.filter((n) => {
-            if (activeSub === 'Leads') return n.type === 'lead';
-            if (activeSub === 'Tasks') return n.type === 'task';
-            if (activeSub === 'Companies') return n.type === 'company';
-            return true;
-        });
+
+        // Filter by sub-category if applicable
+        let list = catList;
+        if (activeCat === 'CRM') {
+            list = catList.filter((n) => {
+                if (activeSub === 'Leads') return n.type === 'lead';
+                if (activeSub === 'Tasks') return n.type === 'task';
+                if (activeSub === 'Companies') return n.type === 'company';
+                return true;
+            });
+        } else if (activeCat === 'Marketing') {
+            list = catList.filter((n) => {
+                if (activeSub === 'Campaigns') return n.type === 'campaign';
+                if (activeSub === 'Broadcasts') return n.type === 'broadcast';
+                return true;
+            });
+        }
+
         return {
             crmNotifications: crm,
             marketingNotifications: marketing,
@@ -127,18 +158,18 @@ const NotificationsScreen = () => {
     }), [crmNotifications, marketingNotifications, otherNotifications]);
 
     const subCounts = useMemo(() => {
-        const catList =
-            activeCat === 'CRM'
-                ? crmNotifications
-                : activeCat === 'Marketing'
-                    ? marketingNotifications
-                    : otherNotifications;
-        return {
-            Leads: catList.filter((n) => n.type === 'lead' && !n.read).length,
-            Tasks: catList.filter((n) => n.type === 'task' && !n.read).length,
-            Companies: catList.filter((n) => n.type === 'company' && !n.read).length,
-        };
-    }, [activeCat, crmNotifications, marketingNotifications, otherNotifications]);
+        const counts = {};
+        if (activeCat === 'CRM') {
+            counts.Leads = crmNotifications.filter((n) => n.type === 'lead' && !n.read).length;
+            counts.Tasks = crmNotifications.filter((n) => n.type === 'task' && !n.read).length;
+            counts.Companies = crmNotifications.filter((n) => n.type === 'company' && !n.read).length;
+        } else if (activeCat === 'Marketing') {
+            counts.Campaigns = marketingNotifications.filter((n) => n.type === 'campaign' && !n.read).length;
+            counts.Broadcasts = marketingNotifications.filter((n) => n.type === 'broadcast' && !n.read).length;
+        }
+        return counts;
+    }, [activeCat, crmNotifications, marketingNotifications]);
+
 
     useFocusEffect(
         useCallback(() => {
@@ -186,7 +217,7 @@ const NotificationsScreen = () => {
                         <TouchableOpacity
                             key={cat}
                             style={[styles.catTab, active && styles.catTabActive]}
-                            onPress={() => setActiveCat(cat)}
+                            onPress={() => handleCatPress(cat)}
                         >
                             <IonIcon
                                 name={CAT_ICONS[cat]}
@@ -205,31 +236,33 @@ const NotificationsScreen = () => {
             </View>
 
             {/* Sub-category pills — Expo style */}
-            <View style={styles.subRow}>
-                {SUB_CATEGORIES.map((sub) => {
-                    const active = activeSub === sub;
-                    return (
-                        <TouchableOpacity
-                            key={sub}
-                            style={[styles.subPill, active && styles.subPillActive]}
-                            onPress={() => setActiveSub(sub)}
-                            activeOpacity={0.8}
-                        >
-                            <IonIcon
-                                name={SUB_ICONS[sub]}
-                                size={ms(14)}
-                                color={active ? '#fff' : Colors.textSecondary}
-                            />
-                            <Text style={[styles.subText, active && styles.subTextActive]}>{sub}</Text>
-                            {subCounts[sub] > 0 ? (
-                                <View style={[styles.subBadge, active && styles.subBadgeActive]}>
-                                    <Text style={[styles.subBadgeText, active && { color: '#fff' }]}>{subCounts[sub]}</Text>
-                                </View>
-                            ) : null}
-                        </TouchableOpacity>
-                    );
-                })}
-            </View>
+            {activeCat !== 'Other' && (
+                <View style={styles.subRow}>
+                    {currentSubCategories.map((sub) => {
+                        const active = activeSub === sub;
+                        return (
+                            <TouchableOpacity
+                                key={sub}
+                                style={[styles.subPill, active && styles.subPillActive]}
+                                onPress={() => setActiveSub(sub)}
+                                activeOpacity={0.8}
+                            >
+                                <IonIcon
+                                    name={SUB_ICONS[sub]}
+                                    size={ms(14)}
+                                    color={active ? '#fff' : Colors.textSecondary}
+                                />
+                                <Text style={[styles.subText, active && styles.subTextActive]}>{sub}</Text>
+                                {subCounts[sub] > 0 ? (
+                                    <View style={[styles.subBadge, active && styles.subBadgeActive]}>
+                                        <Text style={[styles.subBadgeText, active && { color: '#fff' }]}>{subCounts[sub]}</Text>
+                                    </View>
+                                ) : null}
+                            </TouchableOpacity>
+                        );
+                    })}
+                </View>
+            )}
 
             {/* Notification list */}
             <FlatList
@@ -258,7 +291,9 @@ const NotificationsScreen = () => {
                     <View style={styles.emptyState}>
                         <IonIcon name="notifications-off-outline" size={ms(48)} color={Colors.surfaceBorder} />
                         <Text style={styles.emptyTitle}>No notifications</Text>
-                        <Text style={styles.emptySubtitle}>You're all caught up in {activeCat} / {activeSub}</Text>
+                        <Text style={styles.emptySubtitle}>
+                            You're all caught up in {activeCat}{activeSub ? ` / ${activeSub}` : ''}
+                        </Text>
                     </View>
                 }
                 refreshControl={
@@ -283,9 +318,7 @@ const styles = StyleSheet.create({
     header: {
         flexDirection: 'row',
         alignItems: 'center',
-        paddingHorizontal: Spacing.lg,
-        paddingTop: Spacing.sm,
-        paddingBottom: Spacing.md,
+        paddingBottom: Spacing.sm,
     },
     backBtn: {
         width: ms(40),
@@ -323,7 +356,7 @@ const styles = StyleSheet.create({
     // Category tabs — Expo style
     catRow: {
         flexDirection: 'row',
-        paddingHorizontal: Spacing.lg,
+        // paddingHorizontal: Spacing.lg,
         borderBottomWidth: 1,
         borderBottomColor: Colors.divider,
         marginBottom: Spacing.sm,
@@ -367,7 +400,7 @@ const styles = StyleSheet.create({
     // Sub-category pills — Expo style
     subRow: {
         flexDirection: 'row',
-        paddingHorizontal: Spacing.lg,
+        // paddingHorizontal: Spacing.lg,
         gap: Spacing.sm,
         marginBottom: Spacing.md,
     },
@@ -386,7 +419,7 @@ const styles = StyleSheet.create({
         backgroundColor: Colors.primary,
     },
     subText: {
-        fontSize: ms(12),
+        fontSize: ms(13),
         fontWeight: '600',
         color: Colors.textSecondary,
     },
@@ -410,20 +443,20 @@ const styles = StyleSheet.create({
 
     // Notification cards — Expo style
     listContent: {
-        paddingHorizontal: Spacing.lg,
+        paddingHorizontal: Spacing.sm,
         paddingBottom: ms(40),
     },
     notifCard: {
         flexDirection: 'row',
         alignItems: 'flex-start',
-        backgroundColor: Colors.surface,
+        backgroundColor: Colors.primaryBackground + '30',
         borderRadius: BorderRadius.lg,
         padding: ms(14),
         marginBottom: Spacing.sm,
-        ...Shadow.sm,
+        // ...Shadow.sm,
     },
     notifCardUnread: {
-        backgroundColor: Colors.primaryBackground + '40',
+        backgroundColor: Colors.primaryBackground,
     },
     unreadDot: {
         width: ms(8),

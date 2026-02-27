@@ -26,6 +26,9 @@ import {
     DashboardScreen,
     ContactsScreen,
     ReportsScreen,
+    TeamPerformanceScreen,
+    ForecastScreen,
+    SmartCallDashboardScreen,
     FollowUpEngineScreen,
     NotificationsScreen,
     AIAssistantScreen,
@@ -35,6 +38,7 @@ import EditCompanyScreen from '../screens/main/EditCompanyScreen';
 
 // Import navigators
 import BottomTabNavigator from './BottomTabNavigator';
+import { OverdueDetailScreen } from '../screens/details';
 
 const Stack = createNativeStackNavigator();
 
@@ -62,6 +66,7 @@ const AppNavigator = () => {
     useEffect(() => {
         // Set navigation ref for API interceptor to use on auth errors
         if (navigationRef.current) {
+            console.log('Navigation ref set', navigationRef.current);
             setNavigationRef(navigationRef.current);
         }
     }, []);
@@ -186,6 +191,18 @@ const AppNavigator = () => {
                     component={ReportsScreen}
                 />
                 <Stack.Screen
+                    name={ROUTES.TEAM_PERFORMANCE}
+                    component={TeamPerformanceScreen}
+                />
+                <Stack.Screen
+                    name={ROUTES.FORECAST}
+                    component={ForecastScreen}
+                />
+                <Stack.Screen
+                    name={ROUTES.SMART_CALL_DASHBOARD}
+                    component={SmartCallDashboardScreen}
+                />
+                <Stack.Screen
                     name={ROUTES.FOLLOW_UP_ENGINE}
                     component={FollowUpEngineScreen}
                 />
@@ -203,6 +220,10 @@ const AppNavigator = () => {
                     name={ROUTES.AI_ASSISTANT}
                     component={AIAssistantScreen}
 
+                />
+                <Stack.Screen
+                    name={ROUTES.OVERDUE_DETAIL}
+                    component={OverdueDetailScreen}
                 />
             </Stack.Navigator>
         </NavigationContainer>

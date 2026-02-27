@@ -64,9 +64,13 @@ export const ROUTES = {
     EDIT_PROFILE: 'EditProfile',
     SETTINGS: 'Settings',
     REPORTS: 'Reports',
+    TEAM_PERFORMANCE: 'TeamPerformance',
+    FORECAST: 'Forecast',
+    SMART_CALL_DASHBOARD: 'SmartCallDashboard',
     FOLLOW_UP_ENGINE: 'FollowUpEngine',
     NOTIFICATIONS: 'Notifications',
     AI_ASSISTANT: 'AIAssistant',
+    OVERDUE_DETAIL: 'OverdueDetail',
 };
 
 
