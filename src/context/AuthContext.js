@@ -63,6 +63,53 @@ export const AuthProvider = ({ children }) => {
     getSystemConfig(); // Fetch system config on app start
   }, []);
 
+  /**
+   * Verify OTP with temp token and complete login
+   * @param {string} tempToken
+   * @param {string} otp
+   * @param {boolean} rememberMe
+   */
+  const verifyTwoFactor = useCallback(
+    async (tempToken, otp, rememberMe = false) => {
+      try {
+        const payload = { tempToken, otp };
+        const response = await authAPI.twoFactorAuth(payload);
+        if (response.success) {
+          const { data } = response;
+          const newToken = data.token || data.access_token;
+          const userData = data.user ||
+            data.data || {
+              id: data._id,
+              name: data.name,
+              email: data.email,
+            };
+
+          await saveToken(newToken);
+          await saveUserData(userData);
+
+          setTokenState(newToken);
+          setUser(userData);
+          setIsAuthenticated(true);
+
+          showSuccess('Welcome!', 'Two-factor verification successful');
+
+          return { success: true };
+        }
+        return {
+          success: false,
+          error: response.error || 'OTP verification failed',
+        };
+      } catch (error) {
+        console.error('2FA verify error:', error);
+        return {
+          success: false,
+          error: getErrorMessage(error) || 'OTP verification failed',
+        };
+      }
+    },
+    [],
+  );
+
   const initializeAuth = async () => {
     setIsLoading(true);
     try {
@@ -122,6 +169,18 @@ export const AuthProvider = ({ children }) => {
 
       if (response.success) {
         const { data } = response;
+
+        // If backend requires two-factor verification, return that info so caller
+        // can display OTP UI instead of completing login.
+        if (data && data.requiresTwoFactor) {
+          return {
+            success: false,
+            requiresTwoFactor: true,
+            tempToken: data.tempToken || data.temp_token || null,
+            email: data.email || email,
+          };
+        }
+
         const newToken = data.token || data.access_token;
         const userData = data.user ||
           data.data || {
@@ -478,6 +537,7 @@ export const AuthProvider = ({ children }) => {
 
     // Methods
     login,
+    verifyTwoFactor,
     register,
     googleLogin,
     appleLogin,
