@@ -34,6 +34,7 @@ export {
   deviceTokensAPI,
   settingsAPI,
   followUpAPI,
+  pipelineAPI,
   reportsAPI,
   aiAPI,
 } from './services';

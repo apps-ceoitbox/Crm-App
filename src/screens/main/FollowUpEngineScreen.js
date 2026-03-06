@@ -303,11 +303,6 @@ const FollowUpEngineScreen = ({ navigation }) => {
     const handlePress = (item) => {
         if (item._id || item.id) {
             if (activeTab === TAB_OVERDUE) {
-                navigation.navigate(ROUTES.OVERDUE_DETAIL, {
-                    id: item._id || item.id,
-                    phoneNumber: item.contact?.phone || item.contact?.mobile
-                });
-            } else {
                 navigation.navigate(ROUTES.LEAD_DETAILS, { lead: item, id: item._id || item.id });
             }
         }

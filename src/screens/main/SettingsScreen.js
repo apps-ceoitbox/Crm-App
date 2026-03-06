@@ -26,7 +26,7 @@ const ORGANIZATION_SETTINGS = [
         subtitle: 'Manage company profiles',
         icon: 'business',
         iconColor: '#3b82f6',
-        route: ROUTES.DASHBOARD,
+        route: ROUTES.COMPANY,
     },
     {
         id: 'contacts',

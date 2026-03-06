@@ -2,7 +2,7 @@
  * Main Screens Index
  */
 
-export { default as DashboardScreen } from './DashboardScreen';
+export { default as CompanyScreen } from './CompanyScreen';
 export { default as ContactsScreen } from './ContactsScreen';
 export { default as LeadsScreen } from './LeadsScreen';
 export { default as PipelineScreen } from './PipelineScreen';

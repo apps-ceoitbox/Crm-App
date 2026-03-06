@@ -7,7 +7,7 @@ export { SplashScreen, LoginScreen, RegisterScreen, OnboardingScreen } from './a
 
 // Main Screens
 export {
-    DashboardScreen,
+    CompanyScreen,
     ContactsScreen,
     LeadsScreen,
     PipelineScreen,

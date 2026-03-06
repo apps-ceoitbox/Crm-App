@@ -24,7 +24,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import { Colors } from '../../constants/Colors';
 import { BorderRadius, Shadow } from '../../constants/Spacing';
 import { ms, vs, wp } from '../../utils/Responsive';
-import { reportsAPI } from '../../api';
+import { reportsAPI, settingsAPI } from '../../api';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -316,6 +316,7 @@ const ReportsScreen = ({ navigation }) => {
     const [inputYear, setInputYear] = useState('');
 
     const [reportData, setReportData] = useState(null);
+    const [callingEnabled, setCallingEnabled] = useState(false);
     const [loading, setLoading] = useState(false);
     const [refreshing, setRefreshing] = useState(false);
     const [error, setError] = useState(null);
@@ -327,14 +328,23 @@ const ReportsScreen = ({ navigation }) => {
         else setLoading(true);
         setError(null);
         try {
-            const res = await reportsAPI.getCrmOverview({
-                dateFrom: toApiFormat(from),
-                dateTo: toApiFormat(to),
-            });
+            const [res, settingsRes] = await Promise.all([
+                reportsAPI.getCrmOverview({
+                    dateFrom: toApiFormat(from),
+                    dateTo: toApiFormat(to),
+                }),
+                settingsAPI.get()
+            ]);
+
             if (res.success) {
                 setReportData(res.data);
             } else {
                 setError(res.error || 'Failed to load report');
+            }
+
+            if (settingsRes.success && settingsRes.data) {
+                const callingSettings = settingsRes.data.callingIntegrationSettings;
+                setCallingEnabled(!!(callingSettings && callingSettings.enableCallingIntegration));
             }
         } catch {
             setError('An unexpected error occurred');
@@ -541,8 +551,9 @@ const ReportsScreen = ({ navigation }) => {
                             accent: Colors.warning,
                             bg: Colors.warningBg,
                             route: 'SmartCallDashboard',
+                            hide: !callingEnabled,
                         },
-                    ].map((item, idx, arr) => {
+                    ].filter(item => !item.hide).map((item, idx, arr) => {
                         const isActive = item.route === null;
                         return (
                             <TouchableOpacity

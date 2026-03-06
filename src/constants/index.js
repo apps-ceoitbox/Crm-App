@@ -45,9 +45,11 @@ export const ROUTES = {
     // Company Screens
     EDIT_COMPANY: 'EditCompany',
     ADD_COMPANY: 'AddCompany',
+    COMPANY_DETAILS: 'CompanyDetails',
+    CONTACT_DETAILS: 'ContactDetails',
 
     // Tab Screens
-    DASHBOARD: 'Dashboard',
+    COMPANY: 'Company',
     CONTACTS: 'Contacts',
     LEADS: 'Leads',
     PIPELINE: 'Pipeline',

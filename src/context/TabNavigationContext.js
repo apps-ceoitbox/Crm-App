@@ -47,7 +47,7 @@ export const ALL_DRAWER_SCREENS = [
         subtitle: 'Company profiles',
         icon: 'business',
         iconColor: '#8b5cf6',
-        route: ROUTES.DASHBOARD,
+        route: ROUTES.COMPANY,
     },
     {
         id: 'contacts',

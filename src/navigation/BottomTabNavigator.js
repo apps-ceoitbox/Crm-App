@@ -40,7 +40,7 @@ const TAB_ICONS = {
 
 // More menu items - secondary screens
 const MORE_ITEMS = [
-    { key: ROUTES.DASHBOARD, icon: 'grid-outline', label: 'Companies' },
+    { key: ROUTES.COMPANY, icon: 'grid-outline', label: 'Companies' },
     { key: ROUTES.CONTACTS, icon: 'people-outline', label: 'Contacts' },
     { key: ROUTES.REPORTS, icon: 'bar-chart-outline', label: 'Reports' },
 ];

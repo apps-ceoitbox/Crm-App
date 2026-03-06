@@ -49,7 +49,7 @@ function getAvatarColor(name) {
 }
 
 // Contact Card — matching Expo ContactsScreen
-const ContactCard = ({ contact, onEdit, onDelete, navigation }) => {
+const ContactCard = ({ contact, onEdit, onDelete, onPress }) => {
     const firstName = contact.firstName || contact.first_name || '';
     const lastName = contact.lastName || contact.last_name || '';
     const fullName = `${firstName} ${lastName}`.trim() || contact.name || 'Unknown';
@@ -58,7 +58,7 @@ const ContactCard = ({ contact, onEdit, onDelete, navigation }) => {
     const location = [contact.city, contact.state, contact.country].filter(Boolean).join(', ');
 
     return (
-        <View style={styles.contactCard}>
+        <TouchableOpacity style={styles.contactCard} onPress={onPress} activeOpacity={0.85}>
             {/* Top section */}
             <View style={styles.cardTop}>
                 <View style={[styles.avatar, { backgroundColor: avatarColor + '18' }]}>
@@ -127,7 +127,7 @@ const ContactCard = ({ contact, onEdit, onDelete, navigation }) => {
                     <Text style={[styles.cardActionText, { color: Colors.danger }]}>Delete</Text>
                 </TouchableOpacity>
             </View>
-        </View>
+        </TouchableOpacity>
     );
 };
 
@@ -322,7 +322,10 @@ const ContactsScreen = ({ navigation }) => {
                         renderItem={({ item }) => (
                             <ContactCard
                                 contact={item}
-                                navigation={navigation}
+                                onPress={() => navigation.navigate('ContactDetails', {
+                                    contact: item,
+                                    contactId: item._id || item.id,
+                                })}
                                 onEdit={handleEditContact}
                                 onDelete={handleDeleteContact}
                             />

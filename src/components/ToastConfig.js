@@ -26,7 +26,7 @@ export const toastConfig = {
             style={[styles.container, styles.successContainer]}
         >
             <View style={[styles.iconContainer, styles.successIcon]}>
-                <Icon name="check-circle" size={ms(24)} color={Colors.white} />
+                <Icon name="checkmark-circle" size={ms(24)} color={Colors.white} />
             </View>
             <View style={styles.textContainer}>
                 {text1 && (
@@ -56,7 +56,7 @@ export const toastConfig = {
             style={[styles.container, styles.errorContainer]}
         >
             <View style={[styles.iconContainer, styles.errorIcon]}>
-                <Icon name="alert-circle" size={ms(24)} color={Colors.white} />
+                <Icon name="close-circle" size={ms(24)} color={Colors.white} />
             </View>
             <View style={styles.textContainer}>
                 {text1 && (
@@ -86,7 +86,7 @@ export const toastConfig = {
             style={[styles.container, styles.infoContainer]}
         >
             <View style={[styles.iconContainer, styles.infoIcon]}>
-                <Icon name="information" size={ms(24)} color={Colors.white} />
+                <Icon name="information-circle" size={ms(24)} color={Colors.white} />
             </View>
             <View style={styles.textContainer}>
                 {text1 && (
@@ -116,7 +116,7 @@ export const toastConfig = {
             style={[styles.container, styles.warningContainer]}
         >
             <View style={[styles.iconContainer, styles.warningIcon]}>
-                <Icon name="alert" size={ms(24)} color={Colors.white} />
+                <Icon name="warning" size={ms(24)} color={Colors.white} />
             </View>
             <View style={styles.textContainer}>
                 {text1 && (

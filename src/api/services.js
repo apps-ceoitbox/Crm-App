@@ -159,6 +159,41 @@ export const userAPI = {
             }),
         );
     },
+
+    /**
+     * Get current user's own profile (full)
+     */
+    getMyProfile: () => {
+        return handleRequest(apiClient.get(API_ENDPOINTS.USERS.MY_PROFILE));
+    },
+
+    /**
+     * Update current user's own profile
+     * @param {object} data - { name, mobile, phone, photo }
+     */
+    updateMyProfile: data => {
+        return handleRequest(apiClient.put(API_ENDPOINTS.USERS.MY_PROFILE, data));
+    },
+
+    /**
+     * Upload profile photo (multipart → Cloudinary server-side)
+     * @param {FormData} formData - Form data with 'file' field
+     */
+    uploadProfilePhoto: formData => {
+        return handleRequest(
+            apiClient.post(API_ENDPOINTS.USERS.MY_PHOTO_UPLOAD, formData, {
+                headers: { 'Content-Type': 'multipart/form-data' },
+            }),
+        );
+    },
+
+    /**
+     * Update profile photo URL directly
+     * @param {string} photoUrl - URL of the uploaded photo
+     */
+    updateMyPhoto: photoUrl => {
+        return handleRequest(apiClient.put(API_ENDPOINTS.USERS.MY_PHOTO, { photo: photoUrl }));
+    },
 };
 
 // ============================================
@@ -225,6 +260,15 @@ export const leadsAPI = {
      */
     getStats: () => {
         return handleRequest(apiClient.get(API_ENDPOINTS.LEADS.STATS));
+    },
+
+    /**
+     * Get activities for a lead
+     * @param {string} id - Lead ID
+     * @param {object} params - { page, limit }
+     */
+    getActivities: (id, params = {}) => {
+        return handleRequest(apiClient.get(API_ENDPOINTS.LEADS.ACTIVITIES(id), { params }));
     },
 };
 
@@ -497,6 +541,38 @@ export const contactsAPI = {
      */
     delete: id => {
         return handleRequest(apiClient.delete(API_ENDPOINTS.CONTACTS.DELETE(id)));
+    },
+
+    /**
+     * Get documents for a contact
+     * @param {string} id - Contact ID
+     */
+    getDocuments: id => {
+        return handleRequest(apiClient.get(API_ENDPOINTS.CONTACTS.DOCUMENTS(id)));
+    },
+
+    /**
+     * Upload a document to a contact
+     * @param {string} id - Contact ID
+     * @param {FormData} formData - FormData with 'file' field
+     */
+    uploadDocument: (id, formData) => {
+        return handleRequest(
+            apiClient.post(API_ENDPOINTS.CONTACTS.DOCUMENTS(id), formData, {
+                headers: { 'Content-Type': 'multipart/form-data' },
+            }),
+        );
+    },
+
+    /**
+     * Delete a document from a contact
+     * @param {string} id - Contact ID
+     * @param {string} docId - Document ID
+     */
+    deleteDocument: (id, docId) => {
+        return handleRequest(
+            apiClient.delete(API_ENDPOINTS.CONTACTS.DELETE_DOCUMENT(id, docId)),
+        );
     },
 };
 
@@ -818,6 +894,32 @@ export const aiAPI = {
      */
     getPlanStatus: () => {
         return handleRequest(apiClient.get(API_ENDPOINTS.AI.PLAN_STATUS));
+    },
+};
+
+// ============================================
+// PIPELINE APIs
+// ============================================
+
+export const pipelineAPI = {
+    /**
+     * Get all pipelines for the organisation
+     */
+    getAll: () => {
+        return handleRequest(apiClient.get(API_ENDPOINTS.PIPELINES.LIST));
+    },
+
+    /**
+     * Get leads for a specific pipeline with pagination
+     * @param {string} pipelineId - Pipeline _id
+     * @param {object} params - { page, limit, search, ... }
+     */
+    getLeadsByPipeline: (pipelineId, params = {}) => {
+        return handleRequest(
+            apiClient.get(API_ENDPOINTS.LEADS.LIST, {
+                params: { pipelineId, ...params },
+            })
+        );
     },
 };
 

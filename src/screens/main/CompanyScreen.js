@@ -147,7 +147,7 @@ const CompanyCard = ({ company, onPress, onEdit, onDelete }) => {
   );
 };
 
-const DashboardScreen = ({ navigation }) => {
+const CompanyScreen = ({ navigation }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(true);
@@ -362,7 +362,10 @@ const DashboardScreen = ({ navigation }) => {
               <CompanyCard
                 company={item}
                 onPress={() =>
-                  navigation.navigate('CompanyDetails', { company: item })
+                  navigation.navigate('CompanyDetails', {
+                    company: item,
+                    companyId: item._id || item.id,
+                  })
                 }
                 onEdit={handleEditCompany}
                 onDelete={handleDeleteCompany}
@@ -539,4 +542,4 @@ const styles = StyleSheet.create({
   footerLoader: { paddingVertical: Spacing.md, alignItems: 'center' },
 });
 
-export default DashboardScreen;
+export default CompanyScreen;

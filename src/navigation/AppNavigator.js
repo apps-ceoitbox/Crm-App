@@ -23,7 +23,7 @@ import {
     AddCompanyScreen,
     EditLeadScreen,
     EditContactScreen,
-    DashboardScreen,
+    CompanyScreen,
     ContactsScreen,
     ReportsScreen,
     TeamPerformanceScreen,
@@ -38,7 +38,7 @@ import EditCompanyScreen from '../screens/main/EditCompanyScreen';
 
 // Import navigators
 import BottomTabNavigator from './BottomTabNavigator';
-import { OverdueDetailScreen } from '../screens/details';
+import { OverdueDetailScreen, CompanyDetailsScreen, ContactDetailsScreen } from '../screens/details';
 
 const Stack = createNativeStackNavigator();
 
@@ -122,6 +122,7 @@ const AppNavigator = () => {
                 <Stack.Screen
                     name={ROUTES.TASK_DETAILS}
                     component={TaskDetailsScreen}
+                    options={{ animation: 'slide_from_right' }}
                 />
                 <Stack.Screen
                     name={ROUTES.ADD_LEAD}
@@ -179,8 +180,8 @@ const AppNavigator = () => {
 
                 {/* Settings Sub-Screens */}
                 <Stack.Screen
-                    name={ROUTES.DASHBOARD}
-                    component={DashboardScreen}
+                    name={ROUTES.COMPANY}
+                    component={CompanyScreen}
                 />
                 <Stack.Screen
                     name={ROUTES.CONTACTS}
@@ -224,6 +225,16 @@ const AppNavigator = () => {
                 <Stack.Screen
                     name={ROUTES.OVERDUE_DETAIL}
                     component={OverdueDetailScreen}
+                />
+                <Stack.Screen
+                    name={ROUTES.COMPANY_DETAILS}
+                    component={CompanyDetailsScreen}
+                    options={{ animation: 'slide_from_right' }}
+                />
+                <Stack.Screen
+                    name={ROUTES.CONTACT_DETAILS}
+                    component={ContactDetailsScreen}
+                    options={{ animation: 'slide_from_right' }}
                 />
             </Stack.Navigator>
         </NavigationContainer>
