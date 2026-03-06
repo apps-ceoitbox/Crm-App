@@ -30,6 +30,7 @@ export const API_ENDPOINTS = {
     UPDATE_PROFILE: '/users/profile',
     CHANGE_PASSWORD: '/users/change-password',
     UPLOAD_AVATAR: '/users/avatar',
+    ALL: '/users',
   },
 
   // Leads

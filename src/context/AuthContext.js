@@ -9,8 +9,8 @@ import React, {
   useState,
   useEffect,
   useCallback,
-  use,
 } from 'react';
+import NetInfo from '@react-native-community/netinfo';
 import {
   getToken,
   setToken as saveToken,
@@ -21,10 +21,10 @@ import {
   setRememberMe as saveRememberMe,
   removeRememberMe,
 } from '../storage';
-import { authAPI, getErrorMessage } from '../api';
+import { authAPI, getErrorMessage, isNetworkError } from '../api';
 import { showSuccess } from '../utils';
 import { signInWithGoogle, signOutFromGoogle } from '../services';
-import { SystemConfigAPI } from '../api/services';
+import { SystemConfigAPI, userAPI } from '../api/services';
 import { set } from '@react-native-firebase/app/dist/module/internal/web/firebaseDatabase';
 import appleAuth from '@invertase/react-native-apple-authentication';
 
@@ -56,11 +56,29 @@ export const AuthProvider = ({ children }) => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [rememberedEmail, setRememberedEmail] = useState(null);
   const [isAppleReviewMode, setIsAppleReviewMode] = useState(false);
+  const [isOffline, setIsOffline] = useState(false);
+  const [allUsers, setAllUsers] = useState([]);
 
   // Initialize auth state on app load
   useEffect(() => {
     initializeAuth();
     getSystemConfig(); // Fetch system config on app start
+  }, []);
+
+  // Subscribe to network state changes and expose `isOffline`
+  useEffect(() => {
+    const unsubscribe = NetInfo.addEventListener(state => {
+      const offline = !(state.isConnected && state.isInternetReachable);
+      setIsOffline(Boolean(offline));
+    });
+
+    // Set initial state
+    NetInfo.fetch().then(state => {
+      const offline = !(state.isConnected && state.isInternetReachable);
+      setIsOffline(Boolean(offline));
+    });
+
+    return () => unsubscribe();
   }, []);
 
   /**
@@ -127,6 +145,24 @@ export const AuthProvider = ({ children }) => {
 
       if (storedEmail) {
         setRememberedEmail(storedEmail);
+      }
+      // If we're online, try to refresh user profile from API.
+      // Do NOT force logout on network/backend failures; keep local session.
+      const netState = await NetInfo.fetch();
+      const online = netState.isConnected && netState.isInternetReachable;
+      if (online && storedToken) {
+        try {
+          const resp = await fetchCurrentUser();
+          if (!resp.success) {
+            // If failure due to network, mark offline; otherwise keep local data.
+            if (resp.error && resp.error.toLowerCase?.().includes('network')) {
+              setIsOffline(true);
+            }
+          }
+        } catch (err) {
+          // Ignore — we keep local session and mark offline if network error
+          if (isNetworkError(err)) setIsOffline(true);
+        }
       }
     } catch (error) {
       console.error('Error initializing auth:', error);
@@ -518,7 +554,34 @@ export const AuthProvider = ({ children }) => {
         const userData = response.data.user || response.data;
         await saveUserData(userData);
         setUser(userData);
+        setIsOffline(false);
         return { success: true, user: userData };
+      }
+      return { success: false, error: response.error };
+    } catch (error) {
+      // If it's a network error, mark offline and keep local session
+      if (isNetworkError(error)) {
+        setIsOffline(true);
+        return { success: false, error: 'Network error' };
+      }
+
+      return { success: false, error: getErrorMessage(error) };
+    }
+  }, []);
+
+  /**
+   * Fetch all users for dropdown lists
+   */
+  const fetchAllUsers = useCallback(async () => {
+    try {
+      const response = await userAPI.getAllUsers();
+      if (response.success && response.data) {
+        // Handle various potential API response structures
+        const dataArr = Array.isArray(response.data.data) ? response.data.data : 
+                        Array.isArray(response.data) ? response.data : 
+                        response.data.users || [];
+        setAllUsers(dataArr);
+        return { success: true, users: dataArr };
       }
       return { success: false, error: response.error };
     } catch (error) {
@@ -532,6 +595,7 @@ export const AuthProvider = ({ children }) => {
     token,
     isLoading,
     isAuthenticated,
+    isOffline,
     rememberedEmail,
     isAppleReviewMode,
 
@@ -545,6 +609,10 @@ export const AuthProvider = ({ children }) => {
     updateUser,
     refreshAuth,
     fetchCurrentUser,
+    fetchAllUsers,
+
+    allUsers,
+    setAllUsers
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

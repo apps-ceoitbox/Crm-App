@@ -1,77 +1,88 @@
-/*
- * Add Task Screen
- * Form to create a new task — UI matched to Expo AddTaskScreen
+/**
+ * EditTaskScreen — mirror of AddTaskScreen but pre-loaded with existing task data.
+ * Calls tasksAPI.update(id, payload) on save.
  */
 
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useCallback } from 'react';
 import {
   View,
   Text,
   StyleSheet,
-  Keyboard,
-  Alert,
-  TextInput,
-  ScrollView,
   TouchableOpacity,
+  Alert,
+  Keyboard,
+  ScrollView,
+  TextInput,
 } from 'react-native';
 import IonIcon from 'react-native-vector-icons/Ionicons';
 import { Colors } from '../../constants/Colors';
 import { Spacing, BorderRadius, Shadow } from '../../constants/Spacing';
-import { ms, vs } from '../../utils/Responsive';
+import { ms, vs, wp } from '../../utils/Responsive';
 import { formatDate } from '../../utils/Helpers';
-import { useTasks } from '../../context';
 import { useAuth } from '../../context/AuthContext';
-import { leadsAPI } from '../../api';
+import { leadsAPI, tasksAPI } from '../../api';
 import {
   ScreenWrapper,
   AppText,
-  AppButton,
   AppInput,
+  AppButton,
   ModalLoader,
-  CustomDropdownModal,
   DatePickerModal,
 } from '../../components';
 
 const TASK_PRIORITIES = [
-  { id: 'Low', color: '#3B82F6', bg: '#EFF6FF' },
-  { id: 'Medium', color: '#F59E0B', bg: '#FFFBEB' },
-  { id: 'High', color: '#EF4444', bg: '#FEF2F2' },
-  { id: 'Urgent', color: '#DC2626', bg: '#FEF2F2' },
+  { id: 'Low', color: '#3B82F6' },
+  { id: 'Medium', color: '#F59E0B' },
+  { id: 'High', color: '#EF4444' },
+  { id: 'Urgent', color: '#dc2626' },
 ];
 
 const TASK_STATUSES = [
-  { id: 'Pending', color: '#6B7280', bg: '#F3F4F6' },
-  { id: 'In Progress', color: '#3B82F6', bg: '#EFF6FF' },
-  { id: 'Completed', color: '#10B981', bg: '#ECFDF5' },
+  { id: 'Pending', color: '#F59E0B' },
+  { id: 'In Progress', color: '#3B82F6' },
+  { id: 'Completed', color: '#10B981' },
 ];
 
-// We will fetch users dynamically instead.
-// const DUMMY_USERS = ...
+// Map API status to UI labels
+const API_STATUS_TO_UI = {
+  open: 'Pending',
+  in_progress: 'In Progress',
+  completed: 'Completed',
+};
 
-// We will fetch real leads dynamically.
-// const DUMMY_LEADS = ...
+// Map UI label back to API value
+const UI_STATUS_TO_API = {
+  Pending: 'open',
+  'In Progress': 'in_progress',
+  Completed: 'completed',
+};
 
-const AddTaskScreen = ({ navigation }) => {
-  const { addTask } = useTasks();
-  const { fetchAllUsers, allUsers, user } = useAuth();
+const EditTaskScreen = ({ navigation, route }) => {
+  const task = route.params?.task || {};
+  const { fetchAllUsers, allUsers } = useAuth();
 
+  // Pre-fill form with existing task data
   const [formData, setFormData] = useState({
-    title: '',
-    description: '',
-    remarks: '',
-    dueDate: new Date(),
-    priority: 'Medium',
-    status: 'Pending',
-    assignedTo: null,
-    leadId: null,
+    title: task.title || '',
+    description: task.description || '',
+    addRemark: task.remark || task.remarks || '',
+    dueDate: task.dueAt ? new Date(task.dueAt) : (task.dueDate ? new Date(task.dueDate) : new Date()),
+    priority: task.priority
+      ? task.priority.charAt(0).toUpperCase() + task.priority.slice(1).toLowerCase()
+      : 'Medium',
+    status: API_STATUS_TO_UI[task.status?.toLowerCase()] || 'Pending',
+    assignedTo: typeof task.assignedTo === 'object' ? (task.assignedTo?._id || task.assignedTo?.id || null) : (task.assignedTo || null),
+    leadId: task.relatedTo?.entityId
+      ? (typeof task.relatedTo.entityId === 'object' ? (task.relatedTo.entityId._id || task.relatedTo.entityId.id) : task.relatedTo.entityId)
+      : null,
   });
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({});
   const [showDatePicker, setShowDatePicker] = useState(false);
-  
+
   // Assignee inline dropdown state
   const [isAssigneeDropdownOpen, setIsAssigneeDropdownOpen] = useState(false);
-  
+
   // Lead inline dropdown state
   const [isLeadDropdownOpen, setIsLeadDropdownOpen] = useState(false);
   const [leadSearchQuery, setLeadSearchQuery] = useState('');
@@ -80,10 +91,9 @@ const AddTaskScreen = ({ navigation }) => {
   const [loadingMoreLeads, setLoadingMoreLeads] = useState(false);
   const [leadsPage, setLeadsPage] = useState(1);
   const [leadsHasMore, setLeadsHasMore] = useState(true);
+  const leadSearchTimerRef = useRef(null);
 
   const descriptionRef = useRef(null);
-  const leadSearchTimerRef = useRef(null);
-  const leadRef = useRef(null);
   const LEADS_LIMIT = 20;
 
   React.useEffect(() => {
@@ -114,9 +124,9 @@ const AddTaskScreen = ({ navigation }) => {
       if (search) params.search = search;
       const response = await leadsAPI.getAll(params);
       if (response.success && response.data) {
-        const leadsData = Array.isArray(response.data.data) ? response.data.data : 
-                        Array.isArray(response.data) ? response.data : 
-                        response.data.leads || [];
+        const leadsData = Array.isArray(response.data.data) ? response.data.data :
+          Array.isArray(response.data) ? response.data :
+            response.data.leads || [];
         if (page === 1) {
           setLeads(leadsData);
         } else {
@@ -145,8 +155,8 @@ const AddTaskScreen = ({ navigation }) => {
     { label: 'None (will use current user)', value: null },
     ...(allUsers || []).map(u => ({
       label: `${u.name} (${u.email})`,
-      value: u.id || u._id
-    }))
+      value: u.id || u._id,
+    })),
   ];
 
   const updateField = (field, value) => {
@@ -164,55 +174,60 @@ const AddTaskScreen = ({ navigation }) => {
       const lastName = contact.lastName || '';
       const email = contact.email || '';
       const title = lead.title || '';
-      
       const fullName = `${firstName} ${lastName}`.trim();
-
       return {
-        label: fullName || email || 'Unknown Lead', // used for search and generic display
+        label: fullName || email || 'Unknown Lead',
         name: fullName,
-        email: email,
-        title: title,
-        value: lead.id || lead._id
+        email,
+        title,
+        value: lead.id || lead._id,
       };
-    })
+    }),
   ];
 
   const validateForm = () => {
     const newErrors = {};
     if (!formData.title.trim()) newErrors.title = 'Title is required*';
-    if (!formData.leadId) newErrors.leadId = 'Lead is required*';
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSave = async () => {
+  const handleUpdate = async () => {
     Keyboard.dismiss();
     if (!validateForm()) return;
     setLoading(true);
-    
-    // Map form data to the requested API payload format
+
+    const taskId = task._id || task.id;
+
     const apiPayload = {
-      assignedTo: formData.assignedTo || undefined, // or map to user ID
+      assignedTo: formData.assignedTo || undefined,
       description: formData.description,
       dueAt: formData.dueDate ? new Date(formData.dueDate).toISOString() : undefined,
-      priority: formData.priority.toLowerCase(), // Low -> low
-      relatedTo: { 
-        entityType: 'lead', 
-        entityId: formData.leadId 
-      },
-      remark: formData.remarks,
-      status: formData.status === 'In Progress' ? 'open' : formData.status.toLowerCase(), // map UI status to valid API status
+      priority: formData.priority.toLowerCase(),
+      relatedTo: formData.leadId ? {
+        entityType: 'lead',
+        entityId: formData.leadId,
+      } : undefined,
+      addRemark: formData.remarks,
+      status: UI_STATUS_TO_API[formData.status] || 'open',
       title: formData.title,
     };
 
-    const result = await addTask(apiPayload);
-    setLoading(false);
-    if (result.success) {
-      Alert.alert('Success', 'Task created successfully!', [
-        { text: 'OK', onPress: () => navigation.goBack() },
-      ]);
-    } else {
-      Alert.alert('Error', result.error || 'Failed to create task');
+    try {
+      console.log('Update payload:', apiPayload, 'task id ', taskId);
+      const result = await tasksAPI.update(taskId, apiPayload);
+      console.log('Update result:', result);
+      setLoading(false);
+      if (result.success) {
+        Alert.alert('Success', 'Task updated successfully!', [
+          { text: 'OK', onPress: () => navigation.goBack() },
+        ]);
+      } else {
+        Alert.alert('Error', result.error || 'Failed to update task');
+      }
+    } catch (error) {
+      setLoading(false);
+      Alert.alert('Error', 'Failed to update task');
     }
   };
 
@@ -226,8 +241,8 @@ const AddTaskScreen = ({ navigation }) => {
       </TouchableOpacity>
 
       <View style={styles.headerCenter}>
-        <Text style={styles.headerTitle}>Add New Task</Text>
-        <Text style={styles.headerSubtitle}>Enter the task details below</Text>
+        <Text style={styles.headerTitle}>Edit Task</Text>
+        <Text style={styles.headerSubtitle}>Update the task details below</Text>
       </View>
     </View>
   );
@@ -277,7 +292,7 @@ const AddTaskScreen = ({ navigation }) => {
             numberOfLines={2}
           />
 
-          {/* Due Date (Date Select) */}
+          {/* Due Date */}
           <Text style={styles.inputLabelmarginTop}>Due Date *</Text>
           <TouchableOpacity
             style={styles.dropdownButton}
@@ -291,12 +306,12 @@ const AddTaskScreen = ({ navigation }) => {
             </View>
           </TouchableOpacity>
 
-          {/* Assigned To (Inline Dropdown) */}
+          {/* Assigned To */}
           <Text style={styles.inputLabelmarginTop}>Assigned To</Text>
           <TouchableOpacity
             style={[
               styles.dropdownButton,
-              isAssigneeDropdownOpen && { borderBottomWidth: 0, borderBottomLeftRadius: 0, borderBottomRightRadius: 0, marginBottom: 0 }
+              isAssigneeDropdownOpen && { borderBottomLeftRadius: 0, borderBottomRightRadius: 0, marginBottom: 0 },
             ]}
             onPress={() => setIsAssigneeDropdownOpen(!isAssigneeDropdownOpen)}
           >
@@ -308,8 +323,7 @@ const AddTaskScreen = ({ navigation }) => {
             </View>
             <IonIcon name={isAssigneeDropdownOpen ? "chevron-up" : "chevron-down"} size={20} color={Colors.textTertiary} />
           </TouchableOpacity>
-          
-          {/* Inline Dropdown List for Assignee */}
+
           {isAssigneeDropdownOpen && (
             <View style={styles.inlineDropdownContainer}>
               <ScrollView style={styles.inlineListContainer} nestedScrollEnabled={true}>
@@ -320,7 +334,7 @@ const AddTaskScreen = ({ navigation }) => {
                       key={item.value || 'null'}
                       style={[
                         styles.inlineOptionItem,
-                        isSelected && { backgroundColor: '#ECFDF5' } // Light emerald green for selected
+                        isSelected && { backgroundColor: '#ECFDF5' },
                       ]}
                       onPress={() => {
                         updateField('assignedTo', item.value);
@@ -332,7 +346,7 @@ const AddTaskScreen = ({ navigation }) => {
                       )}
                       <Text style={[
                         styles.inlineOptionText,
-                        isSelected && { color: Colors.primary }
+                        isSelected && { color: Colors.primary },
                       ]}>{item.label}</Text>
                     </TouchableOpacity>
                   );
@@ -340,18 +354,19 @@ const AddTaskScreen = ({ navigation }) => {
               </ScrollView>
             </View>
           )}
+        </View>
 
-          {/* Lead (Inline Searchable Dropdown) */}
-          <Text style={styles.inputLabelmarginTop}>Lead *</Text>
+        {/* Lead */}
+        <Text style={styles.sectionLabel}>LEAD</Text>
+        <View style={styles.sectionCard}>
           <TouchableOpacity
             style={[
-              styles.dropdownButton, 
-              errors.leadId && { borderColor: Colors.error },
-              isLeadDropdownOpen && { borderBottomWidth: 0, borderBottomLeftRadius: 0, borderBottomRightRadius: 0, marginBottom: 0 }
+              styles.dropdownButton,
+              isLeadDropdownOpen && { borderBottomLeftRadius: 0, borderBottomRightRadius: 0, marginBottom: 0 },
             ]}
             onPress={() => setIsLeadDropdownOpen(!isLeadDropdownOpen)}
           >
-            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
               <IonIcon name="person-add-outline" size={20} color={Colors.textSecondary} style={{ marginRight: 8 }} />
               <Text style={styles.dropdownText} numberOfLines={1}>
                 {formattedLeads.find(l => l.value === formData.leadId)?.label || 'Search and select lead'}
@@ -359,8 +374,7 @@ const AddTaskScreen = ({ navigation }) => {
             </View>
             <IonIcon name={isLeadDropdownOpen ? "chevron-up" : "chevron-down"} size={20} color={Colors.textTertiary} />
           </TouchableOpacity>
-          
-          {/* Inline Dropdown List */}
+
           {isLeadDropdownOpen && (
             <View style={styles.inlineDropdownContainer}>
               <View style={styles.inlineSearchContainer}>
@@ -385,7 +399,7 @@ const AddTaskScreen = ({ navigation }) => {
                       key={item.value || 'null'}
                       style={[
                         styles.inlineOptionItem,
-                        isSelected && { backgroundColor: '#ECFDF5' }
+                        isSelected && { backgroundColor: '#ECFDF5' },
                       ]}
                       onPress={() => {
                         updateField('leadId', item.value);
@@ -399,7 +413,7 @@ const AddTaskScreen = ({ navigation }) => {
                       {item.isDefault ? (
                         <Text style={[
                           styles.inlineOptionText,
-                          isSelected && { color: Colors.primary }
+                          isSelected && { color: Colors.primary },
                         ]}>{item.label}</Text>
                       ) : (
                         <View style={{ flex: 1, marginLeft: isSelected ? 0 : Spacing.md + 4 }}>
@@ -407,19 +421,19 @@ const AddTaskScreen = ({ navigation }) => {
                             <Text style={[
                               styles.inlineOptionText,
                               { fontWeight: '600', marginBottom: 2 },
-                              isSelected && { color: Colors.primary }
+                              isSelected && { color: Colors.primary },
                             ]}>{item.name}</Text>
                           )}
                           {!!item.email && (
                             <Text style={[
                               styles.inlineOptionText,
-                              { fontSize: ms(13), color: isSelected ? Colors.primary : Colors.textSecondary, marginBottom: 2 }
+                              { fontSize: ms(13), color: isSelected ? Colors.primary : Colors.textSecondary, marginBottom: 2 },
                             ]}>{item.email}</Text>
                           )}
                           {!!item.title && (
                             <Text style={[
                               styles.inlineOptionText,
-                              { fontSize: ms(12), color: isSelected ? Colors.primary : Colors.textTertiary }
+                              { fontSize: ms(12), color: isSelected ? Colors.primary : Colors.textTertiary },
                             ]}>{item.title}</Text>
                           )}
                         </View>
@@ -433,8 +447,6 @@ const AddTaskScreen = ({ navigation }) => {
               </ScrollView>
             </View>
           )}
-
-          {errors.leadId && !isLeadDropdownOpen && <Text style={styles.errorText}>{errors.leadId}</Text>}
         </View>
 
         {/* Priority */}
@@ -451,14 +463,8 @@ const AddTaskScreen = ({ navigation }) => {
                 ]}
                 onPress={() => updateField('priority', p.id)}
               >
-                <IonIcon
-                  name="flag"
-                  size={13}
-                  color={active ? '#fff' : p.color}
-                />
-                <Text style={[styles.pillText, active && { color: '#fff' }]}>
-                  {p.id}
-                </Text>
+                <IonIcon name="flag" size={13} color={active ? '#fff' : p.color} />
+                <Text style={[styles.pillText, active && { color: '#fff' }]}>{p.id}</Text>
               </TouchableOpacity>
             );
           })}
@@ -478,26 +484,32 @@ const AddTaskScreen = ({ navigation }) => {
                 ]}
                 onPress={() => updateField('status', s.id)}
               >
-                <Text style={[styles.pillText, active && { color: '#fff' }]}>
-                  {s.id}
-                </Text>
+                <Text style={[styles.pillText, active && { color: '#fff' }]}>{s.id}</Text>
               </TouchableOpacity>
             );
           })}
         </View>
 
-        {/* Save Button */}
-        <AppButton
-          title="Create Task"
-          onPress={handleSave}
-          loading={loading}
-          icon="checkmark-outline"
-          style={styles.saveButton}
-        />
+        {/* Action Buttons */}
+        <View style={styles.actionButtons}>
+          <AppButton
+            title="Update Task"
+            onPress={handleUpdate}
+            loading={loading}
+            icon="checkmark-outline"
+            style={styles.updateButton}
+          />
+          <TouchableOpacity
+            style={styles.cancelButton}
+            onPress={() => navigation.goBack()}
+          >
+            <Text style={styles.cancelButtonText}>Cancel</Text>
+          </TouchableOpacity>
+        </View>
       </View>
 
       <View style={styles.bottomSpacer} />
-      <ModalLoader visible={loading} text="Creating task..." />
+      <ModalLoader visible={loading} text="Updating task..." />
 
       <DatePickerModal
         visible={showDatePicker}
@@ -510,216 +522,105 @@ const AddTaskScreen = ({ navigation }) => {
 };
 
 const styles = StyleSheet.create({
-  // Header — centered title with close button at top-right
   header: {
     height: ms(48),
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: vs(6),
     position: 'relative',
+    marginBottom: Spacing.lg,
   },
   backButton: {
-    position: 'absolute',
-    right: -Spacing.screenPadding / 2,
-    top: vs(0),
-    width: ms(40),
-    height: ms(40),
-    borderRadius: ms(20),
-    backgroundColor: Colors.surface,
-    justifyContent: 'center',
-    alignItems: 'center',
-    ...Shadow.sm,
+    position: 'absolute', right: 0, top: 0, bottom: 0,
+    justifyContent: 'center', paddingHorizontal: Spacing.xs,
+    zIndex: 10,
   },
-  headerCenter: {
-    alignItems: 'center',
-    // make sure center is visually higher to reduce top gap
-    marginTop: -vs(4),
-  },
-  headerTitle: {
-    fontSize: ms(20),
-    fontWeight: '700',
-    color: Colors.textPrimary,
-  },
-  headerSubtitle: {
-    marginTop: vs(2),
-    color: Colors.textSecondary,
-  },
+  headerCenter: { alignItems: 'center' },
+  headerTitle: { fontSize: ms(18), fontWeight: '700', color: Colors.textPrimary },
+  headerSubtitle: { fontSize: ms(12), color: Colors.textTertiary, marginTop: 2 },
 
-  formContainer: {
-    flex: 1,
-  },
-
-  // Section labels — uppercase Expo style
+  formContainer: { paddingBottom: vs(30) },
   sectionLabel: {
-    fontSize: ms(11),
-    fontWeight: '700',
-    color: Colors.textTertiary,
-    letterSpacing: 0.8,
-    marginTop: Spacing.xl,
-    marginBottom: Spacing.sm,
-    paddingLeft: 2,
+    fontSize: ms(12), fontWeight: '700', color: Colors.textTertiary,
+    letterSpacing: 1, marginBottom: Spacing.sm, marginTop: Spacing.lg,
+    paddingLeft: Spacing.xs,
   },
   sectionCard: {
-    backgroundColor: Colors.surface,
-    borderRadius: BorderRadius.lg,
-    overflow: 'hidden',
-    padding: Spacing.md,
-    ...Shadow.sm,
-  },
-
-  // Task type chips — matching Expo
-  typeRow: {
-    flexDirection: 'row',
-    gap: Spacing.sm,
-  },
-  typeChip: {
-    flex: 1,
-    alignItems: 'center',
-    paddingVertical: vs(14),
-    borderRadius: BorderRadius.md,
-    borderWidth: 1.5,
-    borderColor: Colors.surfaceBorder,
-    backgroundColor: Colors.surface,
-  },
-  typeChipIcon: {
-    width: ms(36),
-    height: ms(36),
-    borderRadius: ms(18),
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: Spacing.xs,
-  },
-  typeChipText: {
-    fontSize: ms(12),
-    fontWeight: '600',
-    color: Colors.textSecondary,
-  },
-
-  // Pill row — matching Expo
-  pillRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: Spacing.sm,
-  },
-  pill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: ms(14),
-    paddingVertical: ms(10),
-    borderRadius: BorderRadius.round,
-    backgroundColor: Colors.surface,
-    borderWidth: 1.5,
-    borderColor: Colors.surfaceBorder,
-    gap: 5,
-  },
-  pillText: {
-    fontSize: ms(13),
-    fontWeight: '600',
-    color: Colors.textSecondary,
-  },
-
-  // Selected date
-  selectedDateContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: Spacing.md,
-    padding: Spacing.md,
-    backgroundColor: Colors.primaryBackground,
-    borderRadius: BorderRadius.sm,
-  },
-  selectedDate: {
-    marginLeft: Spacing.sm,
-    fontSize: ms(13),
-    fontWeight: '600',
-    color: Colors.primary,
-  },
-
-  saveButton: {
-    marginTop: Spacing.xl,
-  },
-  bottomSpacer: {
-    height: vs(40),
+    backgroundColor: Colors.surface, borderRadius: BorderRadius.lg,
+    padding: Spacing.lg, ...Shadow.sm,
   },
   inputLabelmarginTop: {
-    fontSize: ms(13),
-    fontWeight: '600',
-    color: Colors.textSecondary,
-    marginBottom: Spacing.xs,
-    marginTop: Spacing.md,
-    paddingLeft: Spacing.xs,
+    fontSize: ms(13), fontWeight: '600', color: Colors.textSecondary,
+    marginBottom: Spacing.xs, marginTop: Spacing.md, paddingLeft: Spacing.xs,
   },
   dropdownButton: {
-    flexDirection: 'row',
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+    backgroundColor: '#F9FAFB', borderWidth: 1, borderColor: '#E5E7EB',
+    borderRadius: BorderRadius.md, paddingHorizontal: Spacing.md,
+    height: vs(48), marginBottom: Spacing.md,
+  },
+  dropdownText: { fontSize: ms(15), color: Colors.textPrimary },
+  pillRow: {
+    flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.sm,
+    backgroundColor: Colors.surface, borderRadius: BorderRadius.lg,
+    padding: Spacing.md, ...Shadow.sm,
+  },
+  pill: {
+    flexDirection: 'row', alignItems: 'center', gap: 4,
+    paddingVertical: Spacing.sm, paddingHorizontal: Spacing.md,
+    borderRadius: BorderRadius.xl, borderWidth: 1.5,
+    borderColor: Colors.surfaceBorder, backgroundColor: Colors.surface,
+  },
+  pillText: { fontSize: ms(13), fontWeight: '600', color: Colors.textSecondary },
+  actionButtons: {
+    marginTop: Spacing.xl,
+    gap: Spacing.md,
+  },
+  updateButton: {
+    marginTop: 0,
+  },
+  cancelButton: {
     alignItems: 'center',
-    justifyContent: 'space-between',
-    backgroundColor: '#F9FAFB', // Slight grey tint for the trigger background
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
+    paddingVertical: Spacing.md,
     borderRadius: BorderRadius.md,
-    paddingHorizontal: Spacing.md,
-    height: vs(48),
-    marginBottom: Spacing.md,
-  },
-  dropdownText: {
-    fontSize: ms(15),
-    color: Colors.textPrimary,
-  },
-  errorText: {
-    color: Colors.error,
-    fontSize: ms(12),
-    marginTop: -Spacing.sm,
-    marginBottom: Spacing.sm,
-    paddingLeft: Spacing.xs,
-  },
-  inlineDropdownContainer: {
+    borderWidth: 1.5,
+    borderColor: Colors.surfaceBorder,
     backgroundColor: Colors.surface,
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
-    borderTopWidth: 0,
-    borderBottomLeftRadius: BorderRadius.md,
-    borderBottomRightRadius: BorderRadius.md,
-    marginBottom: Spacing.md,
-    overflow: 'hidden',
+  },
+  cancelButtonText: {
+    fontSize: ms(15),
+    fontWeight: '600',
+    color: Colors.textSecondary,
+  },
+  bottomSpacer: { height: vs(40) },
+
+  // Inline dropdown styles
+  inlineDropdownContainer: {
+    backgroundColor: Colors.surface, borderWidth: 1, borderColor: '#E5E7EB',
+    borderTopWidth: 0, borderBottomLeftRadius: BorderRadius.md,
+    borderBottomRightRadius: BorderRadius.md, marginBottom: Spacing.md, overflow: 'hidden',
   },
   inlineSearchContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: Colors.surface,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.surfaceBorder,
-    paddingHorizontal: Spacing.md,
-    paddingVertical: Spacing.xs,
+    flexDirection: 'row', alignItems: 'center', backgroundColor: Colors.surface,
+    borderBottomWidth: 1, borderBottomColor: Colors.surfaceBorder,
+    paddingHorizontal: Spacing.md, paddingVertical: Spacing.xs,
   },
-  inlineSearchIcon: {
-    marginRight: Spacing.xs,
-  },
-  inlineSearchInput: {
-    flex: 1,
-    height: vs(48),
-    fontSize: ms(14),
-    color: Colors.textPrimary,
-  },
-  inlineListContainer: {
-    maxHeight: vs(200),
-  },
+  inlineSearchIcon: { marginRight: Spacing.xs },
+  inlineSearchInput: { flex: 1, height: vs(48), fontSize: ms(14), color: Colors.textPrimary },
+  inlineListContainer: { maxHeight: vs(200) },
   inlineOptionItem: {
-    paddingVertical: Spacing.md,
-    paddingHorizontal: Spacing.md,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.surfaceBorder,
-    flexDirection: 'row',
-    alignItems: 'center',
+    paddingVertical: Spacing.md, paddingHorizontal: Spacing.md,
+    borderBottomWidth: 1, borderBottomColor: Colors.surfaceBorder,
+    flexDirection: 'row', alignItems: 'center',
   },
-  inlineOptionText: {
-    fontSize: ms(15),
-    color: Colors.textPrimary,
-  },
+  inlineOptionText: { fontSize: ms(15), color: Colors.textPrimary },
   inlineEmptyText: {
-    padding: Spacing.md,
-    textAlign: 'center',
-    color: Colors.textSecondary,
-    fontSize: ms(14),
+    padding: Spacing.md, textAlign: 'center',
+    color: Colors.textSecondary, fontSize: ms(14),
+  },
+  errorText: {
+    color: Colors.error, fontSize: ms(12),
+    marginTop: -Spacing.sm, marginBottom: Spacing.sm, paddingLeft: Spacing.xs,
   },
 });
 
-export default AddTaskScreen;
+export default EditTaskScreen;

@@ -24,7 +24,6 @@ export {
     AIAssistantScreen,
 } from './main';
 
-// Detail Screens
 export {
     LeadDetailsScreen,
     TaskDetailsScreen,
@@ -32,5 +31,6 @@ export {
     AddTaskScreen,
     EditLeadScreen,
     EditContactScreen,
+    EditTaskScreen,
 } from './details';
 
