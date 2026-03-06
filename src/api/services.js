@@ -169,6 +169,10 @@ export const userAPI = {
       }),
     );
   },
+
+  getAllUsers: () => {
+    return handleRequest(apiClient.get(API_ENDPOINTS.USERS.ALL));
+  },
 };
 
 // ============================================
@@ -273,7 +277,7 @@ export const tasksAPI = {
    * @param {object} data - Task data to update
    */
   update: (id, data) => {
-    return handleRequest(apiClient.put(API_ENDPOINTS.TASKS.UPDATE(id), data));
+    return handleRequest(apiClient.patch(API_ENDPOINTS.TASKS.UPDATE(id), data));
   },
 
   /**

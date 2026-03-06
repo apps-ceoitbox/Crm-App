@@ -23,6 +23,7 @@ import {
   AddCompanyScreen,
   EditLeadScreen,
   EditContactScreen,
+  EditTaskScreen,
   DashboardScreen,
   ContactsScreen,
   ReportsScreen,
@@ -131,6 +132,14 @@ const AppNavigator = () => {
         <Stack.Screen
           name={ROUTES.ADD_TASK}
           component={AddTaskScreen}
+          options={{
+            animation: 'slide_from_bottom',
+            presentation: 'modal',
+          }}
+        />
+        <Stack.Screen
+          name="EditTask"
+          component={EditTaskScreen}
           options={{
             animation: 'slide_from_bottom',
             presentation: 'modal',
