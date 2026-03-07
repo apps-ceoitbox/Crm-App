@@ -1,102 +1,53 @@
 /**
  * Add Company Screen
- * Screen for creating a new company — UI matched to Expo AddCompanyScreen
+ * Screen for creating a new company — UI matched to EditContactScreen
  */
 
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   View,
-  Text,
-  TextInput,
   StyleSheet,
   ScrollView,
   TouchableOpacity,
   Animated,
+  Keyboard,
+  ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import IonIcon from 'react-native-vector-icons/Ionicons';
+import Icon from 'react-native-vector-icons/Ionicons';
 import { Colors } from '../../constants/Colors';
 import { Spacing, BorderRadius, Shadow } from '../../constants/Spacing';
 import { ms, vs, wp } from '../../utils/Responsive';
-import { AppText, AppButton } from '../../components';
+import { AppText, AppInput, AppButton, ModalLoader } from '../../components';
 import { companiesAPI } from '../../api';
 import { showError, showSuccess } from '../../utils';
 
-// Form field with focus state — matching Expo AddCompanyScreen
-function FormField({
-  label,
-  value,
-  onChangeText,
-  placeholder,
-  icon,
-  required,
-  keyboardType,
-  multiline,
-  disabled,
-}) {
-  const [focused, setFocused] = useState(false);
-  return (
-    <View style={[fStyles.container, focused && fStyles.focused]}>
-      <View style={fStyles.labelRow}>
-        <IonIcon
-          name={icon}
-          size={15}
-          color={focused ? Colors.primary : Colors.textTertiary}
-        />
-        <Text style={[fStyles.label, focused && { color: Colors.primary }]}>
-          {label}
-          {required ? ' *' : ''}
-        </Text>
-      </View>
-      <TextInput
-        style={[
-          fStyles.input,
-          multiline && { minHeight: 60, textAlignVertical: 'top' },
-          disabled && fStyles.inputDisabled,
-        ]}
-        value={value}
-        onChangeText={onChangeText}
-        placeholder={placeholder}
-        placeholderTextColor={Colors.textTertiary}
-        keyboardType={keyboardType}
-        multiline={multiline}
-        editable={!disabled}
-        onFocus={() => setFocused(true)}
-        onBlur={() => setFocused(false)}
-      />
+// Section Header Component
+const SectionHeader = ({ icon, title }) => (
+  <View style={styles.sectionHeader}>
+    <View style={styles.sectionHeaderContent}>
+      <Icon name={icon} size={ms(20)} color={Colors.primary} />
+      <AppText size="base" weight="bold" color={Colors.textPrimary} style={styles.sectionTitle}>
+        {title}
+      </AppText>
     </View>
-  );
-}
+    <View style={styles.sectionDivider} />
+  </View>
+);
 
-// Half-width field — matching Expo
-function HalfField({ label, value, onChangeText, placeholder, icon }) {
-  const [focused, setFocused] = useState(false);
-  return (
-    <View style={[fStyles.halfContainer, focused && fStyles.focused]}>
-      <View style={fStyles.labelRow}>
-        <IonIcon
-          name={icon}
-          size={14}
-          color={focused ? Colors.primary : Colors.textTertiary}
-        />
-        <Text style={[fStyles.label, focused && { color: Colors.primary }]}>
-          {label}
-        </Text>
-      </View>
-      <TextInput
-        style={fStyles.input}
-        value={value}
-        onChangeText={onChangeText}
-        placeholder={placeholder}
-        placeholderTextColor={Colors.textTertiary}
-        onFocus={() => setFocused(true)}
-        onBlur={() => setFocused(false)}
-      />
-    </View>
-  );
-}
+// Input Field with Icon
+const InputField = ({ icon, label, ...props }) => (
+  <View style={styles.inputFieldContainer}>
+    <AppInput
+      label={label}
+      leftIcon={icon}
+      {...props}
+      containerStyle={{ marginBottom: 0 }}
+    />
+  </View>
+);
 
 const AddCompanyScreen = ({ navigation, route }) => {
   // Animation ref
@@ -120,9 +71,10 @@ const AddCompanyScreen = ({ navigation, route }) => {
   });
 
   const [loading, setLoading] = useState(false);
+  const [errors, setErrors] = useState({});
 
-  // Fade in animation on mount
-  React.useEffect(() => {
+  useEffect(() => {
+    // Fade in animation
     Animated.timing(fadeAnim, {
       toValue: 1,
       duration: 300,
@@ -133,11 +85,28 @@ const AddCompanyScreen = ({ navigation, route }) => {
   // Handle input changes
   const handleInputChange = (field, value) => {
     setFormData(prev => ({ ...prev, [field]: value }));
+    if (errors[field]) {
+      setErrors(prev => ({ ...prev, [field]: null }));
+    }
+  };
+
+  // Validate form
+  const validateForm = () => {
+    const newErrors = {};
+
+    if (!formData.name.trim()) {
+      newErrors.name = 'Company name is required';
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
   };
 
   // Handle form submission
   const handleSubmit = async () => {
-    if (!formData.name.trim()) {
+    Keyboard.dismiss();
+
+    if (!validateForm()) {
       showError('Validation Error', 'Company name is required');
       return;
     }
@@ -174,24 +143,50 @@ const AddCompanyScreen = ({ navigation, route }) => {
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
-      {/* Header — matching Expo */}
+      {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity
           onPress={() => navigation.goBack()}
           style={styles.backButton}
           activeOpacity={0.7}
         >
-          <IonIcon name="arrow-back" size={22} color={Colors.textPrimary} />
+          <Icon name="arrow-back" size={ms(24)} color={Colors.black} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Add Company</Text>
-        <View style={{ width: ms(40) }} />
+        <View style={styles.headerCenter}>
+          <AppText size="lg" weight="bold" numberOfLines={1} color={Colors.black}>
+            Add Company
+          </AppText>
+          {/* <AppText size="xs" color={Colors.textMuted} numberOfLines={1}>
+            New Company Profile
+          </AppText> */}
+        </View>
+        <View style={styles.headerRight}>
+          <TouchableOpacity
+            style={[styles.saveHeaderBtn, (!formData.name.trim() || loading) && { opacity: 0.5 }]}
+            onPress={handleSubmit}
+            disabled={loading || !formData.name.trim()}
+            activeOpacity={0.8}
+          >
+            {loading ? (
+              <ActivityIndicator size="small" color={Colors.white} />
+            ) : (
+              <>
+                <Icon name="checkmark" size={ms(16)} color={Colors.white} />
+                <AppText size="sm" weight="bold" color={Colors.white} style={{ marginLeft: ms(4) }}>
+                  Save
+                </AppText>
+              </>
+            )}
+          </TouchableOpacity>
+        </View>
       </View>
 
       {/* Form Content */}
       <Animated.View style={[styles.content, { opacity: fadeAnim }]}>
         <KeyboardAvoidingView
-          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
           style={{ flex: 1 }}
+          keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : vs(10)}
         >
           <ScrollView
             style={styles.scrollView}
@@ -199,248 +194,153 @@ const AddCompanyScreen = ({ navigation, route }) => {
             showsVerticalScrollIndicator={false}
             keyboardShouldPersistTaps="handled"
           >
-            {/* Basic Information */}
-            <View style={styles.sectionHeader}>
-              <IonIcon
-                name="information-circle"
-                size={18}
-                color={Colors.primary}
-              />
-              <Text style={styles.sectionTitle}>Basic Information</Text>
-            </View>
-            <View style={styles.sectionCard}>
-              <FormField
-                icon="grid-outline"
+            {/* Basic Information Section */}
+            <View style={styles.section}>
+              <SectionHeader icon="business-outline" title="Basic Information" />
+
+              <InputField
+                icon="business-outline"
                 label="Company Name"
-                value={formData.name}
-                onChangeText={v => handleInputChange('name', v)}
                 placeholder="Enter company name"
-                required
+                value={formData.name}
+                onChangeText={(value) => handleInputChange('name', value)}
+                autoCapitalize="words"
+                error={!!errors.name}
+                errorMessage={errors.name}
               />
-              <View style={styles.divider} />
-              <FormField
+
+              <InputField
                 icon="person-outline"
                 label="Owner Name"
-                value={formData.ownerName}
-                onChangeText={v => handleInputChange('ownerName', v)}
                 placeholder="Enter owner name"
+                value={formData.ownerName}
+                onChangeText={(value) => handleInputChange('ownerName', value)}
+                autoCapitalize="words"
               />
-              <View style={styles.divider} />
-              <FormField
-                icon="people-outline"
-                label="Salesperson"
-                value={formData.salesperson}
-                onChangeText={v => handleInputChange('salesperson', v)}
-                placeholder="Enter salesperson name"
-              />
-              <View style={styles.divider} />
-              <FormField
-                icon="business-outline"
-                label="Industry"
-                value={formData.industry}
-                onChangeText={v => handleInputChange('industry', v)}
-                placeholder="Enter industry"
-              />
-            </View>
 
-            {/* Contact Information */}
-            <View style={styles.sectionHeader}>
-              <IonIcon name="call-outline" size={18} color={Colors.primary} />
-              <Text style={styles.sectionTitle}>Contact Information</Text>
-            </View>
-            <View style={styles.sectionCard}>
-              <FormField
-                icon="mail-outline"
-                label="Email Address"
-                value={formData.email}
-                onChangeText={v => handleInputChange('email', v)}
-                placeholder="Enter email address"
-                keyboardType="email-address"
-              />
-              <View style={styles.divider} />
-              <FormField
-                icon="call-outline"
-                label="Phone Number"
-                value={formData.phone}
-                onChangeText={v => handleInputChange('phone', v)}
-                placeholder="Enter phone number"
-                keyboardType="phone-pad"
-              />
-              <View style={styles.divider} />
-              <FormField
+              <InputField
                 icon="globe-outline"
                 label="Website"
+                placeholder="Enter website URL (e.g. www.example.com)"
                 value={formData.website}
-                onChangeText={v => handleInputChange('website', v)}
-                placeholder="Enter website URL"
+                onChangeText={(value) => handleInputChange('website', value)}
+                keyboardType="url"
+                autoCapitalize="none"
               />
             </View>
 
-            {/* Address Details */}
-            <View style={styles.sectionHeader}>
-              <IonIcon
-                name="location-outline"
-                size={18}
-                color={Colors.primary}
-              />
-              <Text style={styles.sectionTitle}>Address Details</Text>
-            </View>
-            <View style={styles.sectionCard}>
-              <FormField
-                icon="home-outline"
-                label="Street Address"
-                value={formData.address}
-                onChangeText={v => handleInputChange('address', v)}
-                placeholder="Enter street address"
-                multiline
-              />
-              <View style={styles.divider} />
-              <View style={styles.halfRow}>
-                <HalfField
-                  icon="business-outline"
-                  label="City"
-                  value={formData.city}
-                  onChangeText={v => handleInputChange('city', v)}
-                  placeholder="Enter city"
-                />
-                <HalfField
-                  icon="map-outline"
-                  label="State"
-                  value={formData.state}
-                  onChangeText={v => handleInputChange('state', v)}
-                  placeholder="Enter state"
-                />
+            {/* Location Section */}
+            <View style={styles.section}>
+              <SectionHeader icon="location-outline" title="Location Details" />
+
+              <View style={styles.row}>
+                <View style={styles.halfInput}>
+                  <InputField
+                    icon="storefront-outline"
+                    label="City"
+                    placeholder="Enter city"
+                    value={formData.city}
+                    onChangeText={(value) => handleInputChange('city', value)}
+                    autoCapitalize="words"
+                  />
+                </View>
+                <View style={styles.halfInput}>
+                  <InputField
+                    icon="map-outline"
+                    label="State"
+                    placeholder="Enter state"
+                    value={formData.state}
+                    onChangeText={(value) => handleInputChange('state', value)}
+                    autoCapitalize="words"
+                  />
+                </View>
               </View>
-              <View style={styles.divider} />
-              <View style={styles.halfRow}>
-                <HalfField
-                  icon="globe-outline"
-                  label="Country"
-                  value={formData.country}
-                  onChangeText={v => handleInputChange('country', v)}
-                  placeholder="Enter"
-                />
-                <HalfField
-                  icon="pin-outline"
-                  label="Pincode"
-                  value={formData.pincode}
-                  onChangeText={v => handleInputChange('pincode', v)}
-                  placeholder="Enter"
-                />
-              </View>
-            </View>
 
-            {/* Tax Information */}
-            <View style={styles.sectionHeader}>
-              <IonIcon
-                name="receipt-outline"
-                size={18}
-                color={Colors.primary}
-              />
-              <Text style={styles.sectionTitle}>Tax Information</Text>
-            </View>
-            <View style={styles.sectionCard}>
-              <FormField
-                icon="document-text-outline"
-                label="GSTIN"
-                value={formData.gstin}
-                onChangeText={v => handleInputChange('gstin', v)}
-                placeholder="Enter GSTIN"
+              <InputField
+                icon="earth-outline"
+                label="Country"
+                placeholder="Enter country"
+                value={formData.country}
+                onChangeText={(value) => handleInputChange('country', value)}
+                autoCapitalize="words"
               />
             </View>
 
-            {/* Save button */}
-            <TouchableOpacity
-              style={[
-                styles.saveBtn,
-                (!formData.name.trim() || loading) && { opacity: 0.5 },
-              ]}
-              onPress={handleSubmit}
-              disabled={!formData.name.trim() || loading}
-              activeOpacity={0.85}
-            >
-              <View style={styles.saveBtnInner}>
-                <IonIcon name="save-outline" size={18} color="#fff" />
-                <Text style={styles.saveBtnText}>
-                  {loading ? 'Saving...' : 'Save Company'}
-                </Text>
-              </View>
-            </TouchableOpacity>
+            {/* Industry & Tax Section */}
+            <View style={styles.section}>
+              <SectionHeader icon="receipt-outline" title="Industry & Tax" />
 
-            <View style={{ height: ms(40) }} />
+              <View style={styles.row}>
+                <View style={styles.halfInput}>
+                  <InputField
+                    icon="briefcase-outline"
+                    label="Industry"
+                    placeholder="e.g. Technology"
+                    value={formData.industry}
+                    onChangeText={(value) => handleInputChange('industry', value)}
+                    autoCapitalize="words"
+                  />
+                </View>
+                <View style={styles.halfInput}>
+                  <InputField
+                    icon="document-text-outline"
+                    label="GSTIN"
+                    placeholder="Enter GSTIN"
+                    value={formData.gstin}
+                    onChangeText={(value) => handleInputChange('gstin', value)}
+                    autoCapitalize="characters"
+                  />
+                </View>
+              </View>
+            </View>
+
+            <View style={styles.bottomSpacer} />
           </ScrollView>
         </KeyboardAvoidingView>
       </Animated.View>
+
+      <ModalLoader visible={loading} text="Saving company..." />
     </SafeAreaView>
   );
 };
-
-const fStyles = StyleSheet.create({
-  container: {
-    paddingHorizontal: ms(14),
-    paddingVertical: ms(10),
-  },
-  halfContainer: {
-    flex: 1,
-    paddingHorizontal: ms(10),
-    paddingVertical: ms(10),
-  },
-  focused: {
-    backgroundColor: Colors.primaryBackground + '40',
-  },
-  labelRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 5,
-    marginBottom: 4,
-  },
-  label: {
-    fontSize: ms(12),
-    fontWeight: '600',
-    color: Colors.textSecondary,
-  },
-  input: {
-    fontSize: ms(15),
-    fontWeight: '500',
-    color: Colors.textPrimary,
-    paddingVertical: ms(4),
-    paddingHorizontal: ms(20),
-    backgroundColor: Colors.background,
-    borderRadius: ms(10),
-    marginTop: 4,
-  },
-  inputDisabled: {
-    backgroundColor: Colors.divider,
-    color: Colors.textTertiary,
-  },
-});
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: Colors.background,
   },
-  // Header — matching Expo
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: Spacing.lg,
-    paddingVertical: Spacing.md,
+    paddingHorizontal: wp(4),
+    paddingVertical: vs(10),
   },
   backButton: {
-    width: ms(40),
-    height: ms(40),
-    borderRadius: ms(14),
-    backgroundColor: Colors.surface,
+    width: ms(44),
+    height: ms(44),
+    borderRadius: BorderRadius.round,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
     justifyContent: 'center',
     alignItems: 'center',
-    ...Shadow.sm,
   },
-  headerTitle: {
-    fontSize: ms(18),
-    fontWeight: '700',
-    color: Colors.textPrimary,
+  headerCenter: {
+    flex: 1,
+    marginLeft: wp(0),
+  },
+  headerRight: {
+    justifyContent: 'center',
+    alignItems: 'flex-end',
+  },
+  saveHeaderBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: Colors.primary,
+    paddingHorizontal: wp(3),
+    paddingVertical: vs(8),
+    borderRadius: BorderRadius.md,
+    justifyContent: 'center',
+    ...Shadow.sm,
   },
   content: {
     flex: 1,
@@ -449,52 +349,47 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   scrollContent: {
-    paddingHorizontal: Spacing.lg,
+    paddingTop: vs(16),
+    paddingBottom: vs(100),
+  },
+  section: {
+    marginHorizontal: wp(4),
+    marginBottom: vs(20),
+    backgroundColor: Colors.white,
+    borderRadius: BorderRadius.xl,
+    padding: Spacing.lg,
+    ...Shadow.md,
   },
   sectionHeader: {
+    marginBottom: vs(16),
+  },
+  sectionHeaderContent: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
-    marginTop: Spacing.lg,
-    marginBottom: Spacing.sm,
+    marginBottom: vs(8),
   },
   sectionTitle: {
-    fontSize: ms(15),
-    fontWeight: '700',
-    color: Colors.textPrimary,
+    marginLeft: ms(8),
   },
-  sectionCard: {
-    backgroundColor: Colors.surface,
-    borderRadius: BorderRadius.xl,
-    overflow: 'hidden',
-    ...Shadow.sm,
+  sectionDivider: {
+    height: 2,
+    backgroundColor: Colors.primary + '20',
+    borderRadius: 1,
   },
-  divider: {
-    height: 1,
-    backgroundColor: Colors.divider,
-    marginLeft: ms(14),
+  inputFieldContainer: {
+    marginBottom: vs(16),
   },
-  halfRow: {
+  row: {
     flexDirection: 'row',
+    gap: Spacing.md,
   },
-  saveBtn: {
-    marginTop: Spacing.xl,
-    borderRadius: ms(16),
-    overflow: 'hidden',
+  halfInput: {
+    flex: 1,
   },
-  saveBtnInner: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: ms(16),
-    backgroundColor: Colors.primary,
-    gap: 8,
-  },
-  saveBtnText: {
-    fontSize: ms(16),
-    fontWeight: '700',
-    color: '#fff',
+  bottomSpacer: {
+    height: vs(20),
   },
 });
 
 export default AddCompanyScreen;
+

@@ -1,6 +1,7 @@
 /**
  * Edit Company Screen
- * Screen for editing company details with modern UI
+ * Same UI as AddCompanyScreen — prefills from route.params.company
+ * and calls companiesAPI.update(id, payload) on save.
  */
 
 import React, { useState, useEffect, useRef } from 'react';
@@ -10,17 +11,21 @@ import {
     ScrollView,
     TouchableOpacity,
     Animated,
+    Keyboard,
+    ActivityIndicator,
+    KeyboardAvoidingView,
+    Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { Colors } from '../../constants/Colors';
 import { Spacing, BorderRadius, Shadow } from '../../constants/Spacing';
 import { ms, vs, wp } from '../../utils/Responsive';
-import { AppText, AppInput, AppButton } from '../../components';
+import { AppText, AppInput, AppButton, ModalLoader } from '../../components';
 import { companiesAPI } from '../../api';
 import { showError, showSuccess } from '../../utils';
 
-// Section Header Component - defined outside to prevent re-renders
+// Section Header Component
 const SectionHeader = ({ icon, title }) => (
     <View style={styles.sectionHeader}>
         <View style={styles.sectionHeaderContent}>
@@ -33,7 +38,7 @@ const SectionHeader = ({ icon, title }) => (
     </View>
 );
 
-// Input Field with Icon - defined outside to prevent re-renders
+// Input Field with Icon
 const InputField = ({ icon, label, ...props }) => (
     <View style={styles.inputFieldContainer}>
         <AppInput
@@ -46,9 +51,7 @@ const InputField = ({ icon, label, ...props }) => (
 );
 
 const EditCompanyScreen = ({ navigation, route }) => {
-    const { company } = route.params;
-
-    console.log('EditCompanyScreen - company data:', company);
+    const { company } = route.params || {};
 
     // Animation ref
     const fadeAnim = useRef(new Animated.Value(0)).current;
@@ -71,11 +74,14 @@ const EditCompanyScreen = ({ navigation, route }) => {
     });
 
     const [loading, setLoading] = useState(false);
+    const [errors, setErrors] = useState({});
 
-    // Populate form when component mounts
+    const initialDataRef = useRef(null);
+
+    // Pre-fill form with existing company data
     useEffect(() => {
         if (company) {
-            setFormData({
+            const initial = {
                 name: company.name || '',
                 ownerName: company.ownerName || '',
                 salesperson: company.salesperson || '',
@@ -89,7 +95,11 @@ const EditCompanyScreen = ({ navigation, route }) => {
                 phone: company.phone || '',
                 address: company.address || '',
                 pincode: company.pincode || '',
-            });
+            };
+            setFormData(initial);
+            initialDataRef.current = initial;
+        } else {
+            initialDataRef.current = formData;
         }
 
         // Fade in animation
@@ -98,26 +108,60 @@ const EditCompanyScreen = ({ navigation, route }) => {
             duration: 300,
             useNativeDriver: true,
         }).start();
-    }, []); // Only run once on mount
+    }, []);
 
     // Handle input changes
     const handleInputChange = (field, value) => {
         setFormData(prev => ({ ...prev, [field]: value }));
+        if (errors[field]) {
+            setErrors(prev => ({ ...prev, [field]: null }));
+        }
+    };
+
+    // Check if form has been modified
+    const hasChanges = initialDataRef.current
+        ? Object.keys(formData).some(key => formData[key] !== initialDataRef.current[key])
+        : false;
+
+    // Validate form
+    const validateForm = () => {
+        const newErrors = {};
+
+        if (!formData.name.trim()) {
+            newErrors.name = 'Company name is required';
+        }
+
+        setErrors(newErrors);
+        return Object.keys(newErrors).length === 0;
     };
 
     // Handle form submission
     const handleSubmit = async () => {
-        if (!formData.name.trim()) {
+        Keyboard.dismiss();
+
+        if (!validateForm()) {
             showError('Validation Error', 'Company name is required');
             return;
         }
 
         setLoading(true);
         try {
-            const response = await companiesAPI.update(company._id, formData);
+            const companyId = company?._id || company?.id;
+            const response = await companiesAPI.update(companyId, formData);
 
             if (response.success) {
                 showSuccess('Success', 'Company updated successfully');
+                // Notify parent screen if callback provided
+                try {
+                    const updated =
+                        response.data?.data ||
+                        response.data?.company ||
+                        response.data ||
+                        { ...company, ...formData };
+                    route?.params?.onUpdate && route.params.onUpdate(updated);
+                } catch {
+                    // ignore non-serializable param errors
+                }
                 navigation.goBack();
             } else {
                 showError('Error', response.error || 'Failed to update company');
@@ -130,10 +174,9 @@ const EditCompanyScreen = ({ navigation, route }) => {
         }
     };
 
-
     return (
         <SafeAreaView style={styles.container} edges={['top']}>
-            {/* Enhanced Header */}
+            {/* Header */}
             <View style={styles.header}>
                 <TouchableOpacity
                     onPress={() => navigation.goBack()}
@@ -143,195 +186,155 @@ const EditCompanyScreen = ({ navigation, route }) => {
                     <Icon name="arrow-back" size={ms(24)} color={Colors.black} />
                 </TouchableOpacity>
                 <View style={styles.headerCenter}>
-                    {/* <View style={styles.headerIconContainer}>
-                        <Icon name="office-building" size={ms(28)} color={Colors.black} />
-                    </View> */}
-                    <View>
-                        {/* <AppText size="xs" color={Colors.black} style={styles.headerSubtitle}>
-                            Editing
-                        </AppText> */}
+                    {/* <AppText size="lg" weight="bold" numberOfLines={1} color={Colors.black}>
+                        Edit Company
+                    </AppText> */}
+                    {company?.name ? (
                         <AppText size="lg" weight="bold" numberOfLines={1} color={Colors.black}>
-                            {company?.name || 'Company'}
+                            {company.name}
                         </AppText>
-                    </View>
+                    ) : null}
                 </View>
-                <View style={styles.headerRight} />
+                <View style={styles.headerRight}>
+                    <TouchableOpacity
+                        style={[styles.saveHeaderBtn, (!formData.name.trim() || loading || !hasChanges) && { opacity: 0.5 }]}
+                        onPress={handleSubmit}
+                        disabled={loading || !formData.name.trim() || !hasChanges}
+                        activeOpacity={0.8}
+                    >
+                        {loading ? (
+                            <ActivityIndicator size="small" color={Colors.white} />
+                        ) : (
+                            <>
+                                <Icon name="checkmark" size={ms(16)} color={Colors.white} />
+                                <AppText size="sm" weight="bold" color={Colors.white} style={{ marginLeft: ms(4) }}>
+                                    Update
+                                </AppText>
+                            </>
+                        )}
+                    </TouchableOpacity>
+                </View>
             </View>
 
             {/* Form Content */}
             <Animated.View style={[styles.content, { opacity: fadeAnim }]}>
-                <ScrollView
-                    style={styles.scrollView}
-                    contentContainerStyle={styles.scrollContent}
-                    showsVerticalScrollIndicator={false}
+                <KeyboardAvoidingView
+                    behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+                    style={{ flex: 1 }}
+                    keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : vs(10)}
                 >
-                    {/* Basic Information Section */}
-                    <View style={styles.section}>
-                        <SectionHeader icon="information-circle-outline" title="Basic Information" />
+                    <ScrollView
+                        style={styles.scrollView}
+                        contentContainerStyle={styles.scrollContent}
+                        showsVerticalScrollIndicator={false}
+                        keyboardShouldPersistTaps="handled"
+                    >
+                        {/* Basic Information Section */}
+                        <View style={styles.section}>
+                            <SectionHeader icon="business-outline" title="Basic Information" />
 
-                        <InputField
-                            icon="business-outline"
-                            label="Company Name *"
-                            placeholder="Enter company name"
-                            value={formData.name}
-                            onChangeText={(value) => handleInputChange('name', value)}
-                            autoCapitalize="words"
-                        />
+                            <InputField
+                                icon="business-outline"
+                                label="Company Name"
+                                placeholder="Enter company name"
+                                value={formData.name}
+                                onChangeText={(value) => handleInputChange('name', value)}
+                                autoCapitalize="words"
+                                error={!!errors.name}
+                                errorMessage={errors.name}
+                            />
 
-                        <InputField
-                            icon="person-outline"
-                            label="Owner Name"
-                            placeholder="Enter owner name"
-                            value={formData.ownerName}
-                            onChangeText={(value) => handleInputChange('ownerName', value)}
-                            autoCapitalize="words"
-                        />
+                            <InputField
+                                icon="person-outline"
+                                label="Owner Name"
+                                placeholder="Enter owner name"
+                                value={formData.ownerName}
+                                onChangeText={(value) => handleInputChange('ownerName', value)}
+                                autoCapitalize="words"
+                            />
 
-                        <InputField
-                            icon="star-outline"
-                            label="Salesperson"
-                            placeholder="Enter salesperson name"
-                            value={formData.salesperson}
-                            onChangeText={(value) => handleInputChange('salesperson', value)}
-                            autoCapitalize="words"
-                        />
+                            <InputField
+                                icon="globe-outline"
+                                label="Website"
+                                placeholder="Enter website URL (e.g. www.example.com)"
+                                value={formData.website}
+                                onChangeText={(value) => handleInputChange('website', value)}
+                                keyboardType="url"
+                                autoCapitalize="none"
+                            />
+                        </View>
 
-                        <InputField
-                            icon="layers-outline"
-                            label="Industry"
-                            placeholder="Enter industry"
-                            value={formData.industry}
-                            onChangeText={(value) => handleInputChange('industry', value)}
-                            autoCapitalize="words"
-                        />
-                    </View>
+                        {/* Location Section */}
+                        <View style={styles.section}>
+                            <SectionHeader icon="location-outline" title="Location Details" />
 
-                    {/* Contact Information Section */}
-                    <View style={styles.section}>
-                        <SectionHeader icon="people-circle-outline" title="Contact Information" />
-
-                        <InputField
-                            icon="mail-outline"
-                            label="Email Address"
-                            placeholder="Enter email address"
-                            value={formData.email}
-                            onChangeText={(value) => handleInputChange('email', value)}
-                            keyboardType="email-address"
-                            autoCapitalize="none"
-                        />
-
-                        <InputField
-                            icon="call-outline"
-                            label="Phone Number"
-                            placeholder="Enter phone number"
-                            value={formData.phone}
-                            onChangeText={(value) => handleInputChange('phone', value)}
-                            keyboardType="phone-pad"
-                        />
-
-                        <InputField
-                            icon="globe-outline"
-                            label="Website"
-                            placeholder="Enter website URL"
-                            value={formData.website}
-                            onChangeText={(value) => handleInputChange('website', value)}
-                            keyboardType="url"
-                            autoCapitalize="none"
-                        />
-                    </View>
-
-                    {/* Address Section */}
-                    <View style={styles.section}>
-                        <SectionHeader icon="location-outline" title="Address Details" />
-
-                        <InputField
-                            icon="home-outline"
-                            label="Street Address"
-                            placeholder="Enter street address"
-                            value={formData.address}
-                            onChangeText={(value) => handleInputChange('address', value)}
-                            multiline
-                            numberOfLines={3}
-                            inputStyle={styles.textArea}
-                        />
-
-                        <View style={styles.row}>
-                            <View style={styles.halfInput}>
-                                <InputField
-                                    icon="storefront-outline"
-                                    label="City"
-                                    placeholder="Enter city"
-                                    value={formData.city}
-                                    onChangeText={(value) => handleInputChange('city', value)}
-                                    autoCapitalize="words"
-                                />
+                            <View style={styles.row}>
+                                <View style={styles.halfInput}>
+                                    <InputField
+                                        icon="storefront-outline"
+                                        label="City"
+                                        placeholder="Enter city"
+                                        value={formData.city}
+                                        onChangeText={(value) => handleInputChange('city', value)}
+                                        autoCapitalize="words"
+                                    />
+                                </View>
+                                <View style={styles.halfInput}>
+                                    <InputField
+                                        icon="map-outline"
+                                        label="State"
+                                        placeholder="Enter state"
+                                        value={formData.state}
+                                        onChangeText={(value) => handleInputChange('state', value)}
+                                        autoCapitalize="words"
+                                    />
+                                </View>
                             </View>
-                            <View style={styles.halfInput}>
-                                <InputField
-                                    icon="map-outline"
-                                    label="State"
-                                    placeholder="Enter state"
-                                    value={formData.state}
-                                    onChangeText={(value) => handleInputChange('state', value)}
-                                    autoCapitalize="words"
-                                />
+
+                            <InputField
+                                icon="earth-outline"
+                                label="Country"
+                                placeholder="Enter country"
+                                value={formData.country}
+                                onChangeText={(value) => handleInputChange('country', value)}
+                                autoCapitalize="words"
+                            />
+                        </View>
+
+                        {/* Industry & Tax Section */}
+                        <View style={styles.section}>
+                            <SectionHeader icon="receipt-outline" title="Industry & Tax" />
+
+                            <View style={styles.row}>
+                                <View style={styles.halfInput}>
+                                    <InputField
+                                        icon="briefcase-outline"
+                                        label="Industry"
+                                        placeholder="e.g. Technology"
+                                        value={formData.industry}
+                                        onChangeText={(value) => handleInputChange('industry', value)}
+                                        autoCapitalize="words"
+                                    />
+                                </View>
+                                <View style={styles.halfInput}>
+                                    <InputField
+                                        icon="document-text-outline"
+                                        label="GSTIN"
+                                        placeholder="Enter GSTIN"
+                                        value={formData.gstin}
+                                        onChangeText={(value) => handleInputChange('gstin', value)}
+                                        autoCapitalize="characters"
+                                    />
+                                </View>
                             </View>
                         </View>
 
-                        <View style={styles.row}>
-                            <View style={styles.halfInput}>
-                                <InputField
-                                    icon="earth-outline"
-                                    label="Country"
-                                    placeholder="Enter country"
-                                    value={formData.country}
-                                    onChangeText={(value) => handleInputChange('country', value)}
-                                    autoCapitalize="words"
-                                />
-                            </View>
-                            <View style={styles.halfInput}>
-                                <InputField
-                                    icon="mail-open-outline"
-                                    label="Pincode"
-                                    placeholder="Enter pincode"
-                                    value={formData.pincode}
-                                    onChangeText={(value) => handleInputChange('pincode', value)}
-                                    keyboardType="number-pad"
-                                />
-                            </View>
-                        </View>
-                    </View>
-
-                    {/* Tax Information Section */}
-                    <View style={styles.section}>
-                        <SectionHeader icon="document-text-outline" title="Tax Information" />
-
-                        <InputField
-                            icon="id-card-outline"
-                            label="GSTIN"
-                            placeholder="Enter GSTIN"
-                            value={formData.gstin}
-                            onChangeText={(value) => handleInputChange('gstin', value)}
-                            autoCapitalize="characters"
-                        />
-                    </View>
-
-                    <View style={styles.bottomSpacer} />
-                </ScrollView>
-
-                {/* Floating Action Button */}
-                <View style={styles.fabContainer}>
-                    <AppButton
-                        title="Update Company"
-                        onPress={handleSubmit}
-                        loading={loading}
-                        disabled={loading || !formData.name.trim()}
-                        icon="save-outline"
-                        fullWidth
-                        style={styles.updateButton}
-                    />
-                </View>
+                        <View style={styles.bottomSpacer} />
+                    </ScrollView>
+                </KeyboardAvoidingView>
             </Animated.View>
+
+            <ModalLoader visible={loading} text="Updating company..." />
         </SafeAreaView>
     );
 };
@@ -347,8 +350,6 @@ const styles = StyleSheet.create({
         justifyContent: 'space-between',
         paddingHorizontal: wp(4),
         paddingVertical: vs(10),
-        // backgroundColor: Colors.white,
-        // ...Shadow.lg,
     },
     backButton: {
         width: ms(44),
@@ -360,25 +361,21 @@ const styles = StyleSheet.create({
     },
     headerCenter: {
         flex: 1,
-        flexDirection: 'row',
-        alignItems: 'center',
-        marginLeft: wp(3),
-        gap: Spacing.sm,
-    },
-    headerIconContainer: {
-        width: ms(50),
-        height: ms(50),
-        borderRadius: BorderRadius.round,
-        backgroundColor: 'rgba(255, 255, 255, 0.2)',
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
-    headerSubtitle: {
-        opacity: 0.9,
-        marginBottom: 2,
+        marginLeft: wp(0),
     },
     headerRight: {
-        width: ms(44),
+        justifyContent: 'center',
+        alignItems: 'flex-end',
+    },
+    saveHeaderBtn: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: Colors.primary,
+        paddingHorizontal: wp(3),
+        paddingVertical: vs(8),
+        borderRadius: BorderRadius.md,
+        justifyContent: 'center',
+        ...Shadow.sm,
     },
     content: {
         flex: 1,
@@ -423,26 +420,6 @@ const styles = StyleSheet.create({
     },
     halfInput: {
         flex: 1,
-    },
-    textArea: {
-        minHeight: vs(80),
-        textAlignVertical: 'top',
-    },
-    fabContainer: {
-        position: 'absolute',
-        bottom: 0,
-        left: 0,
-        right: 0,
-        paddingHorizontal: wp(4),
-        paddingVertical: vs(16),
-        backgroundColor: Colors.white,
-        borderTopLeftRadius: BorderRadius.xl,
-        borderTopRightRadius: BorderRadius.xl,
-        ...Shadow.xl,
-    },
-    updateButton: {
-        borderRadius: BorderRadius.xl,
-        paddingVertical: vs(16),
     },
     bottomSpacer: {
         height: vs(20),

@@ -460,7 +460,12 @@ const LeadsScreen = ({ navigation }) => {
 
         <TouchableOpacity
           style={styles.fab}
-          onPress={() => navigation.navigate('AddLead')}
+          onPress={() => navigation.navigate('AddLead', {
+            onCreate: newLead => {
+              setLeads(prev => [newLead, ...prev]);
+              setPage(1); // Optional: reset pagination to show the new item at the top cleanly
+            }
+          })}
           activeOpacity={0.85}
         >
           <IonIcon name="add" size={22} color="#fff" />
@@ -549,7 +554,14 @@ const LeadsScreen = ({ navigation }) => {
   const renderLeadCard = ({ item }) => (
     <LeadCard
       lead={item}
-      onPress={() => navigation.navigate('LeadDetails', { lead: item })}
+      onPress={() => navigation.navigate('LeadDetails', {
+        lead: item,
+        onUpdate: updatedLead => {
+          setLeads(prev => prev.map(l =>
+            (l._id === updatedLead._id || l.id === updatedLead.id) ? updatedLead : l
+          ));
+        }
+      })}
       onDelete={handleDeleteLead}
     />
   );

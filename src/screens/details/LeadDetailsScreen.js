@@ -448,7 +448,12 @@ const LeadDetailsScreen = ({ route, navigation }) => {
             <View style={styles.topBarActions}>
                 <TouchableOpacity
                     style={styles.editBtn}
-                    onPress={() => navigation.navigate('EditLead', { lead })}
+                    onPress={() => navigation.navigate('EditLead', {
+                        lead,
+                        onUpdate: (updatedLead) => {
+                            setLead(updatedLead);
+                        }
+                    })}
                 >
                     <IonIcon name="create-outline" size={ms(18)} color={Colors.primary} />
                 </TouchableOpacity>

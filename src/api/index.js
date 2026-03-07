@@ -37,5 +37,10 @@ export {
   pipelineAPI,
   reportsAPI,
   aiAPI,
+  productsAPI,
+  dealStagesAPI,
+  leadTagsAPI,
+  leadSourcesAPI,
+  usersAPI,
 } from './services';
 export { default as API } from './services';

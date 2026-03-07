@@ -259,7 +259,12 @@ const CompanyDetailsScreen = ({ navigation, route }) => {
 	};
 
 	const handleEdit = () => {
-		navigation.navigate('EditCompany', { company });
+		navigation.navigate('EditCompany', {
+			company,
+			onUpdate: (updatedCompany) => {
+				setCompany(updatedCompany);
+			}
+		});
 	};
 
 	const handleDelete = () => {

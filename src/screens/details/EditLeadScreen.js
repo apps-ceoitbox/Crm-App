@@ -1,362 +1,937 @@
 /**
- * Edit Lead Screen
- * Screen for editing lead details with modern UI
+ * EditLeadScreen
+ * Edit an existing lead – same UI as AddLeadScreen, prefills all fields
+ * from route.params.lead and calls leadsAPI.update() on save.
  */
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import {
     View,
+    Text,
     StyleSheet,
-    ScrollView,
     TouchableOpacity,
-    Animated,
     Keyboard,
+    KeyboardAvoidingView,
+    Alert,
+    Modal,
+    FlatList,
+    TextInput,
+    ScrollView,
+    Platform,
+    StatusBar,
+    ActivityIndicator,
+    Animated,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import DateTimePicker from '@react-native-community/datetimepicker';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { Colors } from '../../constants/Colors';
 import { Spacing, BorderRadius, Shadow } from '../../constants/Spacing';
 import { ms, vs, wp } from '../../utils/Responsive';
+import { useAuth } from '../../context/AuthContext';
 import { AppText, AppInput, AppButton, ModalLoader } from '../../components';
-import { leadsAPI } from '../../api';
+import {
+    leadsAPI,
+    productsAPI,
+    dealStagesAPI,
+    leadTagsAPI,
+    leadSourcesAPI,
+    usersAPI,
+    contactsAPI,
+    companiesAPI,
+    pipelineAPI,
+} from '../../api/services';
 import { showError, showSuccess } from '../../utils';
 
-// Lead Source Options
-const LEAD_SOURCES = [
-    { id: 'website', label: 'Website', icon: 'globe-outline' },
-    { id: 'referral', label: 'Referral', icon: 'people-outline' },
-    { id: 'linkedin', label: 'LinkedIn', icon: 'logo-linkedin' },
-    { id: 'event', label: 'Event', icon: 'calendar-outline' },
-    { id: 'ads', label: 'Ads', icon: 'megaphone-outline' },
-    { id: 'cold_call', label: 'Cold Call', icon: 'call-outline' },
-];
+const CURRENCIES = ['INR', 'USD', 'EUR', 'GBP'];
 
-// Lead Status Options
-const LEAD_STATUS = [
-    { id: 'cold', label: 'Cold', color: Colors.leadCold || '#3B82F6' },
-    { id: 'warm', label: 'Warm', color: Colors.leadWarm || '#F59E0B' },
-    { id: 'hot', label: 'Hot', color: Colors.leadHot || '#EF4444' },
-];
+// ─── Helper: extract ID string from an object or string ──────────────────────
+const toId = val => {
+    if (!val) return 'none';
+    if (typeof val === 'string') return val;
+    return val._id || val.id || 'none';
+};
 
-// Section Header Component
+// ─── Section Header ──────────────────────────────────────────────────────────
 const SectionHeader = ({ icon, title }) => (
     <View style={styles.sectionHeader}>
-        <View style={styles.sectionHeaderContent}>
-            <Icon name={icon} size={ms(20)} color={Colors.primary} />
-            <AppText size="base" weight="bold" color={Colors.textPrimary} style={styles.sectionTitle}>
-                {title}
-            </AppText>
+        <View style={styles.sectionIconWrap}>
+            <Icon name={icon} size={ms(16)} color={Colors.primary} />
         </View>
-        <View style={styles.sectionDivider} />
+        <AppText size="md" weight="bold" color={Colors.textPrimary}>{title}</AppText>
     </View>
 );
 
-// Input Field with Icon
-const InputField = ({ icon, label, ...props }) => (
-    <View style={styles.inputFieldContainer}>
-        <AppInput
-            label={label}
-            leftIcon={icon}
-            {...props}
-            containerStyle={{ marginBottom: 0 }}
-        />
-    </View>
-);
+// ─── Searchable Bottom-Sheet Picker ──────────────────────────────────────────
+const SearchablePicker = ({
+    visible,
+    title,
+    items,
+    getLabel,
+    getKey,
+    selectedKey,
+    onSelect,
+    onClose,
+    allowNone = true,
+    multiple = false,
+}) => {
+    const [query, setQuery] = useState('');
 
-const EditLeadScreen = ({ navigation, route }) => {
-    const { lead } = route.params;
+    const filtered = useMemo(() => {
+        if (!query.trim()) return items;
+        const q = query.toLowerCase();
+        return items.filter(item => (getLabel(item) || '').toLowerCase().includes(q));
+    }, [items, query, getLabel]);
 
-    // Animation ref
-    const fadeAnim = useRef(new Animated.Value(0)).current;
-
-    // Form state
-    const [formData, setFormData] = useState({
-        title: '',
-        name: '',
-        email: '',
-        phone: '',
-        company: '',
-        value: '',
-        source: 'website',
-        status: 'cold',
-        notes: '',
-        expectedCloseDate: '',
-        followUpDate: '',
-    });
-
-    const [loading, setLoading] = useState(false);
-    const [errors, setErrors] = useState({});
-
-    // Populate form when component mounts
-    useEffect(() => {
-        if (lead) {
-            setFormData({
-                title: lead.title || '',
-                name: lead.contact?.firstName
-                    ? `${lead.contact.firstName} ${lead.contact.lastName || ''}`.trim()
-                    : lead.name || '',
-                email: lead.contact?.email || lead.email || '',
-                phone: lead.contact?.phone || lead.phone || '',
-                company: lead.company?.name || lead.company || '',
-                value: lead.value?.toString() || '',
-                source: lead.source?.id || lead.source || 'website',
-                status: lead.status || 'cold',
-                notes: lead.notes || '',
-                expectedCloseDate: lead.expectedCloseDate || '',
-                followUpDate: lead.followUpDate || '',
-            });
-        }
-
-        // Fade in animation
-        Animated.timing(fadeAnim, {
-            toValue: 1,
-            duration: 300,
-            useNativeDriver: true,
-        }).start();
-    }, []);
-
-    // Handle input changes
-    const handleInputChange = (field, value) => {
-        setFormData(prev => ({ ...prev, [field]: value }));
-        if (errors[field]) {
-            setErrors(prev => ({ ...prev, [field]: null }));
-        }
+    const handleClose = () => {
+        setQuery('');
+        onClose();
     };
 
-    // Validate form
-    const validateForm = () => {
-        const newErrors = {};
-
-        if (!formData.title.trim()) {
-            newErrors.title = 'Lead title is required';
-        }
-
-        setErrors(newErrors);
-        return Object.keys(newErrors).length === 0;
-    };
-
-    // Handle form submission
-    const handleSubmit = async () => {
-        Keyboard.dismiss();
-
-        if (!validateForm()) return;
-
-        setLoading(true);
-        try {
-            // Prepare data for API
-            const updateData = {
-                title: formData.title,
-                name: formData.name,
-                email: formData.email,
-                phone: formData.phone,
-                company: formData.company,
-                value: formData.value ? parseFloat(formData.value) : null,
-                source: formData.source,
-                status: formData.status,
-                notes: formData.notes,
-            };
-
-            const response = await leadsAPI.update(lead._id, updateData);
-
-            if (response.success) {
-                showSuccess('Success', 'Lead updated successfully');
-                navigation.goBack();
+    const handleSelect = item => {
+        if (multiple) {
+            if (!item) return;
+            const key = getKey(item);
+            let newSelected = Array.isArray(selectedKey) ? [...selectedKey] : [];
+            if (newSelected.includes(key)) {
+                newSelected = newSelected.filter(k => k !== key);
             } else {
-                showError('Error', response.error || 'Failed to update lead');
+                newSelected.push(key);
             }
-        } catch (error) {
-            console.error('Error updating lead:', error);
-            showError('Error', 'Failed to update lead');
-        } finally {
-            setLoading(false);
+            onSelect(newSelected);
+            return;
         }
+        setQuery('');
+        onSelect(item);
     };
 
     return (
-        <SafeAreaView style={styles.container} edges={['top']}>
-            {/* Header */}
-            <View style={styles.header}>
+        <Modal visible={visible} transparent animationType="slide" onRequestClose={handleClose}>
+            <View style={styles.modalBackdrop}>
+                <TouchableOpacity style={{ flex: 1 }} activeOpacity={1} onPress={handleClose} />
+                <View style={styles.pickerSheet}>
+                    <View style={styles.handleBar} />
+                    <View style={styles.pickerHeader}>
+                        <AppText size="lg" weight="bold" color={Colors.textPrimary}>{title}</AppText>
+                        <TouchableOpacity onPress={handleClose} style={styles.pickerCloseBtn} hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}>
+                            <Icon name="close" size={ms(20)} color={Colors.textSecondary} />
+                        </TouchableOpacity>
+                    </View>
+
+                    <View style={styles.pickerSearch}>
+                        <Icon name="search-outline" size={ms(15)} color={Colors.textTertiary} />
+                        <TextInput
+                            style={styles.pickerSearchInput}
+                            placeholder="Search..."
+                            placeholderTextColor={Colors.textTertiary}
+                            value={query}
+                            onChangeText={setQuery}
+                            autoCorrect={false}
+                            returnKeyType="search"
+                        />
+                        {query.length > 0 && (
+                            <TouchableOpacity onPress={() => setQuery('')} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+                                <Icon name="close-circle" size={ms(16)} color={Colors.textTertiary} />
+                            </TouchableOpacity>
+                        )}
+                    </View>
+
+                    <FlatList
+                        data={allowNone && !multiple ? [{ __none: true }, ...filtered] : filtered}
+                        keyExtractor={(item, idx) => (item.__none ? '__none__' : (getKey(item) || String(idx)))}
+                        keyboardShouldPersistTaps="handled"
+                        showsVerticalScrollIndicator={false}
+                        renderItem={({ item }) => {
+                            if (item.__none) {
+                                const isSelected = !selectedKey || selectedKey === 'none';
+                                return (
+                                    <TouchableOpacity
+                                        style={[styles.pickerItem, isSelected && styles.pickerItemActive]}
+                                        onPress={() => handleSelect(null)}
+                                        activeOpacity={0.7}
+                                    >
+                                        <View style={styles.pickerItemLeft}>
+                                            <View style={[styles.colorDot, { backgroundColor: Colors.textTertiary + '40' }]} />
+                                            <AppText color={isSelected ? Colors.primary : Colors.textPrimary} weight={isSelected ? "bold" : "regular"}>None</AppText>
+                                        </View>
+                                        {isSelected && <Icon name="checkmark-circle" size={ms(20)} color={Colors.primary} />}
+                                    </TouchableOpacity>
+                                );
+                            }
+                            const key = getKey(item);
+                            const label = getLabel(item);
+                            const isSelected = multiple
+                                ? Array.isArray(selectedKey) && selectedKey.includes(key)
+                                : selectedKey === key;
+                            return (
+                                <TouchableOpacity
+                                    style={[styles.pickerItem, isSelected && styles.pickerItemActive]}
+                                    onPress={() => handleSelect(item)}
+                                    activeOpacity={0.7}
+                                >
+                                    <View style={styles.pickerItemLeft}>
+                                        <View style={[styles.colorDot, { backgroundColor: (item.color || Colors.primary) + '40' }]} />
+                                        <AppText color={isSelected ? Colors.primary : Colors.textPrimary} weight={isSelected ? "bold" : "regular"} numberOfLines={1}>{label}</AppText>
+                                    </View>
+                                    {isSelected && <Icon name="checkmark-circle" size={ms(20)} color={Colors.primary} />}
+                                </TouchableOpacity>
+                            );
+                        }}
+                        style={styles.pickerList}
+                        ListEmptyComponent={
+                            <View style={styles.pickerEmpty}>
+                                <Icon name="search-outline" size={ms(28)} color={Colors.textTertiary} />
+                                <AppText color={Colors.textTertiary}>No results found</AppText>
+                            </View>
+                        }
+                        contentContainerStyle={{ paddingBottom: vs(20) }}
+                    />
+                </View>
+            </View>
+        </Modal>
+    );
+};
+
+// ─── Main Screen ─────────────────────────────────────────────────────────────
+const EditLeadScreen = ({ navigation, route }) => {
+    const { lead } = route.params || {};
+    const { user } = useAuth();
+    const scrollY = useRef(new Animated.Value(0)).current;
+
+    // Role helpers
+    const canEditSalesperson =
+        user?.role === 'boss' || user?.role === 'admin' ||
+        user?.role === 'crm' || user?.role === 'manager';
+    const isManager = user?.role === 'manager';
+    const isAdminOrBoss = user?.role === 'boss' || user?.role === 'admin' || user?.role === 'crm';
+
+    // ── Dropdown data ──
+    const [contacts, setContacts] = useState([]);
+    const [companies, setCompanies] = useState([]);
+    const [products, setProducts] = useState([]);
+    const [pipelines, setPipelines] = useState([]);
+    const [dealStages, setDealStages] = useState([]);
+    const [leadTags, setLeadTags] = useState([]);
+    const [leadSources, setLeadSources] = useState([]);
+    const [allUsers, setAllUsers] = useState([]);
+    const [dataLoading, setDataLoading] = useState(false);
+
+    // ── Form state (initialised with lead data) ──
+    const [formData, setFormData] = useState({
+        title: lead?.title || '',
+        contactId: toId(lead?.contactId || lead?.contact),
+        companyId: toId(lead?.companyId || lead?.company),
+        productId: toId(lead?.productId || lead?.product),
+        userId: toId(lead?.userId || lead?.salesperson || lead?.user),
+        telesalesId: toId(lead?.telesalesId || lead?.telesales),
+        pipelineId: toId(lead?.pipelineId || lead?.pipeline),
+        stage: toId(lead?.stageId || lead?.stage),
+        value: lead?.value !== undefined && lead?.value !== null ? String(lead.value) : '',
+        currency: lead?.currency || 'INR',
+        source: toId(lead?.sourceId || lead?.source),
+        expectedCloseDate: lead?.expectedCloseDate ? new Date(lead.expectedCloseDate) : undefined,
+        followup: lead?.followup ? new Date(lead.followup) : undefined,
+        tags: Array.isArray(lead?.tags)
+            ? lead.tags.map(t => (typeof t === 'string' ? t : t?.name || ''))
+            : [],
+        notes: lead?.notes || '',
+    });
+
+    const [loading, setLoading] = useState(false);
+    const [activePicker, setActivePicker] = useState(null);
+    const [showDatePicker, setShowDatePicker] = useState(false);
+    const [datePickerTarget, setDatePickerTarget] = useState(null);
+
+    // ── Computed ──
+    const effectivePipelineId = formData.pipelineId !== 'none' ? formData.pipelineId : null;
+
+    const availableStages = useMemo(() => {
+        if (!effectivePipelineId) {
+            return dealStages;
+        }
+        const pid = String(effectivePipelineId);
+        return dealStages.filter(s => {
+            const sp = s.pipeline || s.pipelineId;
+            return sp && String(sp) === pid;
+        });
+    }, [dealStages, effectivePipelineId]);
+
+    const selectedStage = useMemo(
+        () => availableStages.find(s => (s._id || s.id) === formData.stage),
+        [availableStages, formData.stage]
+    );
+
+    const isStageClosed = useMemo(() => {
+        if (!selectedStage) return false;
+        const p = selectedStage.probability ?? -1;
+        const name = (selectedStage.name || '').toLowerCase();
+        return p === 0 || p === 100 || name === 'lost' || name === 'won';
+    }, [selectedStage]);
+
+    const isFollowupRequired = !isStageClosed;
+
+    const availableSalespersons = useMemo(() => {
+        if (!canEditSalesperson) return [];
+        if (isAdminOrBoss) return allUsers.filter(u => u.status === 'active' && (u.role === 'sales' || u.role === 'manager'));
+        if (isManager) {
+            const mid = user?._id || user?.id;
+            return allUsers.filter(u =>
+                u.status === 'active' && u.role === 'sales' &&
+                (typeof u.superior === 'string' ? u.superior === mid : u.superior?._id === mid)
+            );
+        }
+        return [];
+    }, [allUsers, canEditSalesperson, isAdminOrBoss, isManager, user]);
+
+    const availableTelesales = useMemo(() => {
+        if (!canEditSalesperson) return [];
+        if (isAdminOrBoss) return allUsers.filter(u => u.status === 'active' && u.role === 'telesales');
+        if (isManager) {
+            const mid = user?._id || user?.id;
+            return allUsers.filter(u =>
+                u.status === 'active' && u.role === 'telesales' &&
+                Array.isArray(u.managers) &&
+                u.managers.some(m => (typeof m === 'object' ? m?._id : m) === mid)
+            );
+        }
+        return [];
+    }, [allUsers, canEditSalesperson, isAdminOrBoss, isManager, user]);
+
+    // ── Fetch dropdown data ──
+    useEffect(() => {
+        const fetchAll = async () => {
+            setDataLoading(true);
+            try {
+                const promises = [
+                    contactsAPI.getAll({ page: 1, limit: 1000 }),
+                    companiesAPI.getAll({ page: 1, limit: 1000 }),
+                    productsAPI.getAll({ page: 1, limit: 1000 }),
+                    pipelineAPI.getAll(),
+                    dealStagesAPI.getAll(),
+                    leadTagsAPI.getAll(),
+                    leadSourcesAPI.getAll(),
+                ];
+                if (canEditSalesperson) promises.push(usersAPI.getAll({ limit: 500 }));
+
+                const results = await Promise.allSettled(promises);
+
+                const extractArray = (res, ...paths) => {
+                    if (!res || res.status !== 'fulfilled' || !res.value?.success) return [];
+                    const data = res.value.data;
+                    for (const path of paths) {
+                        const parts = path.split('.');
+                        let val = data;
+                        for (const p of parts) val = val?.[p];
+                        if (Array.isArray(val)) return val;
+                    }
+                    return Array.isArray(data) ? data : [];
+                };
+
+                setContacts(extractArray(results[0], 'contacts', 'data'));
+                setCompanies(extractArray(results[1], 'companies', 'data'));
+                setProducts(extractArray(results[2], 'products', 'data'));
+                setPipelines(extractArray(results[3], 'pipelines', 'data'));
+                setDealStages(extractArray(results[4], 'stages', 'dealStages', 'data'));
+                setLeadTags(extractArray(results[5], 'tags', 'data').filter(t => t.active !== false));
+                setLeadSources(extractArray(results[6], 'sources', 'data').filter(s => s.active !== false));
+                if (canEditSalesperson && results[7]) {
+                    setAllUsers(extractArray(results[7], 'users', 'data'));
+                }
+            } catch (err) {
+                console.warn('EditLeadScreen data fetch error:', err);
+            } finally {
+                setDataLoading(false);
+            }
+        };
+        fetchAll();
+    }, [canEditSalesperson]);
+
+    // ── Helpers ──
+    const updateField = (field, value) => setFormData(prev => ({ ...prev, [field]: value }));
+    const getContactName = c => c?.name || `${c?.firstName || ''} ${c?.lastName || ''}`.trim() || '';
+    const getCompanyName = c => c?.name || '';
+    const getUserLabel = u => `${u?.name || ''}${u?.email ? ` (${u.email})` : ''}`;
+    const getStageLabel = s => `${s?.name || ''} (${s?.probability ?? 0}%)`;
+    const getIdFromItem = item => item?._id || item?.id || '';
+
+    const getSelectedLabel = (list, id, getLabelFn, fallback = 'Select...') => {
+        if (!id || id === 'none') return fallback;
+        const item = list.find(i => getIdFromItem(i) === id);
+        return item ? getLabelFn(item) : fallback;
+    };
+
+    const formatDateString = d => {
+        if (!d) return null;
+        return d.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
+    };
+
+    const removeTag = tagName => updateField('tags', formData.tags.filter(t => t !== tagName));
+
+    // ── Validation & Submit ──
+    const validateAndSave = async () => {
+        Keyboard.dismiss();
+
+        if (!formData.productId || formData.productId === 'none') {
+            showError('Please select a product.');
+            return;
+        }
+        if (isFollowupRequired && !formData.followup) {
+            showError('Followup date is required for this pipeline stage.');
+            return;
+        }
+
+        const payload = {
+            title: formData.title.trim() || undefined,
+            contactId: formData.contactId !== 'none' ? formData.contactId : undefined,
+            companyId: formData.companyId !== 'none' ? formData.companyId : undefined,
+            productId: formData.productId !== 'none' ? formData.productId : undefined,
+            pipelineId: effectivePipelineId && effectivePipelineId !== 'none' ? effectivePipelineId : undefined,
+            stage: formData.stage !== 'none' ? formData.stage : undefined,
+            value: formData.value ? parseFloat(formData.value) : 0,
+            currency: formData.currency,
+            source: formData.source !== 'none' ? formData.source : undefined,
+            expectedCloseDate: formData.expectedCloseDate?.toISOString(),
+            followup: formData.followup?.toISOString(),
+            tags: formData.tags,
+            notes: formData.notes || undefined,
+        };
+
+        if (canEditSalesperson) {
+            if (formData.userId && formData.userId !== 'none') payload.userId = formData.userId;
+        } else {
+            payload.userId = user?._id || user?.id;
+        }
+
+        if (canEditSalesperson && formData.telesalesId && formData.telesalesId !== 'none') {
+            payload.telesalesId = formData.telesalesId;
+        }
+
+        setLoading(true);
+        try {
+            const leadId = lead?._id || lead?.id;
+            const result = await leadsAPI.update(leadId, payload);
+            setLoading(false);
+            if (result.success) {
+                showSuccess('Lead updated successfully!');
+                const updatedLead = result.data?.data || result.data?.lead || result.data || { ...lead, ...payload };
+                try {
+                    route?.params?.onUpdate && route.params.onUpdate(updatedLead);
+                } catch (e) { }
+                navigation.goBack();
+            } else {
+                showError(result.error || 'Failed to update lead');
+            }
+        } catch {
+            setLoading(false);
+            showError('Failed to update lead');
+        }
+    };
+
+    // ── Date picker ──
+    const handleDateChange = (event, date) => {
+        if (Platform.OS === 'android') setShowDatePicker(false);
+        if (event.type === 'dismissed' || event.type === 'set') setShowDatePicker(false);
+        if (date && datePickerTarget) updateField(datePickerTarget, date);
+    };
+
+    const openDatePicker = target => {
+        setDatePickerTarget(target);
+        Keyboard.dismiss();
+        setShowDatePicker(true);
+    };
+
+    // ── Header Component ──
+    const renderHeader = () => (
+        <View style={styles.header}>
+            <View style={styles.headerLeft}>
                 <TouchableOpacity
                     onPress={() => navigation.goBack()}
                     style={styles.backButton}
-                    activeOpacity={0.7}
+                    hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
                 >
-                    <Icon name="arrow-back" size={ms(24)} color={Colors.black} />
+                    <Icon name="chevron-back" size={ms(24)} color={Colors.textPrimary} />
                 </TouchableOpacity>
-                <View style={styles.headerCenter}>
-                    <AppText size="lg" weight="bold" numberOfLines={1} color={Colors.black}>
-                        Edit Lead
-                    </AppText>
-                    <AppText size="xs" color={Colors.textMuted} numberOfLines={1}>
-                        {lead?.title || 'Lead'}
-                    </AppText>
+                <View>
+                    <AppText size="xl" weight="bold" color={Colors.textPrimary}>Edit Lead</AppText>
+                    {(lead?.title || lead?.name) && (
+                        <AppText size="sm" color={Colors.textSecondary} numberOfLines={1}>{lead.title || lead.name}</AppText>
+                    )}
                 </View>
-                <View style={styles.headerRight} />
             </View>
+            <TouchableOpacity
+                onPress={validateAndSave}
+                style={[styles.saveButton, loading && { opacity: 0.6 }]}
+                disabled={loading}
+            >
+                {loading ? (
+                    <ActivityIndicator size="small" color="#fff" />
+                ) : (
+                    <AppText color="#fff" weight="bold">Update</AppText>
+                )}
+            </TouchableOpacity>
+        </View>
+    );
 
-            {/* Form Content */}
-            <Animated.View style={[styles.content, { opacity: fadeAnim }]}>
+    const isProductSelected = formData.productId !== 'none';
+    const selectedProduct = isProductSelected ? products.find(p => getIdFromItem(p) === formData.productId) : null;
+
+    return (
+        <SafeAreaView style={styles.container} edges={['top']}>
+            <StatusBar barStyle="dark-content" backgroundColor="#f8f9fa" />
+
+            {renderHeader()}
+
+            <KeyboardAvoidingView
+                style={styles.flex}
+                behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+            >
                 <ScrollView
-                    style={styles.scrollView}
+                    style={styles.flex}
                     contentContainerStyle={styles.scrollContent}
                     showsVerticalScrollIndicator={false}
-                    keyboardShouldPersistTaps="handled"
+                    onScroll={Animated.event(
+                        [{ nativeEvent: { contentOffset: { y: scrollY } } }],
+                        { useNativeDriver: false }
+                    )}
                 >
-                    {/* Basic Information Section */}
-                    <View style={styles.section}>
-                        <SectionHeader icon="information-circle-outline" title="Basic Information" />
+                    <Animated.View style={{
+                        opacity: scrollY.interpolate({
+                            inputRange: [0, 50],
+                            outputRange: [1, 0.95],
+                            extrapolate: 'clamp'
+                        }),
+                        transform: [{
+                            translateY: scrollY.interpolate({
+                                inputRange: [-100, 0],
+                                outputRange: [50, 0],
+                                extrapolate: 'clamp'
+                            })
+                        }]
+                    }}>
 
-                        <InputField
-                            icon="text-outline"
-                            label="Lead Title *"
-                            placeholder="Enter lead title"
-                            value={formData.title}
-                            onChangeText={(value) => handleInputChange('title', value)}
-                            error={!!errors.title}
-                            errorMessage={errors.title}
-                        />
+                        {/* ── Section: Lead Info ── */}
+                        <SectionHeader icon="pricetag-outline" title="Lead Info" />
+                        <View style={styles.card}>
+                            <AppInput
+                                label="Title"
+                                placeholder="e.g. Enterprise Software Deal"
+                                value={formData.title}
+                                onChangeText={t => updateField('title', t)}
+                                leftIcon="create-outline"
+                            />
+                        </View>
 
-                        <InputField
-                            icon="person-outline"
-                            label="Contact Name"
-                            placeholder="Enter contact name"
-                            value={formData.name}
-                            onChangeText={(value) => handleInputChange('name', value)}
-                            autoCapitalize="words"
-                        />
+                        {/* ── Section: Related Contact & Company ── */}
+                        <SectionHeader icon="people-outline" title="Contact & Company" />
+                        <View style={styles.card}>
+                            <TouchableOpacity onPress={() => setActivePicker('contact')} activeOpacity={0.7}>
+                                <AppInput
+                                    label="Contact"
+                                    placeholder="Select contact"
+                                    value={getSelectedLabel(contacts, formData.contactId, getContactName, '')}
+                                    editable={false}
+                                    leftIcon="person-outline"
+                                    rightIcon="chevron-down-outline"
+                                    pointerEvents="none"
+                                />
+                            </TouchableOpacity>
+                            <TouchableOpacity onPress={() => setActivePicker('company')} activeOpacity={0.7}>
+                                <AppInput
+                                    label="Company"
+                                    placeholder="Select company"
+                                    value={getSelectedLabel(companies, formData.companyId, getCompanyName, '')}
+                                    editable={false}
+                                    leftIcon="business-outline"
+                                    rightIcon="chevron-down-outline"
+                                    pointerEvents="none"
+                                />
+                            </TouchableOpacity>
+                        </View>
 
-                        <InputField
-                            icon="business-outline"
-                            label="Company"
-                            placeholder="Enter company name"
-                            value={formData.company}
-                            onChangeText={(value) => handleInputChange('company', value)}
-                            autoCapitalize="words"
-                        />
+                        {/* ── Section: Product & Value ── */}
+                        <SectionHeader icon="cube-outline" title="Product & Value" />
+                        <View style={styles.card}>
+                            <TouchableOpacity onPress={() => setActivePicker('product')} activeOpacity={0.7}>
+                                <AppInput
+                                    label="Product"
+                                    placeholder="Select product"
+                                    value={selectedProduct?.name || ''}
+                                    editable={false}
+                                    required
+                                    leftIcon="cube-outline"
+                                    rightIcon="chevron-down-outline"
+                                    pointerEvents="none"
+                                />
+                            </TouchableOpacity>
 
-                        <InputField
-                            icon="cash-outline"
-                            label="Estimated Value"
-                            placeholder="Enter estimated deal value"
-                            value={formData.value}
-                            onChangeText={(value) => handleInputChange('value', value.replace(/[^0-9.]/g, ''))}
-                            keyboardType="numeric"
-                        />
-                    </View>
-
-                    {/* Contact Information Section */}
-                    <View style={styles.section}>
-                        <SectionHeader icon="people-circle-outline" title="Contact Information" />
-
-                        <InputField
-                            icon="mail-outline"
-                            label="Email Address"
-                            placeholder="Enter email address"
-                            value={formData.email}
-                            onChangeText={(value) => handleInputChange('email', value)}
-                            keyboardType="email-address"
-                            autoCapitalize="none"
-                        />
-
-                        <InputField
-                            icon="call-outline"
-                            label="Phone Number"
-                            placeholder="Enter phone number"
-                            value={formData.phone}
-                            onChangeText={(value) => handleInputChange('phone', value)}
-                            keyboardType="phone-pad"
-                        />
-                    </View>
-
-                    {/* Lead Source Section */}
-                    <View style={styles.section}>
-                        <SectionHeader icon="git-branch-outline" title="Lead Source" />
-                        <View style={styles.optionsGrid}>
-                            {LEAD_SOURCES.map((source) => (
-                                <TouchableOpacity
-                                    key={source.id}
-                                    style={[
-                                        styles.optionCard,
-                                        formData.source === source.id && styles.optionCardActive,
-                                    ]}
-                                    onPress={() => handleInputChange('source', source.id)}
-                                    activeOpacity={0.7}
-                                >
-                                    <Icon
-                                        name={source.icon}
-                                        size={ms(24)}
-                                        color={formData.source === source.id ? Colors.primary : Colors.textMuted}
+                            <View style={styles.row}>
+                                <View style={{ flex: 2 }}>
+                                    <AppInput
+                                        label="Deal Value"
+                                        placeholder="0.00"
+                                        value={formData.value}
+                                        onChangeText={t => updateField('value', t.replace(/[^0-9.]/g, ''))}
+                                        keyboardType="numeric"
+                                        leftIcon="cash-outline"
                                     />
-                                    <AppText
-                                        size="xs"
-                                        weight={formData.source === source.id ? 'semiBold' : 'regular'}
-                                        color={formData.source === source.id ? Colors.primary : Colors.textSecondary}
-                                        style={styles.optionLabel}
-                                    >
-                                        {source.label}
-                                    </AppText>
-                                </TouchableOpacity>
-                            ))}
-                        </View>
-                    </View>
+                                </View>
+                                <View style={{ flex: 1, marginLeft: Spacing.md }}>
+                                    <TouchableOpacity onPress={() => setActivePicker('currency')} activeOpacity={0.7}>
+                                        <AppInput
+                                            label="Currency"
+                                            value={formData.currency}
+                                            editable={false}
+                                            rightIcon="chevron-down-outline"
+                                            pointerEvents="none"
+                                        />
+                                    </TouchableOpacity>
+                                </View>
+                            </View>
 
-                    {/* Lead Status Section */}
-                    <View style={styles.section}>
-                        <SectionHeader icon="thermometer-outline" title="Lead Status" />
-                        <View style={styles.statusContainer}>
-                            {LEAD_STATUS.map((status) => (
-                                <TouchableOpacity
-                                    key={status.id}
-                                    style={[
-                                        styles.statusButton,
-                                        formData.status === status.id && { backgroundColor: status.color },
-                                    ]}
-                                    onPress={() => handleInputChange('status', status.id)}
-                                    activeOpacity={0.7}
-                                >
-                                    <AppText
-                                        size="sm"
-                                        weight="semiBold"
-                                        color={formData.status === status.id ? Colors.white : status.color}
-                                    >
-                                        {status.label}
+                            {isProductSelected && selectedProduct && (
+                                <View style={styles.infoBadge}>
+                                    <Icon name="information-circle" size={ms(16)} color={Colors.primary} />
+                                    <AppText size="sm" color={Colors.primary} weight="medium" style={{ marginLeft: 6 }}>
+                                        {selectedProduct.price !== undefined
+                                            ? `Default Price: ${formData.currency} ${selectedProduct.price}`
+                                            : 'No default price set'}
                                     </AppText>
-                                </TouchableOpacity>
-                            ))}
+                                </View>
+                            )}
                         </View>
-                    </View>
 
-                    {/* Notes Section */}
-                    <View style={styles.section}>
+                        {/* ── Section: Pipeline & Stage ── */}
+                        <SectionHeader icon="git-network-outline" title="Pipeline & Stage" />
+                        <View style={styles.card}>
+                            {pipelines.length >= 2 && (
+                                <TouchableOpacity onPress={() => setActivePicker('pipeline')} activeOpacity={0.7}>
+                                    <AppInput
+                                        label="Pipeline"
+                                        placeholder="Select pipeline"
+                                        value={getSelectedLabel(pipelines, formData.pipelineId, p => p.name, '')}
+                                        required
+                                        editable={false}
+                                        leftIcon="git-branch-outline"
+                                        rightIcon="chevron-down-outline"
+                                        pointerEvents="none"
+                                    />
+                                </TouchableOpacity>
+                            )}
+                            <TouchableOpacity onPress={() => setActivePicker('stage')} activeOpacity={0.7}>
+                                <AppInput
+                                    label="Stage"
+                                    placeholder="Select stage"
+                                    value={selectedStage ? getStageLabel(selectedStage) : ''}
+                                    required
+                                    editable={false}
+                                    leftIcon="stats-chart-outline"
+                                    rightIcon="chevron-down-outline"
+                                    pointerEvents="none"
+                                />
+                            </TouchableOpacity>
+
+                            {selectedStage && (
+                                <View style={[styles.infoBadge, { backgroundColor: (selectedStage.color || Colors.primary) + '10' }]}>
+                                    <View style={[styles.colorDot, { backgroundColor: selectedStage.color || Colors.primary, width: 8, height: 8 }]} />
+                                    <AppText size="sm" color={selectedStage.color || Colors.primary} weight="medium" style={{ marginLeft: 6 }}>
+                                        {isStageClosed ? 'Closed stage — followup not required' : `${selectedStage.probability ?? 0}% probability`}
+                                    </AppText>
+                                </View>
+                            )}
+                        </View>
+
+                        {/* ── Section: Assignment ── */}
+                        <SectionHeader icon="person-circle-outline" title="Assignment" />
+                        <View style={styles.card}>
+                            {canEditSalesperson ? (
+                                <>
+                                    <TouchableOpacity onPress={() => setActivePicker('salesperson')} activeOpacity={0.7}>
+                                        <AppInput
+                                            label="Salesperson"
+                                            placeholder="Unassigned"
+                                            value={getSelectedLabel(availableSalespersons, formData.userId, getUserLabel, '')}
+                                            editable={false}
+                                            leftIcon="person-outline"
+                                            rightIcon="chevron-down-outline"
+                                            pointerEvents="none"
+                                        />
+                                    </TouchableOpacity>
+                                    <TouchableOpacity onPress={() => setActivePicker('telesales')} activeOpacity={0.7}>
+                                        <AppInput
+                                            label="Telesales"
+                                            placeholder="Unassigned"
+                                            value={getSelectedLabel(availableTelesales, formData.telesalesId, getUserLabel, '')}
+                                            editable={false}
+                                            leftIcon="call-outline"
+                                            rightIcon="chevron-down-outline"
+                                            pointerEvents="none"
+                                        />
+                                    </TouchableOpacity>
+                                </>
+                            ) : (
+                                <AppInput
+                                    label="Salesperson"
+                                    value={user?.name || user?.email || 'Current User'}
+                                    editable={false}
+                                    leftIcon="person-outline"
+                                    rightIcon="lock-closed-outline"
+                                />
+                            )}
+                        </View>
+
+                        {/* ── Section: Source & Dates ── */}
+                        <SectionHeader icon="calendar-outline" title="Source & Dates" />
+                        <View style={styles.card}>
+                            <TouchableOpacity onPress={() => setActivePicker('source')} activeOpacity={0.7}>
+                                <AppInput
+                                    label="Lead Source"
+                                    placeholder="Select source"
+                                    value={getSelectedLabel(leadSources, formData.source, s => s.name, '')}
+                                    editable={false}
+                                    leftIcon="globe-outline"
+                                    rightIcon="chevron-down-outline"
+                                    pointerEvents="none"
+                                />
+                            </TouchableOpacity>
+
+                            <TouchableOpacity onPress={() => openDatePicker('expectedCloseDate')} activeOpacity={0.7}>
+                                <AppInput
+                                    label="Expected Close Date"
+                                    placeholder="Pick a date"
+                                    value={formatDateString(formData.expectedCloseDate)}
+                                    editable={false}
+                                    leftIcon="calendar-outline"
+                                    rightIcon="chevron-down-outline"
+                                    pointerEvents="none"
+                                />
+                            </TouchableOpacity>
+
+                            <TouchableOpacity onPress={() => openDatePicker('followup')} activeOpacity={0.7}>
+                                <AppInput
+                                    label="Followup Date"
+                                    placeholder="Pick a date"
+                                    value={formatDateString(formData.followup)}
+                                    required={isFollowupRequired}
+                                    editable={false}
+                                    leftIcon="notifications-outline"
+                                    rightIcon="chevron-down-outline"
+                                    pointerEvents="none"
+                                    error={isFollowupRequired && !formData.followup}
+                                    errorMessage="Required for this stage"
+                                />
+                            </TouchableOpacity>
+                        </View>
+
+                        {/* ── Section: Tags ── */}
+                        <SectionHeader icon="pricetags-outline" title="Tags" />
+                        <View style={styles.card}>
+                            {formData.tags.length > 0 ? (
+                                <View style={styles.tagWrap}>
+                                    {formData.tags.map(tag => {
+                                        const tagData = leadTags.find(t => t.name === tag);
+                                        return (
+                                            <TouchableOpacity
+                                                key={tag}
+                                                style={[styles.tagChip, { backgroundColor: (tagData?.color || Colors.primary) + '20' }]}
+                                                onPress={() => removeTag(tag)}
+                                            >
+                                                <AppText size="xs" weight="medium" color={tagData?.color || Colors.primary}>{tag}</AppText>
+                                                <Icon name="close-circle" size={ms(14)} color={tagData?.color || Colors.primary} style={{ marginLeft: 4 }} />
+                                            </TouchableOpacity>
+                                        );
+                                    })}
+                                    <TouchableOpacity style={styles.addTagInline} onPress={() => setActivePicker('tags')}>
+                                        <Icon name="add-circle" size={ms(24)} color={Colors.primary} />
+                                    </TouchableOpacity>
+                                </View>
+                            ) : (
+                                <TouchableOpacity style={styles.addTagButton} onPress={() => setActivePicker('tags')}>
+                                    <Icon name="add-circle-outline" size={ms(20)} color={Colors.primary} />
+                                    <AppText color={Colors.primary} weight="medium" style={{ marginLeft: 8 }}>Add Tags</AppText>
+                                </TouchableOpacity>
+                            )}
+                        </View>
+
+                        {/* ── Section: Notes ── */}
                         <SectionHeader icon="document-text-outline" title="Notes" />
-                        <AppInput
-                            placeholder="Add any additional notes..."
-                            value={formData.notes}
-                            onChangeText={(value) => handleInputChange('notes', value)}
-                            multiline
-                            numberOfLines={4}
-                            inputStyle={styles.textArea}
-                        />
-                    </View>
+                        <View style={[styles.card, { paddingBottom: Spacing.lg }]}>
+                            <AppInput
+                                label="Additional Notes"
+                                placeholder="Type any details..."
+                                value={formData.notes}
+                                onChangeText={t => updateField('notes', t)}
+                                multiline
+                                numberOfLines={4}
+                                leftIcon="document-text-outline"
+                            />
+                        </View>
 
-                    <View style={styles.bottomSpacer} />
+                        <View style={{ height: vs(40) }} />
+                    </Animated.View>
                 </ScrollView>
-
-                {/* Floating Action Button */}
-                <View style={styles.fabContainer}>
-                    <AppButton
-                        title="Update Lead"
-                        onPress={handleSubmit}
-                        loading={loading}
-                        disabled={loading || !formData.title.trim()}
-                        icon="save-outline"
-                        fullWidth
-                        style={styles.updateButton}
-                    />
-                </View>
-            </Animated.View>
+            </KeyboardAvoidingView>
 
             <ModalLoader visible={loading} text="Updating lead..." />
+
+            {showDatePicker && (
+                <DateTimePicker
+                    value={formData[datePickerTarget] || new Date()}
+                    mode="date"
+                    display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+                    onChange={handleDateChange}
+                />
+            )}
+
+            {/* ─────────────── PICKERS ─────────────── */}
+            <SearchablePicker
+                visible={activePicker === 'contact'}
+                title="Select Contact"
+                items={contacts}
+                getLabel={getContactName}
+                getKey={getIdFromItem}
+                selectedKey={formData.contactId}
+                onSelect={item => { updateField('contactId', item ? getIdFromItem(item) : 'none'); setActivePicker(null); }}
+                onClose={() => setActivePicker(null)}
+            />
+            <SearchablePicker
+                visible={activePicker === 'company'}
+                title="Select Company"
+                items={companies}
+                getLabel={getCompanyName}
+                getKey={getIdFromItem}
+                selectedKey={formData.companyId}
+                onSelect={item => { updateField('companyId', item ? getIdFromItem(item) : 'none'); setActivePicker(null); }}
+                onClose={() => setActivePicker(null)}
+            />
+            <SearchablePicker
+                visible={activePicker === 'product'}
+                title="Select Product"
+                items={products}
+                getLabel={p => p.name || ''}
+                getKey={getIdFromItem}
+                selectedKey={formData.productId}
+                onSelect={item => {
+                    if (item) {
+                        setFormData(prev => ({
+                            ...prev,
+                            productId: getIdFromItem(item),
+                            value: item.price !== undefined && item.price !== null
+                                ? String(item.price)
+                                : prev.value,
+                        }));
+                    } else {
+                        updateField('productId', 'none');
+                    }
+                    setActivePicker(null);
+                }}
+                onClose={() => setActivePicker(null)}
+            />
+            <SearchablePicker
+                visible={activePicker === 'salesperson'}
+                title="Select Salesperson"
+                items={availableSalespersons}
+                getLabel={getUserLabel}
+                getKey={getIdFromItem}
+                selectedKey={formData.userId}
+                onSelect={item => { updateField('userId', item ? getIdFromItem(item) : 'none'); setActivePicker(null); }}
+                onClose={() => setActivePicker(null)}
+            />
+            <SearchablePicker
+                visible={activePicker === 'telesales'}
+                title="Select Telesales"
+                items={availableTelesales}
+                getLabel={getUserLabel}
+                getKey={getIdFromItem}
+                selectedKey={formData.telesalesId}
+                onSelect={item => { updateField('telesalesId', item ? getIdFromItem(item) : 'none'); setActivePicker(null); }}
+                onClose={() => setActivePicker(null)}
+            />
+            <SearchablePicker
+                visible={activePicker === 'pipeline'}
+                title="Select Pipeline"
+                items={pipelines}
+                getLabel={p => p.name || ''}
+                getKey={getIdFromItem}
+                selectedKey={formData.pipelineId}
+                onSelect={item => {
+                    if (item) {
+                        const pid = String(getIdFromItem(item));
+                        const stagesForPipeline = dealStages.filter(s => {
+                            const sp = s.pipeline || s.pipelineId;
+                            return sp && String(sp) === pid;
+                        });
+                        setFormData(prev => ({
+                            ...prev,
+                            pipelineId: pid,
+                            stage: stagesForPipeline.length > 0 &&
+                                stagesForPipeline.some(s => (s._id || s.id) === prev.stage)
+                                ? prev.stage
+                                : (stagesForPipeline.length > 0 ? (stagesForPipeline[0]._id || stagesForPipeline[0].id || 'none') : 'none'),
+                        }));
+                    } else {
+                        updateField('pipelineId', 'none');
+                    }
+                    setActivePicker(null);
+                }}
+                onClose={() => setActivePicker(null)}
+            />
+            <SearchablePicker
+                visible={activePicker === 'stage'}
+                title="Select Stage"
+                items={availableStages}
+                getLabel={getStageLabel}
+                getKey={getIdFromItem}
+                selectedKey={formData.stage}
+                onSelect={item => {
+                    if (item) {
+                        const prob = item.probability ?? -1;
+                        const name = (item.name || '').toLowerCase();
+                        const isClosed = prob === 0 || prob === 100 || name === 'lost' || name === 'won';
+                        setFormData(prev => ({
+                            ...prev,
+                            stage: getIdFromItem(item),
+                            ...(isClosed ? { followup: undefined } : {}),
+                        }));
+                    } else {
+                        updateField('stage', 'none');
+                    }
+                    setActivePicker(null);
+                }}
+                onClose={() => setActivePicker(null)}
+                allowNone={false}
+            />
+            <SearchablePicker
+                visible={activePicker === 'currency'}
+                title="Select Currency"
+                items={CURRENCIES.map(c => ({ id: c, name: c }))}
+                getLabel={c => c.name}
+                getKey={c => c.id}
+                selectedKey={formData.currency}
+                onSelect={item => { if (item) updateField('currency', item.id); setActivePicker(null); }}
+                onClose={() => setActivePicker(null)}
+                allowNone={false}
+            />
+            <SearchablePicker
+                visible={activePicker === 'source'}
+                title="Select Source"
+                items={leadSources}
+                getLabel={s => s.name || ''}
+                getKey={getIdFromItem}
+                selectedKey={formData.source}
+                onSelect={item => { updateField('source', item ? getIdFromItem(item) : 'none'); setActivePicker(null); }}
+                onClose={() => setActivePicker(null)}
+            />
+            <SearchablePicker
+                visible={activePicker === 'tags'}
+                title="Select Tags"
+                items={leadTags}
+                getLabel={t => t.name}
+                getKey={getIdFromItem}
+                selectedKey={formData.tags}
+                onSelect={newTags => updateField('tags', newTags)}
+                onClose={() => setActivePicker(null)}
+                multiple={true}
+            />
         </SafeAreaView>
     );
 };
@@ -364,123 +939,169 @@ const EditLeadScreen = ({ navigation, route }) => {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: Colors.background,
+        backgroundColor: '#f8f9fa',
+    },
+    flex: {
+        flex: 1,
     },
     header: {
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
-        paddingHorizontal: wp(4),
-        paddingVertical: vs(10),
+        paddingHorizontal: Spacing.base,
+        paddingVertical: vs(12),
+        backgroundColor: '#f8f9fa',
+    },
+    headerLeft: {
+        flexDirection: 'row',
+        alignItems: 'center',
     },
     backButton: {
-        width: ms(44),
-        height: ms(44),
+        marginRight: Spacing.sm,
+    },
+    saveButton: {
+        backgroundColor: Colors.primary,
+        paddingHorizontal: ms(20),
+        paddingVertical: vs(8),
         borderRadius: BorderRadius.round,
-        backgroundColor: 'rgba(255, 255, 255, 0.2)',
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
-    headerCenter: {
-        flex: 1,
-        marginLeft: wp(3),
-    },
-    headerRight: {
-        width: ms(44),
-    },
-    content: {
-        flex: 1,
-    },
-    scrollView: {
-        flex: 1,
+        ...Shadow.sm,
     },
     scrollContent: {
-        paddingTop: vs(16),
-        paddingBottom: vs(100),
-    },
-    section: {
-        marginHorizontal: wp(4),
-        marginBottom: vs(20),
-        backgroundColor: Colors.white,
-        borderRadius: BorderRadius.xl,
-        padding: Spacing.lg,
-        ...Shadow.md,
+        paddingHorizontal: Spacing.base,
+        paddingBottom: vs(30),
     },
     sectionHeader: {
-        marginBottom: vs(16),
-    },
-    sectionHeaderContent: {
         flexDirection: 'row',
         alignItems: 'center',
-        marginBottom: vs(8),
+        marginTop: Spacing.lg,
+        marginBottom: Spacing.sm,
     },
-    sectionTitle: {
-        marginLeft: ms(8),
-    },
-    sectionDivider: {
-        height: 2,
-        backgroundColor: Colors.primary + '20',
-        borderRadius: 1,
-    },
-    inputFieldContainer: {
-        marginBottom: vs(16),
-    },
-    optionsGrid: {
-        flexDirection: 'row',
-        flexWrap: 'wrap',
-        gap: Spacing.sm,
-    },
-    optionCard: {
-        width: '31%',
-        paddingVertical: vs(14),
+    sectionIconWrap: {
+        width: ms(32),
+        height: ms(32),
+        borderRadius: BorderRadius.sm,
+        backgroundColor: Colors.primary + '15',
+        justifyContent: 'center',
         alignItems: 'center',
-        borderRadius: BorderRadius.md,
-        borderWidth: 1.5,
-        borderColor: Colors.border,
-        backgroundColor: Colors.background,
+        marginRight: Spacing.sm,
     },
-    optionCardActive: {
-        borderColor: Colors.primary,
-        backgroundColor: Colors.primaryBackground,
+    card: {
+        backgroundColor: '#fff',
+        borderRadius: BorderRadius.lg,
+        padding: Spacing.base,
+        ...Shadow.md,
     },
-    optionLabel: {
+    row: {
+        flexDirection: 'row',
+        alignItems: 'flex-start',
+    },
+    infoBadge: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: Colors.primary + '10',
+        padding: Spacing.sm,
+        borderRadius: BorderRadius.sm,
         marginTop: Spacing.xs,
     },
-    statusContainer: {
+    tagWrap: {
         flexDirection: 'row',
-        gap: Spacing.sm,
-    },
-    statusButton: {
-        flex: 1,
-        paddingVertical: vs(12),
+        flexWrap: 'wrap',
         alignItems: 'center',
-        borderRadius: BorderRadius.button,
-        borderWidth: 1.5,
-        borderColor: Colors.border,
-        backgroundColor: Colors.background,
     },
-    textArea: {
-        minHeight: vs(100),
-        textAlignVertical: 'top',
+    tagChip: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingHorizontal: ms(10),
+        paddingVertical: vs(4),
+        borderRadius: BorderRadius.round,
+        marginRight: ms(8),
+        marginBottom: vs(8),
     },
-    fabContainer: {
-        position: 'absolute',
-        bottom: 0,
-        left: 0,
-        right: 0,
-        paddingHorizontal: wp(4),
-        paddingVertical: vs(16),
-        backgroundColor: Colors.white,
+    addTagInline: {
+        marginBottom: vs(8),
+    },
+    addTagButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingVertical: vs(4),
+    },
+    modalBackdrop: {
+        flex: 1,
+        backgroundColor: 'rgba(0,0,0,0.5)',
+        justifyContent: 'flex-end',
+    },
+    pickerSheet: {
+        backgroundColor: '#fff',
         borderTopLeftRadius: BorderRadius.xl,
         borderTopRightRadius: BorderRadius.xl,
-        ...Shadow.xl,
+        maxHeight: '80%',
+        paddingBottom: vs(20),
     },
-    updateButton: {
-        borderRadius: BorderRadius.xl,
-        paddingVertical: vs(16),
+    handleBar: {
+        width: ms(40),
+        height: vs(5),
+        backgroundColor: Colors.borderLight,
+        borderRadius: BorderRadius.round,
+        alignSelf: 'center',
+        marginVertical: vs(12),
     },
-    bottomSpacer: {
-        height: vs(20),
+    pickerHeader: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        paddingHorizontal: Spacing.base,
+        paddingBottom: Spacing.sm,
+    },
+    pickerCloseBtn: {
+        backgroundColor: Colors.borderLight,
+        borderRadius: BorderRadius.round,
+        padding: 4,
+    },
+    pickerSearch: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: '#f1f3f5',
+        marginHorizontal: Spacing.base,
+        marginBottom: Spacing.sm,
+        paddingHorizontal: Spacing.sm,
+        borderRadius: BorderRadius.md,
+        height: vs(40),
+    },
+    pickerSearchInput: {
+        flex: 1,
+        marginLeft: Spacing.xs,
+        color: Colors.textPrimary,
+        fontSize: ms(14),
+        padding: 0,
+    },
+    pickerList: {
+        paddingHorizontal: Spacing.base,
+    },
+    pickerItem: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        paddingVertical: vs(12),
+        borderBottomWidth: 1,
+        borderBottomColor: Colors.borderLight,
+    },
+    pickerItemActive: {
+        backgroundColor: Colors.primary + '05',
+    },
+    pickerItemLeft: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        flex: 1,
+    },
+    colorDot: {
+        width: ms(12),
+        height: ms(12),
+        borderRadius: ms(6),
+        marginRight: Spacing.sm,
+    },
+    pickerEmpty: {
+        alignItems: 'center',
+        marginTop: vs(40),
     },
 });
 

@@ -107,7 +107,7 @@ const AppInput = forwardRef(({
                         name={leftIcon}
                         size={ms(20)}
                         color={isFocused ? Colors.primary : Colors.textMuted}
-                        style={styles.leftIcon}
+                        style={[styles.leftIcon, multiline && { paddingTop: vs(Spacing.inputPadding) }]}
                     />
                 )}
 

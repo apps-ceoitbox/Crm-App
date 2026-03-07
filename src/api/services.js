@@ -112,6 +112,16 @@ export const authAPI = {
     googleLogin: data => {
         return handleRequest(apiClient.post(API_ENDPOINTS.AUTH.GOOGLE_LOGIN, data));
     },
+
+    /**
+     * Two Factor Login/Register
+     * @param {object} data - Two factor auth data (token, email, etc.)
+     */
+    twoFactorAuth: data => {
+        return handleRequest(
+            apiClient.post(API_ENDPOINTS.AUTH.TWO_FACTOR_AUTH, data),
+        );
+    },
 };
 
 // ============================================
@@ -158,41 +168,6 @@ export const userAPI = {
                 },
             }),
         );
-    },
-
-    /**
-     * Get current user's own profile (full)
-     */
-    getMyProfile: () => {
-        return handleRequest(apiClient.get(API_ENDPOINTS.USERS.MY_PROFILE));
-    },
-
-    /**
-     * Update current user's own profile
-     * @param {object} data - { name, mobile, phone, photo }
-     */
-    updateMyProfile: data => {
-        return handleRequest(apiClient.put(API_ENDPOINTS.USERS.MY_PROFILE, data));
-    },
-
-    /**
-     * Upload profile photo (multipart → Cloudinary server-side)
-     * @param {FormData} formData - Form data with 'file' field
-     */
-    uploadProfilePhoto: formData => {
-        return handleRequest(
-            apiClient.post(API_ENDPOINTS.USERS.MY_PHOTO_UPLOAD, formData, {
-                headers: { 'Content-Type': 'multipart/form-data' },
-            }),
-        );
-    },
-
-    /**
-     * Update profile photo URL directly
-     * @param {string} photoUrl - URL of the uploaded photo
-     */
-    updateMyPhoto: photoUrl => {
-        return handleRequest(apiClient.put(API_ENDPOINTS.USERS.MY_PHOTO, { photo: photoUrl }));
     },
 };
 
@@ -261,15 +236,6 @@ export const leadsAPI = {
     getStats: () => {
         return handleRequest(apiClient.get(API_ENDPOINTS.LEADS.STATS));
     },
-
-    /**
-     * Get activities for a lead
-     * @param {string} id - Lead ID
-     * @param {object} params - { page, limit }
-     */
-    getActivities: (id, params = {}) => {
-        return handleRequest(apiClient.get(API_ENDPOINTS.LEADS.ACTIVITIES(id), { params }));
-    },
 };
 
 // ============================================
@@ -307,7 +273,7 @@ export const tasksAPI = {
      * @param {object} data - Task data to update
      */
     update: (id, data) => {
-        return handleRequest(apiClient.put(API_ENDPOINTS.TASKS.UPDATE(id), data));
+        return handleRequest(apiClient.patch(API_ENDPOINTS.TASKS.UPDATE(id), data));
     },
 
     /**
@@ -542,38 +508,6 @@ export const contactsAPI = {
     delete: id => {
         return handleRequest(apiClient.delete(API_ENDPOINTS.CONTACTS.DELETE(id)));
     },
-
-    /**
-     * Get documents for a contact
-     * @param {string} id - Contact ID
-     */
-    getDocuments: id => {
-        return handleRequest(apiClient.get(API_ENDPOINTS.CONTACTS.DOCUMENTS(id)));
-    },
-
-    /**
-     * Upload a document to a contact
-     * @param {string} id - Contact ID
-     * @param {FormData} formData - FormData with 'file' field
-     */
-    uploadDocument: (id, formData) => {
-        return handleRequest(
-            apiClient.post(API_ENDPOINTS.CONTACTS.DOCUMENTS(id), formData, {
-                headers: { 'Content-Type': 'multipart/form-data' },
-            }),
-        );
-    },
-
-    /**
-     * Delete a document from a contact
-     * @param {string} id - Contact ID
-     * @param {string} docId - Document ID
-     */
-    deleteDocument: (id, docId) => {
-        return handleRequest(
-            apiClient.delete(API_ENDPOINTS.CONTACTS.DELETE_DOCUMENT(id, docId)),
-        );
-    },
 };
 
 // ============================================
@@ -683,28 +617,24 @@ export const settingsAPI = {
      * Get settings
      */
     get: () => {
-        return handleRequest(
-            apiClient.get(API_ENDPOINTS.SETTINGS.GET)
-        );
+        return handleRequest(apiClient.get(API_ENDPOINTS.SETTINGS.GET));
     },
 
     /**
      * Update settings
-     * @param {object} data 
+     * @param {object} data
      */
-    update: (data) => {
-        return handleRequest(
-            apiClient.put(API_ENDPOINTS.SETTINGS.UPDATE, data)
-        );
+    update: data => {
+        return handleRequest(apiClient.put(API_ENDPOINTS.SETTINGS.UPDATE, data));
     },
 
     /**
      * Get call history
      * @param {object} params (client_numbers, lead_id, page_size)
      */
-    getCallHistory: (params) => {
+    getCallHistory: params => {
         return handleRequest(
-            apiClient.get(API_ENDPOINTS.SETTINGS.CALL_HISTORY, { params })
+            apiClient.get(API_ENDPOINTS.SETTINGS.CALL_HISTORY, { params }),
         );
     },
 };
@@ -898,6 +828,89 @@ export const aiAPI = {
 };
 
 // ============================================
+// PRODUCTS APIs
+// ============================================
+
+export const productsAPI = {
+    /**
+     * Get all products
+     * @param {object} params - Query params (page, limit, search, etc.)
+     */
+    getAll: (params = {}) => {
+        return handleRequest(apiClient.get(API_ENDPOINTS.PRODUCTS.LIST, { params }));
+    },
+
+    /**
+     * Get product by ID
+     * @param {string} id - Product ID
+     */
+    getById: id => {
+        return handleRequest(apiClient.get(API_ENDPOINTS.PRODUCTS.DETAIL(id)));
+    },
+};
+
+// ============================================
+// DEAL STAGES APIs
+// ============================================
+
+export const dealStagesAPI = {
+    /**
+     * Get all deal stages
+     * @param {object} params - Query params (pipelineId, etc.)
+     */
+    getAll: (params = {}) => {
+        return handleRequest(apiClient.get(API_ENDPOINTS.DEAL_STAGES.LIST, { params }));
+    },
+};
+
+// ============================================
+// LEAD TAGS APIs
+// ============================================
+
+export const leadTagsAPI = {
+    /**
+     * Get all lead tags
+     */
+    getAll: () => {
+        return handleRequest(apiClient.get(API_ENDPOINTS.LEAD_TAGS.LIST));
+    },
+};
+
+// ============================================
+// LEAD SOURCES APIs
+// ============================================
+
+export const leadSourcesAPI = {
+    /**
+     * Get all lead sources
+     */
+    getAll: () => {
+        return handleRequest(apiClient.get(API_ENDPOINTS.LEAD_SOURCES.LIST));
+    },
+};
+
+// ============================================
+// USERS APIs (for salesperson / telesales)
+// ============================================
+
+export const usersAPI = {
+    /**
+     * Get all users
+     * @param {object} params - Query params (role, status, etc.)
+     */
+    getAll: (params = {}) => {
+        return handleRequest(apiClient.get(API_ENDPOINTS.USERS.LIST, { params }));
+    },
+
+    /**
+     * Get all users (alias)
+     */
+    getAllUsers: (params = {}) => {
+        return handleRequest(apiClient.get(API_ENDPOINTS.USERS.LIST, { params }));
+    },
+};
+
+// ============================================
 // PIPELINE APIs
 // ============================================
 
@@ -934,7 +947,7 @@ export const reportsAPI = {
      */
     getCrmOverview: (params = {}) => {
         return handleRequest(
-            apiClient.get(API_ENDPOINTS.REPORTS.CRM_OVERVIEW, { params })
+            apiClient.get(API_ENDPOINTS.REPORTS.CRM_OVERVIEW, { params }),
         );
     },
 
@@ -944,7 +957,7 @@ export const reportsAPI = {
      */
     getTeamPerformance: (params = {}) => {
         return handleRequest(
-            apiClient.get(API_ENDPOINTS.REPORTS.TEAM_PERFORMANCE, { params })
+            apiClient.get(API_ENDPOINTS.REPORTS.TEAM_PERFORMANCE, { params }),
         );
     },
 
@@ -954,7 +967,7 @@ export const reportsAPI = {
      */
     getForecast: (params = {}) => {
         return handleRequest(
-            apiClient.get(API_ENDPOINTS.REPORTS.FORECAST, { params })
+            apiClient.get(API_ENDPOINTS.REPORTS.FORECAST, { params }),
         );
     },
 
@@ -964,7 +977,7 @@ export const reportsAPI = {
      */
     getSmartCallDashboard: (params = {}) => {
         return handleRequest(
-            apiClient.get(API_ENDPOINTS.REPORTS.SMART_CALL_DASHBOARD, { params })
+            apiClient.get(API_ENDPOINTS.REPORTS.SMART_CALL_DASHBOARD, { params }),
         );
     },
 };
@@ -985,4 +998,10 @@ export default {
     followUp: followUpAPI,
     reports: reportsAPI,
     ai: aiAPI,
+    pipeline: pipelineAPI,
+    products: productsAPI,
+    dealStages: dealStagesAPI,
+    leadTags: leadTagsAPI,
+    leadSources: leadSourcesAPI,
+    users: usersAPI,
 };

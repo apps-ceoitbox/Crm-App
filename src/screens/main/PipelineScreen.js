@@ -38,6 +38,7 @@ import { Spacing, BorderRadius, Shadow } from '../../constants/Spacing';
 import { ms, vs } from '../../utils/Responsive';
 import { pipelineAPI } from '../../api';
 import { AppButton } from '../../components';
+import { ROUTES } from '../../constants';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const PAGE_LIMIT = 20;
@@ -592,8 +593,8 @@ const PipelineScreen = ({ navigation }) => {
       {/* ── FAB ── */}
       <View style={styles.floatingAction}>
         <AppButton
-          title="Add Deal"
-          onPress={() => navigation.navigate('AddLead')}
+          title="Add"
+          onPress={() => navigation.navigate(ROUTES.ADD_LEAD)}
           fullWidth={false}
           size="small"
           icon="add"

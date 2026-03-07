@@ -21,6 +21,7 @@ export const API_ENDPOINTS = {
     RESET_PASSWORD: '/auth/reset-password',
     VERIFY_EMAIL: '/auth/verify-email',
     ME: '/auth/me',
+    TWO_FACTOR_AUTH: '/auth/verify-login-2fa',
   },
 
   // Users
@@ -129,12 +130,40 @@ export const API_ENDPOINTS = {
     LEADS_BY_PIPELINE: pipelineId => `/leads?pipelineId=${pipelineId}`,
   },
 
+  // Products
+  PRODUCTS: {
+    LIST: '/products',
+    DETAIL: id => `/products/${id}`,
+  },
+
+  // Deal Stages
+  DEAL_STAGES: {
+    LIST: '/deal-stages',
+  },
+
+  // Lead Tags
+  LEAD_TAGS: {
+    LIST: '/lead-tags',
+  },
+
+  // Lead Sources
+  LEAD_SOURCES: {
+    LIST: '/lead-sources',
+  },
+
+  // Users (for salesperson / telesales dropdowns)
+  USERS: {
+    LIST: '/users',
+    DETAIL: id => `/users/${id}`,
+  },
+
   // Reports
   REPORTS: {
     CRM_OVERVIEW: '/reports/crm-overview',
     TEAM_PERFORMANCE: '/reports/team-performance',
     FORECAST: '/reports/forecast',
-    SMART_CALL_DASHBOARD: '/settings/calling-integration/webhook-delivery-dashboard',
+    SMART_CALL_DASHBOARD:
+      '/settings/calling-integration/webhook-delivery-dashboard',
   },
 
   // AI Assistant

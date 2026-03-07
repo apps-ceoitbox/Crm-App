@@ -25,6 +25,7 @@ import { AppText, AppButton } from '../../components';
 import { useAuth } from '../../context';
 import { contactsAPI } from '../../api';
 import { showError } from '../../utils';
+import { ROUTES } from '../../constants';
 
 const LIMIT = 50;
 
@@ -208,7 +209,7 @@ const ContactsScreen = ({ navigation }) => {
     }, [loadingMore, hasMore, loading, page, searchQuery]);
 
     const handleEditContact = (contact) => {
-        navigation.navigate('EditContact', { contact });
+        navigation.navigate(ROUTES.EDIT_CONTACT, { contact });
     };
 
     const handleDeleteContact = (contact) => {

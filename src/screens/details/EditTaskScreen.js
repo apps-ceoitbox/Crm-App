@@ -1,6 +1,6 @@
 /**
- * Add Task Screen
- * Form to create a new task — UI updated to match premium AddContactScreen design
+ * Edit Task Screen
+ * Form to update an existing task — UI updated to match premium AddTaskScreen design
  */
 
 import React, { useState, useEffect, useRef, useMemo } from 'react';
@@ -27,9 +27,21 @@ import { Spacing, BorderRadius, Shadow } from '../../constants/Spacing';
 import { ms, vs, wp } from '../../utils/Responsive';
 import { AppText, AppInput, AppButton, ModalLoader } from '../../components';
 import { useAuth } from '../../context/AuthContext';
-import { useTasks } from '../../context';
-import { leadsAPI } from '../../api';
+import { leadsAPI, tasksAPI } from '../../api';
 import { showError, showSuccess } from '../../utils';
+
+// Maps for status conversion
+const API_STATUS_TO_UI = {
+  open: 'Pending',
+  in_progress: 'In Progress',
+  completed: 'Completed',
+};
+
+const UI_STATUS_TO_API = {
+  Pending: 'open',
+  'In Progress': 'in_progress',
+  Completed: 'completed',
+};
 
 // ─── Searchable Bottom-Sheet Picker ──────────────────────────────────────────
 const SearchablePicker = ({
@@ -42,14 +54,14 @@ const SearchablePicker = ({
   onSelect,
   onClose,
   allowNone = true,
-  onSearch, // Optional: for server-side search
+  onSearch,
   loading = false,
-  onEndReached, // Optional: for pagination
+  onEndReached,
 }) => {
   const [query, setQuery] = useState('');
 
   const filtered = useMemo(() => {
-    if (onSearch) return items; // if server-side search is enabled
+    if (onSearch) return items;
     if (!query.trim()) return items;
     const q = query.toLowerCase();
     return items.filter(item => (getLabel(item) || '').toLowerCase().includes(q));
@@ -176,21 +188,25 @@ const TASK_STATUSES = [
   { id: 'Completed', color: '#10B981', bg: '#ECFDF5' },
 ];
 
-const AddTaskScreen = ({ navigation }) => {
-  const { addTask } = useTasks();
-  const { fetchAllUsers, allUsers, user } = useAuth();
+const EditTaskScreen = ({ navigation, route }) => {
+  const taskData = route.params?.task || {};
+  const { fetchAllUsers, allUsers } = useAuth();
   const fadeAnim = useRef(new Animated.Value(0)).current;
 
-  // Form state
+  // Form state pre-filled from existing task
   const [formData, setFormData] = useState({
-    title: '',
-    description: '',
-    remarks: '',
-    dueDate: new Date(),
-    priority: 'Medium',
-    status: 'Pending',
-    assignedTo: null,
-    leadId: null,
+    title: taskData.title || '',
+    description: taskData.description || '',
+    remarks: taskData.remark || taskData.remarks || '',
+    dueDate: taskData.dueAt ? new Date(taskData.dueAt) : (taskData.dueDate ? new Date(taskData.dueDate) : new Date()),
+    priority: taskData.priority
+      ? taskData.priority.charAt(0).toUpperCase() + taskData.priority.slice(1).toLowerCase()
+      : 'Medium',
+    status: API_STATUS_TO_UI[taskData.status?.toLowerCase()] || 'Pending',
+    assignedTo: typeof taskData.assignedTo === 'object' ? (taskData.assignedTo?._id || taskData.assignedTo?.id || null) : (taskData.assignedTo || null),
+    leadId: taskData.relatedTo?.entityId
+      ? (typeof taskData.relatedTo.entityId === 'object' ? (taskData.relatedTo.entityId._id || taskData.relatedTo.entityId.id) : taskData.relatedTo.entityId)
+      : null,
   });
 
   const [loading, setLoading] = useState(false);
@@ -205,7 +221,7 @@ const AddTaskScreen = ({ navigation }) => {
   const [leadSearchQuery, setLeadSearchQuery] = useState('');
 
   // UI states
-  const [activePicker, setActivePicker] = useState(null); // 'lead', 'assignee'
+  const [activePicker, setActivePicker] = useState(null);
   const [showDatePicker, setShowDatePicker] = useState(false);
 
   const descriptionRef = useRef(null);
@@ -216,6 +232,7 @@ const AddTaskScreen = ({ navigation }) => {
     if (!allUsers || allUsers.length === 0) {
       fetchAllUsers();
     }
+    // If editing, try to populate the leads list starting with the specific lead if needed
     fetchLeads('', 1);
 
     Animated.timing(fadeAnim, {
@@ -284,12 +301,11 @@ const AddTaskScreen = ({ navigation }) => {
   const validateForm = () => {
     const newErrors = {};
     if (!formData.title.trim()) newErrors.title = 'Title is required';
-    if (!formData.leadId) newErrors.leadId = 'Lead is required';
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSave = async () => {
+  const handleUpdate = async () => {
     Keyboard.dismiss();
     if (!validateForm()) {
       showError('Validation Error', 'Please complete all required fields.');
@@ -298,30 +314,31 @@ const AddTaskScreen = ({ navigation }) => {
 
     setLoading(true);
     try {
+      const taskId = taskData._id || taskData.id;
       const apiPayload = {
         assignedTo: formData.assignedTo || undefined,
         description: formData.description,
         dueAt: formData.dueDate ? new Date(formData.dueDate).toISOString() : undefined,
         priority: formData.priority.toLowerCase(),
-        relatedTo: {
+        relatedTo: formData.leadId ? {
           entityType: 'lead',
           entityId: formData.leadId
-        },
-        remark: formData.remarks,
-        status: formData.status === 'In Progress' ? 'open' : formData.status.toLowerCase(),
+        } : undefined,
+        addRemark: formData.remarks, // Matching existing Logic in EditTaskScreen (addRemark)
+        status: UI_STATUS_TO_API[formData.status] || 'open',
         title: formData.title,
       };
 
-      const result = await addTask(apiPayload);
+      const result = await tasksAPI.update(taskId, apiPayload);
       if (result.success) {
-        showSuccess('Success', 'Task created successfully!');
+        showSuccess('Success', 'Task updated successfully!');
         navigation.goBack();
       } else {
-        showError('Error', result.error || 'Failed to create task');
+        showError('Error', result.error || 'Failed to update task');
       }
     } catch (error) {
-      console.error('Error creating task:', error);
-      showError('Error', 'Failed to create task');
+      console.error('Error updating task:', error);
+      showError('Error', 'Failed to update task');
     } finally {
       setLoading(false);
     }
@@ -335,7 +352,7 @@ const AddTaskScreen = ({ navigation }) => {
     if (date) handleInputChange('dueDate', date);
   };
 
-  const formatDate = d => {
+  const formatDateStr = d => {
     if (!d) return 'Pick a date';
     return d.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
   };
@@ -357,20 +374,20 @@ const AddTaskScreen = ({ navigation }) => {
         </TouchableOpacity>
         <View style={styles.headerCenter}>
           <AppText size="lg" weight="bold" numberOfLines={1} color={Colors.black}>
-            Add New Task
+            Edit Task
           </AppText>
           <AppText size="xs" color={Colors.textMuted} numberOfLines={1}>
-            Create work items for leads
+            Update task: {taskData.title || 'Task'}
           </AppText>
         </View>
         <TouchableOpacity
           style={[styles.saveHeaderBtn, loading && { opacity: 0.6 }]}
-          onPress={handleSave}
+          onPress={handleUpdate}
           disabled={loading}
           activeOpacity={0.8}
         >
           <Icon name="checkmark" size={ms(18)} color={Colors.white} />
-          <Text style={styles.saveHeaderBtnText}>{loading ? 'Saving...' : 'Add'}</Text>
+          <Text style={styles.saveHeaderBtnText}>{loading ? 'Saving...' : 'Update'}</Text>
         </TouchableOpacity>
       </View>
 
@@ -424,16 +441,14 @@ const AddTaskScreen = ({ navigation }) => {
               <SectionHeader icon="people-outline" title="Links & Assignment" />
 
               <View style={styles.inputFieldContainer}>
-                <Text style={styles.dropdownLabel}>Related Lead *</Text>
+                <Text style={styles.dropdownLabel}>Related Lead</Text>
                 <PickerTrigger
-                  value={leads.find(l => l.id === formData.leadId)?.label || 'Select Lead'}
+                  value={leads.find(l => l.id === formData.leadId)?.label || (taskData.relatedTo?.entityId?.contact?.firstName ? `${taskData.relatedTo.entityId.contact.firstName} ${taskData.relatedTo.entityId.contact.lastName || ''}` : 'Select Lead')}
                   placeholder="Select Lead"
                   hasValue={!!formData.leadId}
                   onPress={() => setActivePicker('lead')}
                   icon="person-add-outline"
-                  error={!!errors.leadId}
                 />
-                {errors.leadId && <Text style={styles.errorInlineText}>{errors.leadId}</Text>}
               </View>
 
               <View style={styles.inputFieldContainer}>
@@ -461,7 +476,7 @@ const AddTaskScreen = ({ navigation }) => {
                 >
                   <Icon name="calendar-outline" size={ms(18)} color={Colors.primary} />
                   <Text style={styles.dateTriggerText}>
-                    {formatDate(formData.dueDate)}
+                    {formatDateStr(formData.dueDate)}
                   </Text>
                   <Icon name="chevron-expand-outline" size={ms(15)} color={Colors.textTertiary} />
                 </TouchableOpacity>
@@ -518,7 +533,6 @@ const AddTaskScreen = ({ navigation }) => {
             mode="date"
             display="default"
             onChange={handleDateChange}
-            minimumDate={new Date()}
           />
         )}
 
@@ -538,7 +552,7 @@ const AddTaskScreen = ({ navigation }) => {
           onSearch={handleLeadSearch}
           onEndReached={handleLeadEndReached}
           loading={leadsLoading}
-          allowNone={false}
+          allowNone={true}
         />
 
         {/* Assignee Picker */}
@@ -556,7 +570,7 @@ const AddTaskScreen = ({ navigation }) => {
           onClose={() => setActivePicker(null)}
         />
 
-        <ModalLoader visible={loading} text="Creating Task..." />
+        <ModalLoader visible={loading} text="Updating Task..." />
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
@@ -658,7 +672,6 @@ const styles = StyleSheet.create({
     gap: ms(6),
   },
   pillText: { fontSize: ms(13), fontWeight: '600', color: Colors.textSecondary },
-  errorInlineText: { color: Colors.error, fontSize: ms(11), marginTop: vs(4), marginLeft: ms(4) },
   bottomSpacer: { height: vs(20) },
 
   // Modal Sheet Styles
@@ -738,4 +751,4 @@ const styles = StyleSheet.create({
   pickerEmptyText: { color: Colors.textTertiary, fontSize: ms(14) },
 });
 
-export default AddTaskScreen;
+export default EditTaskScreen;
