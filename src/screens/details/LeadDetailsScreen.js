@@ -20,7 +20,10 @@ import {
     LayoutAnimation,
     UIManager,
     Platform,
+    TextInput,
+    KeyboardAvoidingView,
 } from 'react-native';
+import { launchImageLibrary } from 'react-native-image-picker';
 
 // Enable LayoutAnimation on Android
 if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
@@ -32,8 +35,10 @@ import LinearGradient from 'react-native-linear-gradient';
 import { Colors } from '../../constants/Colors';
 import { Spacing, BorderRadius, Shadow } from '../../constants/Spacing';
 import { ms, vs } from '../../utils/Responsive';
-import { leadsAPI, settingsAPI } from '../../api';
+import { leadsAPI, settingsAPI, notesAPI, uploadAPI } from '../../api';
+import { useAuth } from '../../context/AuthContext';
 import { showError } from '../../utils';
+import { DeleteConfirmationModal, AppText } from '../../components';
 
 // ─── Constants ───────────────────────────────────────────────────────────────
 
@@ -76,6 +81,15 @@ function formatTime(dateStr) {
     const d = new Date(dateStr);
     if (isNaN(d)) return '';
     return d.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
+}
+
+function formatDateTime(dateStr) {
+    if (!dateStr) return '–';
+    const d = new Date(dateStr);
+    if (isNaN(d)) return dateStr;
+    const datePart = d.toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' });
+    const timePart = d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+    return `${datePart} • ${timePart}`;
 }
 
 function formatDuration(secs) {
@@ -271,6 +285,9 @@ const LeadDetailsScreen = ({ route, navigation }) => {
 
     // Activities
     const [activities, setActivities] = useState([]);
+    const [activitiesPage, setActivitiesPage] = useState(1);
+    const [loadingMoreActivities, setLoadingMoreActivities] = useState(false);
+    const [hasMoreActivities, setHasMoreActivities] = useState(true);
     const [loadingActivities, setLoadingActivities] = useState(false);
     const [activitiesLoaded, setActivitiesLoaded] = useState(false);
 
@@ -278,6 +295,27 @@ const LeadDetailsScreen = ({ route, navigation }) => {
     const [callHistory, setCallHistory] = useState([]);
     const [loadingCalls, setLoadingCalls] = useState(false);
     const [callsLoaded, setCallsLoaded] = useState(false);
+
+    // Notes
+    const [leadNotes, setLeadNotes] = useState([]);
+    const [loadingNotes, setLoadingNotes] = useState(false);
+    const [notesLoaded, setNotesLoaded] = useState(false);
+    const [newNoteText, setNewNoteText] = useState('');
+    const [noteSearchQuery, setNoteSearchQuery] = useState('');
+    const [addingNote, setAddingNote] = useState(false);
+    const [deletingNoteId, setDeletingNoteId] = useState(null);
+    const [isDeleteNoteModalVisible, setIsDeleteNoteModalVisible] = useState(false);
+    const [deletingNote, setDeletingNote] = useState(false);
+    const [isEditingNote, setIsEditingNote] = useState(false);
+    const [editingNoteId, setEditingNoteId] = useState(null);
+
+    // Documents
+    const [documents, setDocuments] = useState([]);
+    const [loadingDocuments, setLoadingDocuments] = useState(false);
+    const [documentsLoaded, setDocumentsLoaded] = useState(false);
+    const [uploading, setUploading] = useState(false);
+
+    const { user: currentUser } = useAuth();
 
     const tabAnim = useRef(new Animated.Value(0)).current;
 
@@ -289,7 +327,16 @@ const LeadDetailsScreen = ({ route, navigation }) => {
             const res = await leadsAPI.getById(leadId);
             if (res.success) {
                 const data = res.data?.data || res.data;
-                if (data) setLead(data);
+                if (data) {
+                    setLead(data);
+                    if (data.contactDocuments) {
+                        setDocuments(data.contactDocuments);
+                        setDocumentsLoaded(true);
+                    } else if (data.documents) {
+                        setDocuments(data.documents);
+                        setDocumentsLoaded(true);
+                    }
+                }
             }
         } catch (e) {
             // Keep initial lead data
@@ -298,22 +345,57 @@ const LeadDetailsScreen = ({ route, navigation }) => {
         }
     }, [leadId]);
 
-    const fetchActivities = useCallback(async () => {
-        if (!leadId || loadingActivities) return;
-        setLoadingActivities(true);
+    const fetchNotes = useCallback(async () => {
+        if (!leadId || loadingNotes) return;
+        setLoadingNotes(true);
         try {
-            const res = await leadsAPI.getActivities(leadId, { page: 1, limit: 20 });
+            const res = await notesAPI.getAll({ entityType: 'lead', entityId: leadId });
             if (res.success) {
-                const data = res.data?.data || res.data?.activities || res.data || [];
-                setActivities(Array.isArray(data) ? data : []);
+                setLeadNotes(res.data?.data || res.data || []);
+            }
+        } catch (e) {
+            // silently fail
+        } finally {
+            setLoadingNotes(false);
+            setNotesLoaded(true);
+        }
+    }, [leadId]);
+
+
+    const fetchActivities = useCallback(async (page = 1) => {
+        if (!leadId || (page === 1 && loadingActivities) || (page > 1 && loadingMoreActivities)) return;
+
+        if (page === 1) {
+            setLoadingActivities(true);
+        } else {
+            setLoadingMoreActivities(true);
+        }
+
+        try {
+            const limit = 20;
+            const res = await leadsAPI.getActivities(leadId, { page, limit });
+            // console.log('Activities response:', res);
+            if (res.success) {
+                const data = res.data?.data?.activities;
+                const newList = Array.isArray(data) ? data : [];
+
+                if (page === 1) {
+                    setActivities(newList);
+                } else {
+                    setActivities(prev => [...prev, ...newList]);
+                }
+
+                setHasMoreActivities(newList.length === limit);
+                setActivitiesPage(page);
             }
         } catch (e) {
             // silently fail
         } finally {
             setLoadingActivities(false);
+            setLoadingMoreActivities(false);
             setActivitiesLoaded(true);
         }
-    }, [leadId]);
+    }, [leadId, loadingActivities, loadingMoreActivities]);
 
     const fetchCallHistory = useCallback(async () => {
         if (!leadId || loadingCalls) return;
@@ -329,6 +411,7 @@ const LeadDetailsScreen = ({ route, navigation }) => {
                 lead_id: leadId,
                 page_size: 100,
             });
+            // console.log('Call history response:', res);
             if (res.success) {
                 const data = res.data?.data || res.data?.history || res.data || [];
                 setCallHistory(Array.isArray(data) ? data : []);
@@ -343,6 +426,7 @@ const LeadDetailsScreen = ({ route, navigation }) => {
 
     useEffect(() => {
         fetchLeadDetail();
+        fetchNotes();
     }, []);
 
     useEffect(() => {
@@ -350,6 +434,11 @@ const LeadDetailsScreen = ({ route, navigation }) => {
             fetchActivities();
         } else if (activeTab === 1 && !callsLoaded) {
             fetchCallHistory();
+        } else if (activeTab === 2 && !notesLoaded) {
+            fetchNotes();
+        } else if (activeTab === 3 && !documentsLoaded) {
+            // Documents are already loaded via fetchLeadDetail
+            setDocumentsLoaded(true);
         }
     }, [activeTab]);
 
@@ -366,12 +455,25 @@ const LeadDetailsScreen = ({ route, navigation }) => {
     const onRefresh = useCallback(async () => {
         setRefreshing(true);
         setActivitiesLoaded(false);
+        setActivitiesPage(1);
+        setHasMoreActivities(true);
         setCallsLoaded(false);
-        await fetchLeadDetail();
-        if (activeTab === 0) await fetchActivities();
-        if (activeTab === 1) await fetchCallHistory();
+        setNotesLoaded(false);
+        setDocumentsLoaded(false);
+        await Promise.all([
+            fetchLeadDetail(),
+            fetchNotes(),
+            activeTab === 0 ? fetchActivities(1) : Promise.resolve(),
+            activeTab === 1 ? fetchCallHistory() : Promise.resolve(),
+        ]);
         setRefreshing(false);
-    }, [activeTab]);
+    }, [activeTab, fetchLeadDetail, fetchNotes, fetchActivities, fetchCallHistory]);
+
+    const handleLoadMoreActivities = () => {
+        if (!loadingMoreActivities && hasMoreActivities) {
+            fetchActivities(activitiesPage + 1);
+        }
+    };
 
     // ── Derived data ──
 
@@ -415,6 +517,147 @@ const LeadDetailsScreen = ({ route, navigation }) => {
         if (phone) Linking.openURL(`whatsapp://send?phone=${phone}`);
     };
 
+    // ── Notes Handlers ──
+    const handleAddNote = async () => {
+        if (!newNoteText.trim() || !leadId) return;
+        setAddingNote(true);
+        try {
+            let res;
+            if (isEditingNote && editingNoteId) {
+                res = await notesAPI.update(editingNoteId, {
+                    content: newNoteText.trim(),
+                });
+            } else {
+                res = await notesAPI.create({
+                    entityType: 'lead',
+                    entityId: leadId,
+                    content: newNoteText.trim()
+                });
+            }
+            if (res.success) {
+                setNewNoteText('');
+                setIsEditingNote(false);
+                setEditingNoteId(null);
+                fetchNotes();
+            } else {
+                showError(res.error || `Failed to ${isEditingNote ? 'update' : 'add'} note`);
+            }
+        } catch (e) {
+            showError(`Failed to ${isEditingNote ? 'update' : 'add'} note`);
+        } finally {
+            setAddingNote(false);
+        }
+    };
+
+    const handleEditNote = (note) => {
+        setNewNoteText(note.content);
+        setIsEditingNote(true);
+        setEditingNoteId(note._id || note.id);
+    };
+
+    const cancelEditingNote = () => {
+        setNewNoteText('');
+        setIsEditingNote(false);
+        setEditingNoteId(null);
+    };
+
+    const handleDeleteNote = async (noteId) => {
+        setDeletingNote(true);
+        try {
+            const res = await notesAPI.delete(noteId);
+            if (res.success) {
+                setLeadNotes(prev => prev.filter(n => (n._id || n.id) !== noteId));
+                setIsDeleteNoteModalVisible(false);
+                setDeletingNoteId(null);
+            } else {
+                showError(res.error || 'Failed to delete note');
+            }
+        } catch (e) {
+            showError('Something went wrong');
+        } finally {
+            setDeletingNote(false);
+        }
+    };
+
+    // ── Documents Handlers ──
+    const handleUploadDocument = () => {
+        launchImageLibrary(
+            { mediaType: 'mixed', quality: 0.9, selectionLimit: 1 },
+            async (response) => {
+                if (response.didCancel || response.errorCode) return;
+                const asset = response.assets?.[0];
+                if (!asset) return;
+
+                const formData = new FormData();
+                formData.append('file', {
+                    uri: asset.uri,
+                    type: asset.type || 'image/jpeg',
+                    name: asset.fileName || `doc_${Date.now()}.jpg`,
+                });
+
+                setUploading(true);
+                try {
+                    const uploadRes = await uploadAPI.uploadFile(formData);
+                    // console.log('Upload response:', uploadRes);
+                    if (!uploadRes.success) {
+                        Alert.alert('Upload Failed', uploadRes.error || 'Could not upload file.');
+                        return;
+                    }
+
+                    const uploadData = uploadRes.data?.fileUrl
+                        || {};
+                    const newDoc = {
+                        id: uploadData.publicId || `doc_${Date.now()}`,
+                        name: uploadData.fileName || asset.fileName || `doc_${Date.now()}.jpg`,
+                        url: uploadData.fileUrl || '',
+                        publicId: uploadData.publicId || '',
+                        format: (uploadData.fileName || asset.fileName || '').split('.').pop() || '',
+                        size: uploadData.fileSize || asset.fileSize || 0,
+                        type: 'lead_profile',
+                        createdAt: new Date().toISOString(),
+                    };
+
+                    const updatedDocs = [...documents, newDoc];
+                    const patchRes = await leadsAPI.update(leadId, { documents: updatedDocs });
+                    if (patchRes.success) {
+                        setDocuments(updatedDocs);
+                    } else {
+                        Alert.alert('Save Failed', patchRes.error || 'Could not save document to lead.');
+                    }
+                } catch (e) {
+                    Alert.alert('Error', 'Something went wrong during upload.');
+                } finally {
+                    setUploading(false);
+                }
+            },
+        );
+    };
+
+    const handleDeleteDocument = (doc) => {
+        const docId = doc._id || doc.id;
+        const docName = doc.name || doc.fileName || doc.originalName || 'this document';
+        Alert.alert(
+            'Delete Document',
+            `Remove "${docName}"? This cannot be undone.`,
+            [
+                { text: 'Cancel', style: 'cancel' },
+                {
+                    text: 'Delete',
+                    style: 'destructive',
+                    onPress: async () => {
+                        const updatedDocs = documents.filter(d => (d._id || d.id) !== docId);
+                        const res = await leadsAPI.update(leadId, { documents: updatedDocs });
+                        if (res.success) {
+                            setDocuments(updatedDocs);
+                        } else {
+                            Alert.alert('Error', res.error || 'Failed to delete document.');
+                        }
+                    },
+                },
+            ],
+        );
+    };
+
     const handleDelete = () => {
         Alert.alert(
             'Delete Lead',
@@ -427,6 +670,9 @@ const LeadDetailsScreen = ({ route, navigation }) => {
                     onPress: async () => {
                         const res = await leadsAPI.delete(leadId);
                         if (res.success) {
+                            route?.params?.refreshLeads?.();
+                            route?.params?.refreshPipeline?.();
+                            route?.params?.refreshFollowUps?.();
                             navigation.goBack();
                         } else {
                             Alert.alert('Error', res.error || 'Failed to delete lead');
@@ -452,7 +698,10 @@ const LeadDetailsScreen = ({ route, navigation }) => {
                         lead,
                         onUpdate: (updatedLead) => {
                             setLead(updatedLead);
-                        }
+                        },
+                        refreshLeads: route?.params?.refreshLeads,
+                        refreshPipeline: route?.params?.refreshPipeline,
+                        refreshFollowUps: route?.params?.refreshFollowUps,
                     })}
                 >
                     <IonIcon name="create-outline" size={ms(18)} color={Colors.primary} />
@@ -694,6 +943,19 @@ const LeadDetailsScreen = ({ route, navigation }) => {
 
     // ── Render: Tab content ──
 
+    // ── Render: Tabs ──
+
+    const DOC_ICONS = {
+        pdf: { icon: 'document-text', color: '#EF4444', bg: '#FEF2F2' },
+        doc: { icon: 'document', color: '#3B82F6', bg: '#EFF6FF' },
+        docx: { icon: 'document', color: '#3B82F6', bg: '#EFF6FF' },
+        xls: { icon: 'grid', color: '#10B981', bg: '#ECFDF5' },
+        xlsx: { icon: 'grid', color: '#10B981', bg: '#ECFDF5' },
+        png: { icon: 'image', color: '#8B5CF6', bg: '#F5F3FF' },
+        jpg: { icon: 'image', color: '#8B5CF6', bg: '#F5F3FF' },
+        jpeg: { icon: 'image', color: '#8B5CF6', bg: '#F5F3FF' },
+    };
+
     const renderActivitiesTab = () => {
         if (loadingActivities) {
             return (
@@ -718,6 +980,20 @@ const LeadDetailsScreen = ({ route, navigation }) => {
                 {activities.map((item, idx) => (
                     <ActivityItem key={item._id || item.id || idx} item={item} />
                 ))}
+
+                {hasMoreActivities && (
+                    <TouchableOpacity
+                        style={styles.loadMoreBtn}
+                        onPress={handleLoadMoreActivities}
+                        disabled={loadingMoreActivities}
+                    >
+                        {loadingMoreActivities ? (
+                            <ActivityIndicator size="small" color={Colors.primary} />
+                        ) : (
+                            <AppText color={Colors.primary} weight="semiBold">Load More Activities</AppText>
+                        )}
+                    </TouchableOpacity>
+                )}
             </View>
         );
     };
@@ -750,29 +1026,253 @@ const LeadDetailsScreen = ({ route, navigation }) => {
     };
 
     const renderNotesTab = () => {
-        const notes = lead?.notes || lead?.description || '';
-        if (!notes) {
-            return (
-                <EmptyState
-                    icon="document-text-outline"
-                    title="No notes yet"
-                    subtitle="Notes will appear here"
-                />
-            );
-        }
+        const filteredNotes = (leadNotes || []).filter(note => {
+            const noteContent = (note.content || '').toLowerCase();
+
+            // Creator name resolution
+            let creatorName = 'Unknown User';
+            if (typeof note.createdBy === 'object' && note.createdBy?.name) {
+                creatorName = note.createdBy.name;
+            } else {
+                const creatorId = typeof note.createdBy === 'object' ? (note.createdBy?._id || note.createdBy?.id) : note.createdBy;
+                const currentUserId = currentUser?._id || currentUser?.id;
+                if (creatorId && currentUserId && creatorId === currentUserId) {
+                    creatorName = currentUser?.name || 'You';
+                }
+            }
+
+            const query = noteSearchQuery.toLowerCase();
+            return noteContent.includes(query) || creatorName.toLowerCase().includes(query);
+        });
+
         return (
             <View style={styles.notesContainer}>
-                <Text style={styles.notesText}>{notes}</Text>
+                {/* Notes Header with Search */}
+                <View style={styles.notesHeader}>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
+                        <AppText size='md' weight="semiBold" color={Colors.textPrimary} style={{ marginLeft: 8 }}>
+                            Internal Notes
+                        </AppText>
+                        <TouchableOpacity style={{ marginLeft: 6 }}>
+                            <IonIcon name="information-circle-outline" size={20} color={Colors.textTertiary} />
+                        </TouchableOpacity>
+                    </View>
+                </View>
+                <View style={styles.noteSearchContainer}>
+                    <IonIcon name="search-outline" size={ms(18)} color={Colors.textTertiary} style={{ marginRight: 6 }} />
+                    <TextInput
+                        style={styles.noteSearchInput}
+                        placeholder="Search notes..."
+                        placeholderTextColor={Colors.textTertiary}
+                        value={noteSearchQuery}
+                        onChangeText={setNoteSearchQuery}
+                    />
+                </View>
+
+                {/* Add Note Input Area */}
+                <View style={styles.addNoteCard}>
+                    <View style={{ flexDirection: 'row' }}>
+                        <View style={[styles.noteAvatarCircle, { backgroundColor: Colors.primaryBackground }]}>
+                            <AppText size={14} weight="medium" color={Colors.primary}>
+                                {getInitials(currentUser?.name)}
+                            </AppText>
+                        </View>
+                        <View style={styles.noteInputWrapper}>
+                            <TextInput
+                                style={styles.noteTextInput}
+                                placeholder="Write a note..."
+                                placeholderTextColor={Colors.textTertiary}
+                                multiline
+                                value={newNoteText}
+                                onChangeText={setNewNoteText}
+                            />
+                        </View>
+                    </View>
+                    <View style={{ flexDirection: 'row', justifyContent: 'flex-end', marginTop: 12 }}>
+                        {isEditingNote && (
+                            <TouchableOpacity
+                                style={[styles.cancelNoteBtn, { marginRight: 8 }]}
+                                onPress={cancelEditingNote}
+                            >
+                                <AppText color={Colors.textSecondary} weight="semiBold">Cancel</AppText>
+                            </TouchableOpacity>
+                        )}
+                        <TouchableOpacity
+                            style={[styles.addNoteBtn, (!newNoteText.trim() || addingNote) && { opacity: 0.6 }]}
+                            onPress={handleAddNote}
+                            disabled={!newNoteText.trim() || addingNote}
+                        >
+                            {addingNote ? (
+                                <ActivityIndicator size="small" color={Colors.white} />
+                            ) : (
+                                <>
+                                    <IonIcon name={isEditingNote ? "save-outline" : "send"} size={14} color={Colors.white} style={{ marginRight: 8 }} />
+                                    <AppText size='sm' color={Colors.white} weight="semiBold">{isEditingNote ? 'Update' : 'Add'}</AppText>
+                                </>
+                            )}
+                        </TouchableOpacity>
+                    </View>
+                </View>
+
+                {/* Notes List */}
+                {filteredNotes.length > 0 ? (
+                    filteredNotes.map((note) => (
+                        <View key={note._id || note.id} style={styles.noteItemCard}>
+                            <View style={{ flexDirection: 'row' }}>
+                                <View style={[styles.noteAvatarCircle, { backgroundColor: Colors.primaryBackground }]}>
+                                    <AppText size={14} weight="medium" color={Colors.primary}>
+                                        {(() => {
+                                            let name = '';
+                                            if (typeof note.createdBy === 'object' && note.createdBy?.name) {
+                                                name = note.createdBy.name;
+                                            } else {
+                                                const creatorId = typeof note.createdBy === 'object' ? (note.createdBy?._id || note.createdBy?.id) : note.createdBy;
+                                                const currentUserId = currentUser?._id || currentUser?.id;
+                                                if (creatorId && currentUserId && creatorId === currentUserId) {
+                                                    name = currentUser?.name || '';
+                                                }
+                                            }
+                                            return getInitials(name);
+                                        })()}
+                                    </AppText>
+                                </View>
+                                <View style={{ flex: 1, marginLeft: 12 }}>
+                                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                                        <View>
+                                            <AppText weight="semiBold" color={Colors.textPrimary}>
+                                                {(() => {
+                                                    if (typeof note.createdBy === 'object' && note.createdBy?.name) {
+                                                        return note.createdBy.name;
+                                                    } else {
+                                                        const creatorId = typeof note.createdBy === 'object' ? (note.createdBy?._id || note.createdBy?.id) : note.createdBy;
+                                                        const currentUserId = currentUser?._id || currentUser?.id;
+                                                        if (creatorId && currentUserId && creatorId === currentUserId) {
+                                                            return currentUser?.name || 'You';
+                                                        }
+                                                    }
+                                                    return 'Unknown User';
+                                                })()}
+                                            </AppText>
+                                            <AppText size={12} color={Colors.textTertiary}>
+                                                {formatDateTime(note.createdAt)}
+                                            </AppText>
+                                        </View>
+                                        <View style={{ flexDirection: 'row' }}>
+                                            <TouchableOpacity
+                                                style={{ padding: 4 }}
+                                                onPress={() => handleEditNote(note)}
+                                            >
+                                                <IonIcon name="pencil-outline" size={18} color={Colors.textPrimary} />
+                                            </TouchableOpacity>
+                                            <TouchableOpacity
+                                                style={{ padding: 4, marginLeft: 12 }}
+                                                onPress={() => {
+                                                    setDeletingNoteId(note._id || note.id);
+                                                    setIsDeleteNoteModalVisible(true);
+                                                }}
+                                            >
+                                                <IonIcon name="trash-outline" size={18} color={Colors.error} />
+                                            </TouchableOpacity>
+                                        </View>
+                                    </View>
+                                    <AppText size={14} color={Colors.textPrimary} style={{ marginTop: 12, lineHeight: 20 }}>
+                                        {note.content}
+                                    </AppText>
+                                </View>
+                            </View>
+                        </View>
+                    ))
+                ) : (
+                    <EmptyState
+                        icon="chatbubble-outline"
+                        title={noteSearchQuery ? "No matching notes" : "No notes yet"}
+                        subtitle={noteSearchQuery ? "Try a different search term" : "Internal notes will appear here"}
+                    />
+                )}
+
+                <DeleteConfirmationModal
+                    visible={isDeleteNoteModalVisible}
+                    onCancel={() => {
+                        setIsDeleteNoteModalVisible(false);
+                        setDeletingNoteId(null);
+                    }}
+                    onDelete={() => handleDeleteNote(deletingNoteId)}
+                    loading={deletingNote}
+                    title="Delete Note"
+                    message="Are you sure you want to delete this note? This action cannot be undone."
+                />
             </View>
         );
     };
 
     const renderDocumentsTab = () => (
-        <EmptyState
-            icon="cloud-upload-outline"
-            title="No documents uploaded"
-            subtitle="Upload documents to attach them to this lead"
-        />
+        <View style={styles.documentsContainer}>
+            {/* Upload button */}
+            <TouchableOpacity
+                style={styles.uploadBtn}
+                onPress={handleUploadDocument}
+                activeOpacity={0.8}
+                disabled={uploading}
+            >
+                {uploading ? (
+                    <ActivityIndicator size="small" color="#fff" />
+                ) : (
+                    <IonIcon name="cloud-upload-outline" size={ms(18)} color="#fff" />
+                )}
+                <Text style={styles.uploadBtnText}>
+                    {uploading ? 'Uploading…' : 'Upload Document'}
+                </Text>
+            </TouchableOpacity>
+
+            {loadingDocuments && documents.length === 0 ? (
+                <ActivityIndicator size="small" color={Colors.primary} style={{ marginTop: 10 }} />
+            ) : documents.length > 0 ? (
+                documents.map((doc, i) => {
+                    const ext = (doc.name || doc.fileName || doc.originalName || '').split('.').pop()?.toLowerCase();
+                    const ds = DOC_ICONS[ext] || { icon: 'document-attach', color: '#6B7280', bg: '#F3F4F6' };
+                    const name = doc.name || doc.fileName || doc.originalName || 'Document';
+                    const url = doc.url || doc.fileUrl || doc.path;
+                    return (
+                        <View key={doc._id || doc.id || i} style={styles.docItem}>
+                            <TouchableOpacity
+                                style={styles.docItemInner}
+                                onPress={() => url && Linking.openURL(url)}
+                                activeOpacity={url ? 0.75 : 1}
+                                disabled={!url}
+                            >
+                                <View style={[styles.docIconBox, { backgroundColor: ds.bg }]}>
+                                    <IonIcon name={ds.icon} size={ms(20)} color={ds.color} />
+                                </View>
+                                <View style={{ flex: 1, marginLeft: ms(12) }}>
+                                    <Text style={styles.docName} numberOfLines={1}>
+                                        {name}
+                                    </Text>
+                                    <Text style={styles.docMeta}>
+                                        {ext?.toUpperCase() || 'File'} · {formatDate(doc.createdAt || doc.uploadedAt)}
+                                    </Text>
+                                </View>
+                                {url ? (
+                                    <IonIcon name="open-outline" size={ms(16)} color={Colors.primary} style={{ marginLeft: 8 }} />
+                                ) : null}
+                            </TouchableOpacity>
+                            <TouchableOpacity
+                                style={styles.docDeleteBtn}
+                                onPress={() => handleDeleteDocument(doc)}
+                                activeOpacity={0.7}
+                            >
+                                <IonIcon name="trash-outline" size={ms(18)} color={Colors.error} />
+                            </TouchableOpacity>
+                        </View>
+                    );
+                })
+            ) : (
+                <EmptyState
+                    icon="folder-open-outline"
+                    title="No documents yet"
+                    subtitle="Tap 'Upload Document' above to add one"
+                />
+            )}
+        </View>
     );
 
     const renderTabContent = () => {
@@ -790,11 +1290,16 @@ const LeadDetailsScreen = ({ route, navigation }) => {
     if (loadingLead) {
         return (
             <SafeAreaView style={styles.container} edges={['top']}>
-                {renderHeader()}
-                <View style={styles.centered}>
-                    <ActivityIndicator size="large" color={Colors.primary} />
-                    <Text style={styles.loadingText}>Loading lead details…</Text>
-                </View>
+                <KeyboardAvoidingView
+                    behavior={Platform.OS === 'ios' ? 'padding' : null}
+                    style={{ flex: 1 }}
+                >
+                    {renderHeader()}
+                    <View style={styles.centered}>
+                        <ActivityIndicator size="large" color={Colors.primary} />
+                        <Text style={styles.loadingText}>Loading lead details…</Text>
+                    </View>
+                </KeyboardAvoidingView>
             </SafeAreaView>
         );
     }
@@ -803,54 +1308,60 @@ const LeadDetailsScreen = ({ route, navigation }) => {
 
     return (
         <SafeAreaView style={styles.container} edges={['top']}>
-            {renderHeader()}
-            <ScrollView
-                showsVerticalScrollIndicator={false}
-                refreshControl={
-                    <RefreshControl
-                        refreshing={refreshing}
-                        onRefresh={onRefresh}
-                        colors={[Colors.primary]}
-                        tintColor={Colors.primary}
-                    />
-                }
-                contentContainerStyle={styles.scrollContent}
+            <KeyboardAvoidingView
+                behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+                style={{ flex: 1 }}
+                keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
             >
-                {/* Hero Card */}
-                {renderHeroCard()}
+                {renderHeader()}
+                <ScrollView
+                    showsVerticalScrollIndicator={false}
+                    refreshControl={
+                        <RefreshControl
+                            refreshing={refreshing}
+                            onRefresh={onRefresh}
+                            colors={[Colors.primary]}
+                            tintColor={Colors.primary}
+                        />
+                    }
+                    contentContainerStyle={styles.scrollContent}
+                >
+                    {/* Hero Card */}
+                    {renderHeroCard()}
 
-                {/* Two-column layout for left sidebar and main*/}
-                <View style={styles.mainLayout}>
-                    {/* Left Column */}
-                    <View style={styles.leftColumn}>
-                        {renderContactCard()}
-                        {renderQuickActions()}
-                        {renderCompanyCard()}
-                        {renderSalespersonCard()}
-                        {renderTagsCard()}
+                    {/* Two-column layout for left sidebar and main*/}
+                    <View style={styles.mainLayout}>
+                        {/* Left Column */}
+                        <View style={styles.leftColumn}>
+                            {renderContactCard()}
+                            {renderQuickActions()}
+                            {renderCompanyCard()}
+                            {renderSalespersonCard()}
+                            {renderTagsCard()}
+                        </View>
+
+
                     </View>
-
-
-                </View>
-                {/* Center Column: Tabs */}
-                <View style={styles.centerColumn}>
-                    <View style={styles.tabsCard}>
-                        {renderTabs()}
-                        <View style={styles.tabContent}>
-                            {renderTabContent()}
+                    {/* Center Column: Tabs */}
+                    <View style={styles.centerColumn}>
+                        <View style={styles.tabsCard}>
+                            {renderTabs()}
+                            <View style={styles.tabContent}>
+                                {renderTabContent()}
+                            </View>
                         </View>
                     </View>
-                </View>
 
-                {/* Right section full width – stacked below on mobile */}
-                <View style={styles.rightColumns}>
-                    {renderFollowUpCard()}
-                    {renderLeadDetailsCard()}
-                    {renderDocumentsCard()}
-                </View>
+                    {/* Right section full width – stacked below on mobile */}
+                    <View style={styles.rightColumns}>
+                        {renderFollowUpCard()}
+                        {renderLeadDetailsCard()}
+                        {renderDocumentsCard()}
+                    </View>
 
-                <View style={{ height: vs(40) }} />
-            </ScrollView>
+                    <View style={{ height: vs(40) }} />
+                </ScrollView>
+            </KeyboardAvoidingView>
         </SafeAreaView>
     );
 };
@@ -1356,6 +1867,15 @@ const styles = StyleSheet.create({
         fontSize: ms(11),
         color: Colors.textTertiary,
     },
+    loadMoreBtn: {
+        alignItems: 'center',
+        paddingVertical: ms(12),
+        marginTop: ms(8),
+        backgroundColor: Colors.white,
+        borderRadius: ms(8),
+        borderWidth: 1,
+        borderColor: Colors.surfaceBorder,
+    },
 
     // ─ Call history ─
     callHistoryContainer: {
@@ -1414,14 +1934,184 @@ const styles = StyleSheet.create({
         color: Colors.textTertiary,
     },
 
-    // ─ Notes ─
+    // ── Notes ──
     notesContainer: {
-        paddingVertical: ms(8),
+        paddingBottom: 20,
     },
-    notesText: {
+    notesHeader: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginBottom: 16,
+        marginTop: 8,
+    },
+    noteSearchContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        width: '100%',
+        backgroundColor: '#F3F4F6',
+        borderRadius: 8,
+        paddingHorizontal: 10,
+        marginBottom: 10,
+        height: 40,
+    },
+    noteSearchInput: {
+        flex: 1,
+        fontSize: 13,
+        color: Colors.textPrimary,
+        padding: 0,
+    },
+    addNoteCard: {
+        backgroundColor: Colors.white,
+        borderRadius: 12,
+        padding: 16,
+        borderWidth: 1,
+        borderColor: Colors.surfaceBorder,
+        marginBottom: 16,
+        ...Shadow.sm,
+    },
+    noteAvatarCircle: {
+        width: 40,
+        height: 40,
+        borderRadius: 20,
+        backgroundColor: '#E8F5E9',
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    noteInputWrapper: {
+        flex: 1,
+        marginLeft: 12,
+        backgroundColor: '#F9FAFB',
+        borderRadius: 8,
+        borderWidth: 1,
+        borderColor: Colors.surfaceBorder,
+        minHeight: 80,
+    },
+    noteTextInput: {
+        padding: 12,
+        fontSize: 14,
+        color: Colors.textPrimary,
+        textAlignVertical: 'top',
+    },
+    addNoteBtn: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: Colors.primary,
+        paddingHorizontal: 12,
+        paddingVertical: 10,
+        borderRadius: 8,
+    },
+    addNoteBtnText: {
         fontSize: ms(13),
+        fontWeight: '700',
+        color: '#fff',
+    },
+    cancelNoteBtn: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: '#F3F4F6',
+        paddingHorizontal: 16,
+        paddingVertical: 10,
+        borderRadius: 8,
+        borderWidth: 1,
+        borderColor: Colors.surfaceBorder,
+    },
+    noteItemCard: {
+        backgroundColor: Colors.white,
+        borderRadius: 12,
+        padding: 16,
+        borderWidth: 1,
+        borderColor: Colors.surfaceBorder,
+        marginBottom: 12,
+        ...Shadow.sm,
+    },
+    noteItemHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'flex-start',
+        marginBottom: ms(6),
+    },
+    noteUserBox: {
+        flex: 1,
+    },
+    noteUserText: {
+        fontSize: ms(13),
+        fontWeight: '700',
+        color: Colors.textPrimary,
+    },
+    noteDateText: {
+        fontSize: ms(11),
+        color: Colors.textTertiary,
+        marginTop: 1,
+    },
+    noteItemActions: {
+        flexDirection: 'row',
+        gap: ms(12),
+    },
+    noteContentText: {
+        fontSize: ms(14),
         color: Colors.textSecondary,
         lineHeight: ms(20),
+    },
+
+    // ─ Documents ─
+    documentsContainer: {
+        paddingVertical: ms(4),
+    },
+    uploadBtn: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: Colors.primary,
+        paddingVertical: ms(12),
+        borderRadius: ms(12),
+        gap: ms(8),
+        marginBottom: ms(16),
+        ...Shadow.sm,
+    },
+    uploadBtnText: {
+        fontSize: ms(15),
+        fontWeight: '700',
+        color: '#fff',
+    },
+    docItem: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: Colors.background,
+        borderRadius: ms(12),
+        marginBottom: ms(10),
+        borderWidth: 1,
+        borderColor: Colors.surfaceBorder,
+        overflow: 'hidden',
+    },
+    docItemInner: {
+        flex: 1,
+        flexDirection: 'row',
+        alignItems: 'center',
+        padding: ms(10),
+    },
+    docIconBox: {
+        width: ms(40),
+        height: ms(40),
+        borderRadius: ms(10),
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    docName: {
+        fontSize: ms(14),
+        fontWeight: '600',
+        color: Colors.textPrimary,
+    },
+    docMeta: {
+        fontSize: ms(11),
+        color: Colors.textTertiary,
+        marginTop: 2,
+    },
+    docDeleteBtn: {
+        padding: ms(12),
+        justifyContent: 'center',
+        alignItems: 'center',
+        borderLeftWidth: 1,
+        borderLeftColor: Colors.divider,
     },
 
     // ─ Empty State ─

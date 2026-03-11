@@ -369,6 +369,7 @@ const EditContactScreen = ({ navigation, route }) => {
 
             if (response.success) {
                 showSuccess('Success', 'Contact updated successfully');
+                route?.params?.refreshContacts?.();
                 navigation.goBack();
             } else {
                 showError('Error', response.error || 'Failed to update contact');

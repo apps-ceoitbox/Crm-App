@@ -19,6 +19,7 @@ import {
   Platform,
   UIManager,
   Linking,
+  TextInput,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import IonIcon from 'react-native-vector-icons/Ionicons';
@@ -336,7 +337,7 @@ const LeadsScreen = ({ navigation }) => {
       setPage(1);
       setHasMore(true);
       fetchLeads(1, false, searchQuery.trim());
-    }, 300);
+    }, 200);
 
     return () => { if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current); };
   }, [searchQuery]);
@@ -361,7 +362,9 @@ const LeadsScreen = ({ navigation }) => {
       if (search) params.search = search;
 
       const response = await leadsAPI.getAll(params);
-      if (search !== currentSearchRef.current && search !== '') return;
+
+      // If the search query changed while we were fetching (except when clearing the search), ignore this response
+      if (search !== currentSearchRef.current) return;
 
       if (response.success) {
         const leadsData = response.data?.data || response.data?.leads || response.data || [];
@@ -461,10 +464,7 @@ const LeadsScreen = ({ navigation }) => {
         <TouchableOpacity
           style={styles.fab}
           onPress={() => navigation.navigate('AddLead', {
-            onCreate: newLead => {
-              setLeads(prev => [newLead, ...prev]);
-              setPage(1); // Optional: reset pagination to show the new item at the top cleanly
-            }
+            refreshLeads: () => fetchLeads(1, true, '')
           })}
           activeOpacity={0.85}
         >
@@ -474,22 +474,29 @@ const LeadsScreen = ({ navigation }) => {
     </View>
   );
 
-  // ── Render: Search Bar (using AppInput) ──
+  // ── Render: Search Bar (styled like TasksScreen) ──
   const renderSearchBar = () => {
     if (!searchVisible) return null;
     return (
       <View style={styles.searchWrap}>
-        <AppInput
-          placeholder="Search leads by name or company..."
-          value={searchQuery}
-          onChangeText={setSearchQuery}
-          leftIcon="search-outline"
-          rightIcon={searchQuery ? 'close-circle' : undefined}
-          onRightIconPress={() => setSearchQuery('')}
-          returnKeyType="search"
-          autoFocus
-          containerStyle={{ marginBottom: 0 }}
-        />
+        <View style={styles.searchBar}>
+          <IonIcon name="search" size={17} color={Colors.textTertiary} />
+          <TextInput
+            style={styles.searchInput}
+            placeholder="Search leads..."
+            placeholderTextColor={Colors.textTertiary}
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+            autoFocus
+          />
+          <TouchableOpacity onPress={() => {
+            LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+            setSearchVisible(false);
+            setSearchQuery('');
+          }}>
+            <IonIcon name="close-circle" size={17} color={Colors.textTertiary} />
+          </TouchableOpacity>
+        </View>
       </View>
     );
   };
@@ -560,7 +567,8 @@ const LeadsScreen = ({ navigation }) => {
           setLeads(prev => prev.map(l =>
             (l._id === updatedLead._id || l.id === updatedLead.id) ? updatedLead : l
           ));
-        }
+        },
+        refreshLeads: () => fetchLeads(1, true, '')
       })}
       onDelete={handleDeleteLead}
     />
@@ -716,10 +724,20 @@ const styles = StyleSheet.create({
     ...Shadow.md,
   },
 
-  // ── Search (AppInput wrapper) ──
+  // ── Search ──
   searchWrap: {
     paddingHorizontal: Spacing.lg,
     paddingBottom: Spacing.sm,
+  },
+  searchBar: {
+    flexDirection: 'row', alignItems: 'center',
+    backgroundColor: Colors.surface, borderRadius: BorderRadius.md,
+    paddingHorizontal: Spacing.md, height: ms(42),
+    borderWidth: 1, borderColor: Colors.surfaceBorder,
+  },
+  searchInput: {
+    flex: 1, fontSize: ms(14), color: Colors.textPrimary,
+    marginLeft: ms(8), height: '100%',
   },
 
   // ── Stats Card ──

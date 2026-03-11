@@ -18,6 +18,8 @@ import { Colors } from '../../constants/Colors';
 import { BorderRadius, Shadow } from '../../constants/Spacing';
 import { ms, vs } from '../../utils/Responsive';
 import { reportsAPI } from '../../api';
+import DateTimePicker from '@react-native-community/datetimepicker';
+
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -25,19 +27,19 @@ const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 const CALL_TYPES = [
     { label: 'All call types', value: 'all' },
-    { label: 'Connected', value: 'connected' },
+    { label: 'Incoming', value: 'incoming' },
+    { label: 'Outgoing', value: 'outgoing' },
     { label: 'Missed', value: 'missed' },
     { label: 'Rejected', value: 'rejected' },
 ];
 
 const DATE_PRESETS = [
     { label: 'Today', value: 'today' },
-    { label: 'Yesterday', value: 'yesterday' },
-    { label: 'Last 7 Days', value: 'last_7_days' },
+    { label: 'This Week', value: 'this_week' },
     { label: 'This Month', value: 'this_month' },
-    { label: 'Last Month', value: 'last_month' },
     { label: 'Custom Range', value: 'custom' },
 ];
+
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -55,29 +57,33 @@ const toDisplay = (ymd) => {
     return `${d} ${months[parseInt(m, 10) - 1]} ${y}`;
 };
 
+const parseYMD = (ymd) => {
+    if (!ymd) return new Date();
+    const [y, m, d] = ymd.split('-');
+    return new Date(parseInt(y, 10), parseInt(m, 10) - 1, parseInt(d, 10));
+};
+
+
 const getPresetDates = (value) => {
     const now = new Date();
     const y = now.getFullYear(), m = now.getMonth();
+    const day = now.getDay(); // 0 (Sun) to 6 (Sat)
+
     switch (value) {
         case 'today': return { from: toYMD(now), to: toYMD(now) };
-        case 'yesterday': {
-            const d = new Date(now); d.setDate(d.getDate() - 1);
-            return { from: toYMD(d), to: toYMD(d) };
-        }
-        case 'last_7_days': {
-            const d = new Date(now); d.setDate(d.getDate() - 6);
-            return { from: toYMD(d), to: toYMD(now) };
+        case 'this_week': {
+            const start = new Date(now);
+            // Adjust to Monday (assuming week starts on Monday)
+            const diff = now.getDay() === 0 ? 6 : now.getDay() - 1;
+            start.setDate(now.getDate() - diff);
+            return { from: toYMD(start), to: toYMD(now) };
         }
         case 'this_month':
             return { from: toYMD(new Date(y, m, 1)), to: toYMD(now) };
-        case 'last_month': {
-            const start = new Date(y, m - 1, 1);
-            const end = new Date(y, m, 0);
-            return { from: toYMD(start), to: toYMD(end) };
-        }
         default: return { from: toYMD(now), to: toYMD(now) };
     }
 };
+
 
 const fmtDuration = (secs) => {
     if (!secs && secs !== 0) return '—';
@@ -112,115 +118,57 @@ const SectionHeader = ({ icon, title, accent }) => (
 const SelectorModal = ({ visible, title, options, selected, onSelect, onClose }) => (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
         <TouchableOpacity style={styles.modalOverlay} activeOpacity={1} onPress={onClose}>
-            <TouchableOpacity activeOpacity={1} style={styles.pickerBox}>
-                <Text style={styles.pickerTitle}>{title}</Text>
-                <Divider />
-                {options.map(opt => {
-                    const active = opt.value === selected;
-                    return (
-                        <TouchableOpacity
-                            key={opt.value}
-                            style={[styles.pickerOption, active && styles.pickerOptionActive]}
-                            onPress={() => { onSelect(opt); onClose(); }}
-                        >
-                            <Text style={[styles.pickerOptionText, active && styles.pickerOptionTextActive]}>
-                                {opt.label}
-                            </Text>
-                            {active && <IonIcon name="checkmark" size={ms(16)} color={Colors.primary} />}
-                        </TouchableOpacity>
-                    );
-                })}
-            </TouchableOpacity>
+            <View style={styles.pickerBox}>
+                <View style={styles.pickerContent}>
+                    {options.map(opt => {
+                        const active = opt.value === selected;
+                        return (
+                            <TouchableOpacity
+                                key={opt.value}
+                                style={[styles.pickerOption, active && styles.pickerOptionActive]}
+                                onPress={() => { onSelect(opt); onClose(); }}
+                            >
+                                {active && (
+                                    <IonIcon name="checkmark" size={ms(18)} color="#00875A" style={styles.pickerCheck} />
+                                )}
+                                <Text style={[styles.pickerOptionText, active && styles.pickerOptionTextActive]}>
+                                    {opt.label}
+                                </Text>
+                            </TouchableOpacity>
+                        );
+                    })}
+                </View>
+            </View>
         </TouchableOpacity>
     </Modal>
 );
 
+
 /** Custom date entry modal (DD / MM / YYYY) */
-const DateInputModal = ({ visible, title, initialYMD, onConfirm, onClose }) => {
-    const [d, setD] = useState('');
-    const [mo, setMo] = useState('');
-    const [y, setY] = useState('');
+/** Removed manual DateInputModal in favor of native picker */
 
-    React.useEffect(() => {
-        if (visible && initialYMD) {
-            const [yr, mn, dy] = initialYMD.split('-');
-            setD(dy); setMo(mn); setY(yr);
-        }
-    }, [visible, initialYMD]);
 
-    const confirm = () => {
-        const day = parseInt(d, 10), month = parseInt(mo, 10), year = parseInt(y, 10);
-        if (!day || !month || !year || day < 1 || day > 31 || month < 1 || month > 12 || year < 2000 || year > 2100) {
-            Alert.alert('Invalid Date', 'Please enter a valid date.');
-            return;
-        }
-        const mm = String(month).padStart(2, '0'), dd = String(day).padStart(2, '0');
-        onConfirm(`${year}-${mm}-${dd}`);
-        onClose();
-    };
-
-    return (
-        <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
-            <TouchableOpacity style={styles.modalOverlay} activeOpacity={1} onPress={onClose}>
-                <TouchableOpacity activeOpacity={1} style={styles.pickerBox}>
-                    <View style={styles.dateModalHeader}>
-                        <IonIcon name="calendar-outline" size={ms(16)} color={Colors.primary} />
-                        <Text style={styles.pickerTitle}>{title}</Text>
-                    </View>
-                    <Divider />
-                    <View style={styles.dateInputRow}>
-                        {[
-                            { label: 'Day', val: d, set: setD, ph: 'DD', max: 2 },
-                            { label: 'Month', val: mo, set: setMo, ph: 'MM', max: 2 },
-                            { label: 'Year', val: y, set: setY, ph: 'YYYY', max: 4, flex: 1.5 },
-                        ].map((f, i) => (
-                            <React.Fragment key={i}>
-                                {i > 0 && <Text style={styles.dateInputSep}>/</Text>}
-                                <View style={[styles.dateInputBlock, f.flex && { flex: f.flex }]}>
-                                    <Text style={styles.dateInputLabel}>{f.label}</Text>
-                                    <TextInput
-                                        style={styles.dateInput}
-                                        value={f.val}
-                                        onChangeText={f.set}
-                                        keyboardType="numeric"
-                                        maxLength={f.max}
-                                        placeholder={f.ph}
-                                        placeholderTextColor={Colors.textTertiary}
-                                    />
-                                </View>
-                            </React.Fragment>
-                        ))}
-                    </View>
-                    <View style={styles.dateModalBtns}>
-                        <TouchableOpacity style={styles.dateCancelBtn} onPress={onClose}>
-                            <Text style={styles.dateCancelText}>Cancel</Text>
-                        </TouchableOpacity>
-                        <TouchableOpacity style={styles.dateConfirmBtn} onPress={confirm}>
-                            <Text style={styles.dateConfirmText}>Confirm</Text>
-                        </TouchableOpacity>
-                    </View>
-                </TouchableOpacity>
-            </TouchableOpacity>
-        </Modal>
-    );
-};
+// ─── KPI Hero Card ────────────────────────────────────────────────────────────
 
 // ─── KPI Hero Card ────────────────────────────────────────────────────────────
 
 const KpiHeroCard = ({ label, value, sub, icon, iconBg, iconColor, accent }) => (
     <View style={styles.kpiHero}>
         <View style={styles.kpiHeroTop}>
-            <Text style={styles.kpiHeroLabel}>{label}</Text>
             <View style={[styles.kpiHeroIcon, { backgroundColor: iconBg || Colors.primaryBackground }]}>
-                <IonIcon name={icon} size={ms(20)} color={iconColor || Colors.primary} />
+                <IonIcon name={icon} size={ms(18)} color={iconColor || Colors.primary} />
+            </View>
+            <View style={styles.kpiHeroTextWrap}>
+                <Text style={styles.kpiHeroLabel}>{label}</Text>
+                {sub ? <Text style={styles.kpiHeroSubText}>{sub}</Text> : null}
             </View>
         </View>
         <Text style={[styles.kpiHeroValue, accent && { color: accent }]} numberOfLines={1} adjustsFontSizeToFit>
             {value}
         </Text>
-        {sub ? <Text style={styles.kpiHeroSub}>{sub}</Text> : null}
     </View>
 );
+
 
 // ─── Quality Metric Tile ──────────────────────────────────────────────────────
 
@@ -247,32 +195,36 @@ const LeaderboardRow = ({ item, rank, isLast }) => {
     return (
         <View style={[
             styles.lbRow,
-            cfg && { backgroundColor: cfg.bg },
+            cfg && { backgroundColor: cfg.bg + '44' }, // Subtle tint for top 3
             isLast && { borderBottomWidth: 0 },
         ]}>
             <View style={styles.lbRank}>
                 {cfg ? (
-                    <IonIcon name={`${cfg.icon}-outline`} size={ms(18)} color={cfg.color} />
+                    <View style={[styles.lbRankBadge, { backgroundColor: cfg.color }]}>
+                        <IonIcon name={`${cfg.icon}`} size={ms(12)} color="#FFF" />
+                    </View>
                 ) : (
                     <Text style={styles.lbRankNum}>{rank}</Text>
                 )}
             </View>
             <View style={styles.lbAgent}>
                 <View style={styles.lbAvatar}>
-                    <Text style={styles.lbAvatarText}>{getInitials(item.agentName || item.name)}</Text>
+                    <Text style={styles.lbAvatarText}>{getInitials(item.agentName || item.name || 'Agent')}</Text>
                 </View>
-                <Text style={styles.lbName} numberOfLines={1}>{item.agentName || item.name}</Text>
+                <Text style={styles.lbName} numberOfLines={1}>{item.agentName || item.name || 'N/A'}</Text>
             </View>
             <Text style={styles.lbCell}>{item.totalCalls ?? 0}</Text>
-            <Text style={[styles.lbCell, { color: Colors.success }]}>{item.connectedCalls ?? item.connected ?? 0}</Text>
-            <Text style={[styles.lbCell, { color: Colors.danger }]}>{item.missedCalls ?? item.missed ?? 0}</Text>
-            <Text style={styles.lbCell}>{fmtDuration(item.avgDuration ?? item.avgCallDuration)}</Text>
-            <Text style={[styles.lbCell, { color: Colors.info, fontWeight: '700' }]}>
-                {pct(item.connectRate ?? item.connectionRate)}
-            </Text>
+            <Text style={[styles.lbCell, { color: Colors.success, fontWeight: '700' }]}>{item.totalConnectedCalls ?? item.connectedCalls ?? 0}</Text>
+            <Text style={styles.lbCell}>{item.conversions ?? 0}</Text>
+            <Text style={styles.lbCell}>{item.avgDuration ?? item.totalDuration ?? '0:00'}</Text>
+            <Text style={[styles.lbCell, { color: Colors.info, fontWeight: '600' }]}>{item.followUpPercentage ?? '0'}%</Text>
+            <Text style={[styles.lbCell, { fontWeight: '800', color: Colors.textPrimary }]}>{item.score ?? 0}</Text>
         </View>
     );
 };
+
+
+
 
 // ─── Main Screen ──────────────────────────────────────────────────────────────
 
@@ -286,7 +238,8 @@ const SmartCallDashboardScreen = ({ navigation }) => {
 
     const [showPresetPicker, setShowPresetPicker] = useState(false);
     const [showCallTypePicker, setShowCallTypePicker] = useState(false);
-    const [dateInputFor, setDateInputFor] = useState(null); // 'from' | 'to' | null
+    const [showNativePicker, setShowNativePicker] = useState(false);
+
 
     const [data, setData] = useState(null);
     const [loading, setLoading] = useState(false);
@@ -306,8 +259,13 @@ const SmartCallDashboardScreen = ({ navigation }) => {
                 limit: 100,
                 callType: ct.value === 'all' ? undefined : ct.value,
             });
-            if (res.success) setData(res.data);
+            console.log('SmartCallDashboardScreen API Response:', res.data);
+            if (res.success) {
+                // Map data from data.data according to the provided sample
+                setData(res.data.data || res.data);
+            }
             else setError(res.error || 'Failed to load call dashboard');
+
         } catch {
             setError('An unexpected error occurred');
         } finally {
@@ -327,43 +285,46 @@ const SmartCallDashboardScreen = ({ navigation }) => {
             setFromDate(from); setToDate(to);
             fetchData(from, to, callType);
         } else {
-            setDateInputFor('from');
+            setShowNativePicker(true);
         }
     };
+
 
     const applyCallType = (opt) => {
         setCallType(opt);
         fetchData(fromDate, toDate, opt);
     };
 
-    const onDateConfirm = (ymd) => {
-        if (dateInputFor === 'from') {
+    const onNativeDateChange = (event, selectedDate) => {
+        setShowNativePicker(false);
+        if (selectedDate) {
+            const ymd = toYMD(selectedDate);
             setFromDate(ymd);
-            fetchData(ymd, toDate, callType);
-        } else {
             setToDate(ymd);
-            fetchData(fromDate, ymd, callType);
+            setDatePreset(DATE_PRESETS.find(d => d.value === 'custom'));
+            fetchData(ymd, ymd, callType);
         }
-        setDatePreset(DATE_PRESETS.find(d => d.value === 'custom'));
     };
+
 
     // ── Derived ───────────────────────────────────────────────────────────────
 
-    const summary = data?.summary || data?.stats || {};
-    const quality = data?.callQualityMetrics || data?.quality || {};
-    const leaderboard = data?.agentLeaderboard || data?.agents || data?.leaderboard || [];
+    // ── Exact Mapping ──
+    const summary = data?.summary || {};
+    const leaderboard = data?.leaderboard || [];
 
     const totalCalls = summary.totalCalls ?? 0;
-    const connected = summary.connectedCalls ?? summary.connected ?? 0;
-    const connectRate = summary.connectRate ?? summary.connectionRate ?? 0;
-    const rejected = summary.rejectedCalls ?? summary.rejected ?? 0;
-    const uniqueClients = summary.uniqueClients ?? summary.uniqueNumbers ?? 0;
+    const totalConnectedCalls = summary.totalConnectedCalls ?? 0;
+    const totalRejectedCalls = summary.totalRejectedCalls ?? 0;
+    const totalUniqueClients = summary.totalUniqueClients ?? 0;
+    const totalDuration = summary.totalDuration ?? 0;
 
-    const avgDuration = quality.avgCallDuration ?? quality.avgDuration ?? summary.avgCallDuration;
-    const connectionRatePct = quality.connectionRate ?? quality.connectRate ?? connectRate;
-    const sClientsQ = quality.uniqueClients ?? uniqueClients;
-    const shortCalls = quality.shortCalls;
-    const longCalls = quality.longCalls;
+    // Additional metrics for quality tiles
+    const connectRate = totalCalls > 0 ? (totalConnectedCalls / totalCalls) * 100 : 0;
+    const shortCalls = summary.shortCalls ?? data?.shortCalls;
+    const longCalls = summary.longCalls ?? data?.longCalls;
+
+
 
     const dateLabel = datePreset?.value === 'custom'
         ? `${toDisplay(fromDate)} – ${toDisplay(toDate)}`
@@ -393,34 +354,24 @@ const SmartCallDashboardScreen = ({ navigation }) => {
 
             {/* ── Filter Bar ── */}
             <View style={styles.filterBar}>
-                <TouchableOpacity style={styles.filterBtn} onPress={() => setShowPresetPicker(true)}>
-                    <IonIcon name="calendar-outline" size={ms(13)} color={Colors.primary} />
-                    <Text style={styles.filterBtnText} numberOfLines={1}>{dateLabel}</Text>
-                    <IonIcon name="chevron-down" size={ms(11)} color={Colors.textTertiary} />
+                <TouchableOpacity style={styles.dateSelector} onPress={() => setShowPresetPicker(true)}>
+                    <Text style={styles.selectorText} numberOfLines={1}>{dateLabel}</Text>
+                    <IonIcon name="chevron-down" size={ms(16)} color={Colors.textSecondary} />
                 </TouchableOpacity>
-                <TouchableOpacity style={styles.filterBtn} onPress={() => setShowCallTypePicker(true)}>
-                    <IonIcon name="call-outline" size={ms(13)} color={Colors.primary} />
-                    <Text style={styles.filterBtnText} numberOfLines={1}>{callType.label}</Text>
-                    <IonIcon name="chevron-down" size={ms(11)} color={Colors.textTertiary} />
+
+
+                <TouchableOpacity style={styles.calendarIconBtn} onPress={() => setShowNativePicker(true)}>
+                    <IonIcon name="calendar-outline" size={ms(18)} color={Colors.textPrimary} />
+                </TouchableOpacity>
+
+                <TouchableOpacity style={styles.callTypeSelector} onPress={() => setShowCallTypePicker(true)}>
+                    <Text style={styles.selectorText}>{callType.label}</Text>
+                    <IonIcon name="chevron-down" size={ms(16)} color={Colors.textSecondary} />
                 </TouchableOpacity>
             </View>
 
-            {/* Custom date range row (only when custom selected) */}
-            {datePreset?.value === 'custom' && (
-                <View style={styles.customDateBar}>
-                    <TouchableOpacity style={styles.customDateBtn} onPress={() => setDateInputFor('from')}>
-                        <IonIcon name="calendar-outline" size={ms(12)} color={Colors.textTertiary} />
-                        <Text style={styles.customDateText}>From: {toDisplay(fromDate)}</Text>
-                    </TouchableOpacity>
-                    <View style={styles.customDateArrow}>
-                        <IonIcon name="arrow-forward" size={ms(12)} color={Colors.textTertiary} />
-                    </View>
-                    <TouchableOpacity style={styles.customDateBtn} onPress={() => setDateInputFor('to')}>
-                        <IonIcon name="calendar-outline" size={ms(12)} color={Colors.textTertiary} />
-                        <Text style={styles.customDateText}>To: {toDisplay(toDate)}</Text>
-                    </TouchableOpacity>
-                </View>
-            )}
+
+
 
             <ScrollView
                 showsVerticalScrollIndicator={false}
@@ -462,8 +413,8 @@ const SmartCallDashboardScreen = ({ navigation }) => {
                             />
                             <KpiHeroCard
                                 label="Connected Calls"
-                                value={String(connected)}
-                                sub={`${pct(connectRate)} connect rate`}
+                                value={String(totalConnectedCalls)}
+                                sub={`${connectRate.toFixed(0)}% connect rate`}
                                 icon="call-outline"
                                 iconBg={Colors.successBg}
                                 iconColor={Colors.success}
@@ -471,7 +422,7 @@ const SmartCallDashboardScreen = ({ navigation }) => {
                             />
                             <KpiHeroCard
                                 label="Rejected Calls"
-                                value={String(rejected)}
+                                value={String(totalRejectedCalls)}
                                 sub="Declined"
                                 icon="close-circle-outline"
                                 iconBg={Colors.warningBg}
@@ -480,7 +431,7 @@ const SmartCallDashboardScreen = ({ navigation }) => {
                             />
                             <KpiHeroCard
                                 label="Unique Clients"
-                                value={String(uniqueClients)}
+                                value={String(totalUniqueClients)}
                                 sub="Distinct contacts"
                                 icon="people-outline"
                                 iconBg={Colors.infoBg}
@@ -499,19 +450,19 @@ const SmartCallDashboardScreen = ({ navigation }) => {
                                         icon="time-outline"
                                         iconColor={Colors.success}
                                         label="Avg Call Duration"
-                                        value={fmtDuration(avgDuration)}
+                                        value={totalDuration || '0:00'}
                                     />
                                     <QualityTile
                                         icon="call-outline"
                                         iconColor={Colors.primary}
                                         label="Connection Rate"
-                                        value={pct(connectionRatePct)}
+                                        value={`${connectRate.toFixed(0)}%`}
                                     />
                                     <QualityTile
                                         icon="people-outline"
                                         iconColor={Colors.info}
                                         label="Unique Clients"
-                                        value={String(sClientsQ)}
+                                        value={String(totalUniqueClients)}
                                     />
                                     <QualityTile
                                         icon="warning-outline"
@@ -529,6 +480,8 @@ const SmartCallDashboardScreen = ({ navigation }) => {
                             </ScrollView>
                         </Card>
 
+
+
                         {/* ══ AGENT PERFORMANCE LEADERBOARD ══ */}
                         <Card>
                             <SectionHeader icon="trophy-outline" title="Agent Performance Leaderboard" accent={Colors.warning} />
@@ -539,12 +492,14 @@ const SmartCallDashboardScreen = ({ navigation }) => {
                                     <View style={styles.lbHeader}>
                                         <Text style={styles.lbHeaderRank}>Rank</Text>
                                         <Text style={styles.lbHeaderAgent}>Agent</Text>
-                                        <Text style={styles.lbHeaderCell}>Total↑↓</Text>
-                                        <Text style={[styles.lbHeaderCell, { color: Colors.success }]}>Conn↑↓</Text>
-                                        <Text style={[styles.lbHeaderCell, { color: Colors.danger }]}>Missed↑↓</Text>
-                                        <Text style={styles.lbHeaderCell}>Avg Dur↑↓</Text>
-                                        <Text style={[styles.lbHeaderCell, { color: Colors.info }]}>Rate↑↓</Text>
+                                        <Text style={styles.lbHeaderCell}>Total Calls</Text>
+                                        <Text style={[styles.lbHeaderCell, { color: Colors.success }]}>Connected</Text>
+                                        <Text style={styles.lbHeaderCell}>Conversions</Text>
+                                        <Text style={styles.lbHeaderCell}>Avg Duration</Text>
+                                        <Text style={[styles.lbHeaderCell, { color: Colors.info }]}>Follow-Up %</Text>
+                                        <Text style={styles.lbHeaderCell}>Score</Text>
                                     </View>
+
                                     {leaderboard.length === 0 ? (
                                         <View style={styles.emptyLb}>
                                             <IonIcon name="people-outline" size={ms(36)} color={Colors.surfaceBorder} />
@@ -586,13 +541,15 @@ const SmartCallDashboardScreen = ({ navigation }) => {
                 onSelect={applyCallType}
                 onClose={() => setShowCallTypePicker(false)}
             />
-            <DateInputModal
-                visible={dateInputFor !== null}
-                title={dateInputFor === 'from' ? 'Select From Date' : 'Select To Date'}
-                initialYMD={dateInputFor === 'from' ? fromDate : toDate}
-                onConfirm={onDateConfirm}
-                onClose={() => setDateInputFor(null)}
-            />
+            {showNativePicker && (
+                <DateTimePicker
+                    value={parseYMD(fromDate)}
+                    mode="date"
+                    display="default"
+                    onChange={onNativeDateChange}
+                />
+            )}
+
         </SafeAreaView>
     );
 };
@@ -626,34 +583,33 @@ const styles = StyleSheet.create({
 
     // ── Filter ──
     filterBar: {
-        flexDirection: 'row', gap: ms(10),
-        paddingHorizontal: ms(14), paddingVertical: ms(10),
+        flexDirection: 'row', alignItems: 'center', gap: ms(10),
+        paddingHorizontal: ms(14), paddingVertical: ms(12),
         backgroundColor: Colors.surface,
         borderBottomWidth: 1, borderBottomColor: Colors.surfaceBorder,
     },
-    filterBtn: {
-        flex: 1, flexDirection: 'row', alignItems: 'center', gap: ms(6),
-        borderWidth: 1.5, borderColor: Colors.surfaceBorder,
-        borderRadius: BorderRadius.md,
-        paddingHorizontal: ms(10), paddingVertical: ms(9),
-        backgroundColor: Colors.background,
-    },
-    filterBtnText: { flex: 1, fontSize: ms(12), fontWeight: '600', color: Colors.textPrimary },
-    customDateBar: {
-        flexDirection: 'row', alignItems: 'center',
+    dateSelector: {
+        flex: 1.4, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
         paddingHorizontal: ms(14), paddingVertical: ms(8),
-        backgroundColor: Colors.surface,
-        borderBottomWidth: 1, borderBottomColor: Colors.surfaceBorder,
-        gap: ms(6),
+        backgroundColor: '#F1F5F9', borderRadius: ms(20),
+        borderWidth: 1, borderColor: '#E2E8F0',
     },
-    customDateBtn: {
-        flex: 1, flexDirection: 'row', alignItems: 'center', gap: ms(4),
-        backgroundColor: Colors.background, borderRadius: BorderRadius.sm,
-        paddingHorizontal: ms(8), paddingVertical: ms(7),
-        borderWidth: 1, borderColor: Colors.surfaceBorder,
+    selectorLabel: { fontSize: ms(10), color: Colors.textTertiary, fontWeight: '700', textTransform: 'uppercase', position: 'absolute', top: -ms(7), left: ms(12), backgroundColor: Colors.surface, paddingHorizontal: ms(4) },
+    calendarIconBtn: {
+        width: ms(40), height: ms(40),
+        backgroundColor: Colors.primaryBackground, borderRadius: ms(20),
+        justifyContent: 'center', alignItems: 'center',
+        // ...Shadow.sm,
     },
-    customDateText: { fontSize: ms(11), color: Colors.textSecondary, fontWeight: '500' },
-    customDateArrow: { paddingHorizontal: ms(4) },
+    callTypeSelector: {
+        flex: 2, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+        paddingHorizontal: ms(14), paddingVertical: ms(8),
+        backgroundColor: '#F1F5F9', borderRadius: ms(20),
+        borderWidth: 1, borderColor: '#E2E8F0',
+    },
+    selectorText: { fontSize: ms(13), color: Colors.textPrimary, fontWeight: '600' },
+
+
 
     // ── Scroll ──
     scrollContent: { padding: ms(14), gap: ms(12) },
@@ -675,95 +631,100 @@ const styles = StyleSheet.create({
     secTitle: { fontSize: ms(13), fontWeight: '700', color: Colors.textPrimary },
 
     // ── KPI Hero ──
-    heroGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: ms(10) },
+    heroGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: ms(12) },
     kpiHero: {
-        width: CARD_W,
-        backgroundColor: Colors.surface,
-        borderRadius: BorderRadius.lg,
-        padding: ms(14),
-        borderWidth: 1, borderColor: Colors.surfaceBorder,
-        ...Shadow.sm,
+        width: (SCREEN_WIDTH - ms(28) - ms(12)) / 2,
+        backgroundColor: 'rgba(255, 255, 255, 0.95)',
+        borderRadius: ms(20),
+        padding: ms(16),
+        borderWidth: 0.5, borderColor: 'rgba(0,0,0,0.05)',
+        ...Shadow.md,
     },
     kpiHeroTop: {
-        flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start',
-        marginBottom: ms(10),
-    },
-    kpiHeroLabel: {
-        fontSize: ms(11), fontWeight: '600', color: Colors.textTertiary,
-        flex: 1, textTransform: 'uppercase', letterSpacing: 0.3,
+        flexDirection: 'row', alignItems: 'center',
+        marginBottom: ms(12), gap: ms(10),
     },
     kpiHeroIcon: {
-        width: ms(36), height: ms(36), borderRadius: BorderRadius.sm,
+        width: ms(34), height: ms(34), borderRadius: ms(17),
         justifyContent: 'center', alignItems: 'center',
     },
-    kpiHeroValue: {
-        fontSize: ms(28), fontWeight: '900', color: Colors.textPrimary,
-        letterSpacing: -1, marginBottom: ms(4),
+    kpiHeroTextWrap: { flex: 1 },
+    kpiHeroLabel: {
+        fontSize: ms(10), fontWeight: '700', color: Colors.textTertiary,
+        textTransform: 'uppercase', letterSpacing: 0.6,
     },
-    kpiHeroSub: { fontSize: ms(10), color: Colors.textTertiary, fontWeight: '500' },
+    kpiHeroSubText: { fontSize: ms(9), color: Colors.textTertiary, fontWeight: '500', marginTop: ms(1) },
+    kpiHeroValue: {
+        fontSize: ms(26), fontWeight: '900', color: Colors.textPrimary,
+        letterSpacing: -0.8,
+    },
 
     // ── Quality Metrics ──
-    qualityRow: { flexDirection: 'row', gap: ms(8), paddingBottom: ms(4) },
+    qualityRow: { flexDirection: 'row', gap: ms(10), paddingBottom: ms(4) },
     qualityTile: {
-        width: ms(108),
-        backgroundColor: Colors.background,
-        borderRadius: BorderRadius.md,
-        borderWidth: 1, borderColor: Colors.surfaceBorder,
-        padding: ms(12),
+        width: ms(114),
+        backgroundColor: Colors.surface,
+        borderRadius: ms(18),
+        borderWidth: 0.5, borderColor: Colors.surfaceBorder,
+        padding: ms(14),
+        ...Shadow.sm,
     },
     qualityTileTop: {
-        flexDirection: 'row', alignItems: 'center', gap: ms(5), marginBottom: ms(8),
+        flexDirection: 'row', alignItems: 'center', gap: ms(6), marginBottom: ms(10),
     },
     qualityTileLabel: {
-        fontSize: ms(10), color: Colors.textTertiary, fontWeight: '600', flex: 1,
+        fontSize: ms(10), color: Colors.textTertiary, fontWeight: '700', flex: 1,
         lineHeight: ms(13),
     },
     qualityTileValue: {
-        fontSize: ms(20), fontWeight: '800', color: Colors.textPrimary, letterSpacing: -0.5,
+        fontSize: ms(22), fontWeight: '900', color: Colors.textPrimary, letterSpacing: -0.5,
     },
 
     // ── Leaderboard ──
     lbHeader: {
-        flexDirection: 'row', paddingVertical: ms(8),
-        borderBottomWidth: 1, borderBottomColor: Colors.surfaceBorder,
+        flexDirection: 'row', paddingVertical: ms(12),
+        backgroundColor: '#F8FAFC', borderTopLeftRadius: ms(12), borderTopRightRadius: ms(12),
     },
     lbHeaderRank: {
-        width: ms(44), fontSize: ms(10), fontWeight: '700',
-        color: Colors.textTertiary, textTransform: 'uppercase', textAlign: 'center',
+        width: ms(50), fontSize: ms(10), fontWeight: '800',
+        color: Colors.textTertiary, textTransform: 'uppercase', textAlign: 'center', letterSpacing: 0.5,
     },
     lbHeaderAgent: {
-        width: ms(140), fontSize: ms(10), fontWeight: '700',
-        color: Colors.textTertiary, textTransform: 'uppercase',
+        width: ms(150), fontSize: ms(10), fontWeight: '800',
+        color: Colors.textTertiary, textTransform: 'uppercase', letterSpacing: 0.5,
     },
     lbHeaderCell: {
-        width: ms(72), fontSize: ms(10), fontWeight: '700',
-        color: Colors.textTertiary, textTransform: 'uppercase', textAlign: 'center',
+        width: ms(85), fontSize: ms(10), fontWeight: '800',
+        color: Colors.textTertiary, textTransform: 'uppercase', textAlign: 'center', letterSpacing: 0.5,
     },
     lbRow: {
         flexDirection: 'row', alignItems: 'center',
-        paddingVertical: ms(12),
-        borderBottomWidth: 1, borderBottomColor: Colors.surfaceBorder,
-        borderRadius: BorderRadius.sm,
-        marginVertical: ms(1),
+        paddingVertical: ms(14),
+        borderBottomWidth: 1, borderBottomColor: '#F1F5F9',
     },
     lbRank: {
-        width: ms(44), alignItems: 'center', justifyContent: 'center',
+        width: ms(50), alignItems: 'center', justifyContent: 'center',
     },
-    lbRankNum: { fontSize: ms(13), fontWeight: '700', color: Colors.textTertiary },
+    lbRankBadge: {
+        width: ms(22), height: ms(22), borderRadius: ms(11),
+        justifyContent: 'center', alignItems: 'center', ...Shadow.sm,
+    },
+    lbRankNum: { fontSize: ms(14), fontWeight: '700', color: Colors.textTertiary },
     lbAgent: {
-        width: ms(140), flexDirection: 'row', alignItems: 'center', gap: ms(8),
+        width: ms(150), flexDirection: 'row', alignItems: 'center', gap: ms(10),
     },
     lbAvatar: {
-        width: ms(30), height: ms(30), borderRadius: ms(15),
+        width: ms(34), height: ms(34), borderRadius: ms(17),
         backgroundColor: Colors.primaryBackground,
-        justifyContent: 'center', alignItems: 'center',
+        justifyContent: 'center', alignItems: 'center', borderWidth: 1, borderColor: '#FFF', ...Shadow.sm,
     },
-    lbAvatarText: { fontSize: ms(10), fontWeight: '800', color: Colors.primary },
-    lbName: { fontSize: ms(12), fontWeight: '700', color: Colors.textPrimary, flex: 1 },
+    lbAvatarText: { fontSize: ms(11), fontWeight: '800', color: Colors.primary },
+    lbName: { fontSize: ms(13), fontWeight: '700', color: Colors.textPrimary, flex: 1 },
     lbCell: {
-        width: ms(72), fontSize: ms(12), fontWeight: '600',
-        color: Colors.textPrimary, textAlign: 'center',
+        width: ms(85), fontSize: ms(13), fontWeight: '600',
+        color: Colors.textSecondary, textAlign: 'center',
     },
+
     emptyLb: { alignItems: 'center', paddingVertical: ms(28), gap: ms(8) },
     emptyLbText: { fontSize: ms(12), color: Colors.textTertiary },
 
@@ -782,57 +743,26 @@ const styles = StyleSheet.create({
 
     // ── Picker Modal ──
     modalOverlay: {
-        flex: 1, backgroundColor: 'rgba(0,0,0,0.45)',
-        justifyContent: 'center', alignItems: 'center', paddingHorizontal: ms(24),
+        flex: 1, backgroundColor: 'rgba(0,0,0,0.5)',
+        justifyContent: 'center', alignItems: 'center', paddingHorizontal: ms(20),
     },
     pickerBox: {
         width: '100%', backgroundColor: Colors.surface,
-        borderRadius: BorderRadius.lg, paddingVertical: ms(8), paddingHorizontal: ms(4),
-        ...Shadow.sm,
+        borderRadius: BorderRadius.lg, overflow: 'hidden',
+        ...Shadow.md,
     },
-    pickerTitle: {
-        fontSize: ms(14), fontWeight: '700', color: Colors.textPrimary,
-        paddingHorizontal: ms(16), paddingVertical: ms(12),
-    },
+    pickerContent: { padding: ms(8) },
     pickerOption: {
-        flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-        paddingHorizontal: ms(16), paddingVertical: ms(13),
+        flexDirection: 'row', alignItems: 'center',
+        paddingHorizontal: ms(16), paddingVertical: ms(14),
+        borderRadius: BorderRadius.md, gap: ms(12),
     },
-    pickerOptionActive: { backgroundColor: Colors.primaryBackground, borderRadius: BorderRadius.sm },
-    pickerOptionText: { fontSize: ms(14), color: Colors.textPrimary, fontWeight: '500' },
-    pickerOptionTextActive: { color: Colors.primary, fontWeight: '700' },
+    pickerOptionActive: { backgroundColor: '#E6F4EA' },
+    pickerCheck: { width: ms(20) },
+    pickerOptionText: { fontSize: ms(16), color: '#333', fontWeight: '400' },
+    pickerOptionTextActive: { color: '#00875A', fontWeight: '500' },
 
-    // ── Date Input Modal ──
-    dateModalHeader: { flexDirection: 'row', alignItems: 'center', gap: ms(8), paddingHorizontal: ms(16), paddingTop: ms(12) },
-    dateInputRow: {
-        flexDirection: 'row', alignItems: 'flex-end', gap: ms(4),
-        paddingHorizontal: ms(16), marginBottom: ms(16),
-    },
-    dateInputBlock: { flex: 1 },
-    dateInputLabel: {
-        fontSize: ms(10), color: Colors.textTertiary, fontWeight: '600',
-        marginBottom: ms(4), textTransform: 'uppercase', letterSpacing: 0.5,
-    },
-    dateInput: {
-        borderWidth: 1.5, borderColor: Colors.surfaceBorder,
-        borderRadius: BorderRadius.sm, paddingHorizontal: ms(10), paddingVertical: ms(10),
-        fontSize: ms(16), fontWeight: '700', color: Colors.textPrimary,
-        textAlign: 'center', backgroundColor: Colors.background,
-    },
-    dateInputSep: {
-        fontSize: ms(18), color: Colors.textTertiary, fontWeight: '700', paddingBottom: ms(10),
-    },
-    dateModalBtns: { flexDirection: 'row', gap: ms(10), paddingHorizontal: ms(16), paddingBottom: ms(16) },
-    dateCancelBtn: {
-        flex: 1, paddingVertical: ms(12), borderRadius: BorderRadius.md,
-        borderWidth: 1.5, borderColor: Colors.surfaceBorder, alignItems: 'center',
-    },
-    dateCancelText: { fontSize: ms(14), fontWeight: '600', color: Colors.textSecondary },
-    dateConfirmBtn: {
-        flex: 1, paddingVertical: ms(12), borderRadius: BorderRadius.md,
-        backgroundColor: Colors.primary, alignItems: 'center',
-    },
-    dateConfirmText: { fontSize: ms(14), fontWeight: '700', color: '#fff' },
+
 });
 
 export default SmartCallDashboardScreen;

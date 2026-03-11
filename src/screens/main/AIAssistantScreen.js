@@ -682,7 +682,8 @@ const styles = StyleSheet.create({
         flexGrow: 1,
         justifyContent: 'center',
         paddingHorizontal: ms(20),
-        paddingBottom: ms(20),
+        paddingVertical: ms(20),
+
     },
     welcomeContainer: {
         alignItems: 'center',

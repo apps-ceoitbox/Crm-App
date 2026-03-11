@@ -24,6 +24,7 @@ import { ms, vs, wp } from '../../utils/Responsive';
 import { AppText, AppInput, AppButton, ModalLoader } from '../../components';
 import { companiesAPI } from '../../api';
 import { showError, showSuccess } from '../../utils';
+import { ROUTES } from '../../constants';
 
 // Section Header Component
 const SectionHeader = ({ icon, title }) => (
@@ -162,6 +163,8 @@ const EditCompanyScreen = ({ navigation, route }) => {
                 } catch {
                     // ignore non-serializable param errors
                 }
+                // Call refresh callback from parent if provided
+                route?.params?.refreshCompanies?.();
                 navigation.goBack();
             } else {
                 showError('Error', response.error || 'Failed to update company');

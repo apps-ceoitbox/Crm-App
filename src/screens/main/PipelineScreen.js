@@ -337,8 +337,11 @@ const PipelineScreen = ({ navigation }) => {
   }, [hasMore, loadingMore, loading, refreshing, page, selectedPipelineId, searchQuery]);
 
   const handleLeadPress = useCallback((lead) => {
-    navigation.navigate('LeadDetails', { lead });
-  }, [navigation]);
+    navigation.navigate('LeadDetails', {
+      lead,
+      refreshPipeline: () => fetchLeads(selectedPipelineId, 1, searchQuery.trim(), false)
+    });
+  }, [navigation, selectedPipelineId, searchQuery]);
 
   const handleStageToggle = useCallback((stageId) => {
     setExpandedStage(prev => (prev === stageId ? null : stageId));
@@ -594,7 +597,13 @@ const PipelineScreen = ({ navigation }) => {
       <View style={styles.floatingAction}>
         <AppButton
           title="Add"
-          onPress={() => navigation.navigate(ROUTES.ADD_LEAD)}
+          onPress={() => navigation.navigate(ROUTES.ADD_LEAD, {
+            refreshPipeline: () => {
+              if (selectedPipelineId) {
+                fetchLeads(selectedPipelineId, 1, searchQuery.trim(), false)
+              }
+            }
+          })}
           fullWidth={false}
           size="small"
           icon="add"

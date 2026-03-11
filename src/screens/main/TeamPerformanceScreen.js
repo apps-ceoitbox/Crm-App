@@ -119,8 +119,8 @@ const KpiCard = ({ icon, iconBg, label, value, valueColor }) => (
 const UserRow = ({ item, isLast }) => {
     const initials = getInitials(item.userName || item.name);
     const winRate = pct(item.winRate);
-    const lossRate = pct(item.lossRate);
-
+    const lossRate = pct(item.dealsLost);
+    // console.log(item);
     return (
         <View style={[styles.tableRow, isLast && { borderBottomWidth: 0 }]}>
             <View style={styles.tableColUser}>
@@ -128,7 +128,7 @@ const UserRow = ({ item, isLast }) => {
                     <Text style={styles.userAvatarText}>{initials}</Text>
                 </View>
                 <View style={{ flex: 1 }}>
-                    <Text style={styles.tableUserName} numberOfLines={1}>{item.userName || item.name || 'Unknown'}</Text>
+                    <Text style={styles.tableUserName} numberOfLines={1}>{item.userName || 'Unknown'}</Text>
                     {item.role ? (
                         <View style={styles.roleBadge}>
                             <Text style={styles.roleBadgeText}>{item.role}</Text>
@@ -136,8 +136,8 @@ const UserRow = ({ item, isLast }) => {
                     ) : null}
                 </View>
             </View>
-            <Text style={styles.tableCell}>{item.leadsAssigned ?? item.leads ?? 0}</Text>
-            <Text style={styles.tableCell}>{item.contacted ?? 0}</Text>
+            <Text style={styles.tableCell}>{item.leadsAssigned ?? 0}</Text>
+            <Text style={styles.tableCell}>{item.leadsContacted ?? 0}</Text>
             <Text style={styles.tableCell}>{item.dealsWon ?? 0}</Text>
             <Text style={[styles.tableCell, { color: Colors.success }]}>{winRate}</Text>
             <Text style={[styles.tableCell, { color: Colors.danger }]}>{lossRate}</Text>

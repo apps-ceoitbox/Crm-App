@@ -86,17 +86,38 @@ export const authAPI = {
     },
 
     /**
-     * Forgot password
+     * Forgot password - Send OTP
      * @param {string} email - User email
      */
-    forgotPassword: email => {
+    forgotPasswordSendOtp: email => {
         return handleRequest(
-            apiClient.post(API_ENDPOINTS.AUTH.FORGOT_PASSWORD, { email }),
+            apiClient.post(API_ENDPOINTS.AUTH.FORGOT_PASSWORD_SEND_OTP, { email }),
         );
     },
 
     /**
-     * Reset password
+     * Forgot password - Verify OTP
+     * @param {string} email - User email
+     * @param {string} otp - OTP code
+     */
+    verifyForgotPasswordOtp: (email, otp) => {
+        return handleRequest(
+            apiClient.post(API_ENDPOINTS.AUTH.FORGOT_PASSWORD_VERIFY_OTP, { email, otp }),
+        );
+    },
+
+    /**
+     * Forgot password - Reset password
+     * @param {object} data - Reset password data (email, otp, newPassword)
+     */
+    forgotPasswordReset: data => {
+        return handleRequest(
+            apiClient.post(API_ENDPOINTS.AUTH.FORGOT_PASSWORD_RESET_PASSWORD, data),
+        );
+    },
+
+    /**
+     * Reset password (Original)
      * @param {object} data - Reset password data (token, password, confirmPassword)
      */
     resetPassword: data => {
@@ -147,12 +168,24 @@ export const userAPI = {
     },
 
     /**
+     * Update my profile
+     * @param {object} data - Profile data to update
+     */
+    updateMyProfile: data => {
+        return handleRequest(
+            apiClient.put(API_ENDPOINTS.USERS.UPDATE_PROFILE, data),
+        );
+    },
+
+    /**
      * Change password
      * @param {object} data - { currentPassword, newPassword, confirmPassword }
      */
     changePassword: data => {
+        // console.log('data : ', data)
+        // console.log('API_ENDPOINTS.USERS.CHANGE_PASSWORD : ', API_ENDPOINTS.USERS.CHANGE_PASSWORD)
         return handleRequest(
-            apiClient.post(API_ENDPOINTS.USERS.CHANGE_PASSWORD, data),
+            apiClient.put(API_ENDPOINTS.USERS.CHANGE_PASSWORD, data),
         );
     },
 
@@ -163,6 +196,20 @@ export const userAPI = {
     uploadAvatar: formData => {
         return handleRequest(
             apiClient.post(API_ENDPOINTS.USERS.UPLOAD_AVATAR, formData, {
+                headers: {
+                    'Content-Type': 'multipart/form-data',
+                },
+            }),
+        );
+    },
+
+    /**
+     * Upload my profile photo
+     * @param {FormData} formData - Form data with image file
+     */
+    uploadProfilePhoto: formData => {
+        return handleRequest(
+            apiClient.post(API_ENDPOINTS.USERS.MY_PHOTO_UPLOAD, formData, {
                 headers: {
                     'Content-Type': 'multipart/form-data',
                 },
@@ -235,6 +282,44 @@ export const leadsAPI = {
      */
     getStats: () => {
         return handleRequest(apiClient.get(API_ENDPOINTS.LEADS.STATS));
+    },
+
+    /**
+     * Get activities for a lead
+     * @param {string|number} id - Lead ID
+     * @param {object} params - Query params (page, limit)
+     */
+    getActivities: (id, params = {}) => {
+        return handleRequest(
+            apiClient.get(API_ENDPOINTS.LEADS.ACTIVITIES(id), { params }),
+        );
+    },
+
+    /**
+     * Upload document for a lead
+     */
+    uploadDocument: (id, formData) => {
+        return handleRequest(
+            apiClient.post(API_ENDPOINTS.LEADS.DOCUMENTS(id), formData, {
+                headers: { 'Content-Type': 'multipart/form-data' },
+            }),
+        );
+    },
+
+    /**
+     * Get documents for a lead
+     */
+    getDocuments: id => {
+        return handleRequest(apiClient.get(API_ENDPOINTS.LEADS.DOCUMENTS(id)));
+    },
+
+    /**
+     * Delete a lead document
+     */
+    deleteDocument: (id, docId) => {
+        return handleRequest(
+            apiClient.delete(API_ENDPOINTS.LEADS.DELETE_DOCUMENT(id, docId)),
+        );
     },
 };
 
@@ -457,6 +542,40 @@ export const companiesAPI = {
     delete: id => {
         return handleRequest(apiClient.delete(API_ENDPOINTS.COMPANIES.DELETE(id)));
     },
+
+    /**
+     * Upload documents for a company
+     * @param {string|number} id - Company ID
+     * @param {FormData} formData - Form data with files
+     */
+    uploadDocument: (id, formData) => {
+        return handleRequest(
+            apiClient.post(API_ENDPOINTS.COMPANIES.DOCUMENTS(id), formData, {
+                headers: {
+                    'Content-Type': 'multipart/form-data',
+                },
+            }),
+        );
+    },
+
+    /**
+     * Get documents for a company
+     * @param {string|number} id - Company ID
+     */
+    getDocuments: id => {
+        return handleRequest(apiClient.get(API_ENDPOINTS.COMPANIES.DOCUMENTS(id)));
+    },
+
+    /**
+     * Delete a document from a company
+     * @param {string|number} id - Company ID
+     * @param {string} documentId - Document ID
+     */
+    deleteDocument: (id, documentId) => {
+        return handleRequest(
+            apiClient.delete(API_ENDPOINTS.COMPANIES.DELETE_DOCUMENT(id, documentId)),
+        );
+    },
 };
 
 // ============================================
@@ -507,6 +626,41 @@ export const contactsAPI = {
      */
     delete: id => {
         return handleRequest(apiClient.delete(API_ENDPOINTS.CONTACTS.DELETE(id)));
+    },
+
+    /**
+     * Upload documents for a contact
+     * @param {string|number} id - Contact ID
+     * @param {FormData} formData - Form data with files
+     */
+    uploadDocument: (id, formData) => {
+        return handleRequest(
+            apiClient.post(API_ENDPOINTS.CONTACTS.DOCUMENTS(id), formData, {
+                headers: {
+                    'Content-Type': 'multipart/form-data',
+                },
+            }),
+        );
+    },
+
+    /**
+     * Get documents for a contact
+     * @param {string|number} id - Contact ID
+     */
+    getDocuments: (id) => {
+        // Since there's no specific documents-only endpoint, we fetch the contact and extract documents
+        return handleRequest(apiClient.get(API_ENDPOINTS.CONTACTS.DETAIL(id)));
+    },
+
+    /**
+     * Delete a document from a contact
+     * @param {string|number} id - Contact ID
+     * @param {string} documentId - Document ID
+     */
+    deleteDocument: (id, documentId) => {
+        return handleRequest(
+            apiClient.delete(API_ENDPOINTS.CONTACTS.DELETE_DOCUMENT(id, documentId)),
+        );
     },
 };
 
@@ -982,6 +1136,76 @@ export const reportsAPI = {
     },
 };
 
+// ============================================
+// NOTES APIs
+// ============================================
+
+export const notesAPI = {
+    /**
+     * Create a new note
+     * @param {object} data - { entityType, entityId, content, mentions }
+     */
+    create: data => {
+        return handleRequest(apiClient.post(API_ENDPOINTS.NOTES.CREATE, data));
+    },
+
+    /**
+     * Get notes for an entity
+     * @param {object} params - { entityType, entityId }
+     */
+    getAll: (params = {}) => {
+        return handleRequest(apiClient.get(API_ENDPOINTS.NOTES.LIST, { params }));
+    },
+
+    /**
+     * Get note by ID
+     */
+    getById: id => {
+        return handleRequest(apiClient.get(API_ENDPOINTS.NOTES.DETAIL(id)));
+    },
+
+    /**
+     * Update a note
+     */
+    update: (id, data) => {
+        return handleRequest(apiClient.put(API_ENDPOINTS.NOTES.UPDATE(id), data));
+    },
+
+    /**
+     * Delete a note
+     */
+    delete: id => {
+        return handleRequest(apiClient.delete(API_ENDPOINTS.NOTES.DELETE(id)));
+    },
+
+    /**
+     * Add a comment to a note
+     */
+    addComment: (id, data) => {
+        return handleRequest(
+            apiClient.post(API_ENDPOINTS.NOTES.ADD_COMMENT(id), data),
+        );
+    },
+};
+
+// ============================================
+// UPLOAD API (generic file upload to Cloudinary)
+// ============================================
+export const uploadAPI = {
+    /**
+     * Upload a single file
+     * @param {FormData} formData - FormData with field name 'file'
+     * @returns {{ fileUrl, publicId, fileName, fileType, fileSize }}
+     */
+    uploadFile: formData => {
+        return handleRequest(
+            apiClient.post('/upload', formData, {
+                headers: { 'Content-Type': 'multipart/form-data' },
+            }),
+        );
+    },
+};
+
 // Export all APIs
 export default {
     auth: authAPI,
@@ -1004,4 +1228,6 @@ export default {
     leadTags: leadTagsAPI,
     leadSources: leadSourcesAPI,
     users: usersAPI,
+    notes: notesAPI,
+    upload: uploadAPI,
 };

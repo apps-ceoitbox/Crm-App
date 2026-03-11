@@ -22,19 +22,23 @@ import {
 	RefreshControl,
 	Animated,
 	ActivityIndicator,
+	TextInput,
+	KeyboardAvoidingView,
+	Platform,
 } from 'react-native';
 import { launchImageLibrary } from 'react-native-image-picker';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import IonIcon from 'react-native-vector-icons/Ionicons';
 
-import AppText from '../../components/AppText';
 import { CenteredLoader } from '../../components/Loader';
+import { AppText, DeleteConfirmationModal } from '../../components';
 
 import { Colors } from '../../constants/Colors';
 import { Spacing, BorderRadius, Shadow } from '../../constants/Spacing';
-import { ms, vs } from '../../utils/Responsive';
+import { ms, vs, hs } from '../../utils/Responsive';
 
-import { contactsAPI } from '../../api';
+import { contactsAPI, notesAPI } from '../../api';
+import { useAuth } from '../../context/AuthContext';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 const TABS = ['Activities', 'Notes', 'Leads', 'Documents'];
@@ -66,8 +70,9 @@ function formatDateTime(dateStr) {
 	if (!dateStr) return '–';
 	const d = new Date(dateStr);
 	if (isNaN(d)) return dateStr;
-	return d.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })
-		+ ' ' + d.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
+	const datePart = d.toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' });
+	const timePart = d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+	return `${datePart} • ${timePart}`;
 }
 
 function formatCurrency(val) {
@@ -85,7 +90,7 @@ function getInitials(name) {
 }
 
 function getAvatarColor(name) {
-	const palette = ['#4D8733', '#3B82F6', '#8B5CF6', '#EC4899', '#F59E0B', '#10B981'];
+	const palette = ['#4D8733'];
 	if (!name) return palette[0];
 	let hash = 0;
 	for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash);
@@ -163,6 +168,19 @@ const ContactDetailsScreen = ({ navigation, route }) => {
 	const [activeTab, setActiveTab] = useState(0);
 	const [uploading, setUploading] = useState(false);
 	const [documents, setDocuments] = useState([]);
+	const [deleteModalVisible, setDeleteModalVisible] = useState(false);
+	const [deleting, setDeleting] = useState(false);
+	const [contactNotes, setContactNotes] = useState([]);
+	const [noteSearchQuery, setNoteSearchQuery] = useState('');
+	const [newNoteText, setNewNoteText] = useState('');
+	const [addingNote, setAddingNote] = useState(false);
+	const [deletingNoteId, setDeletingNoteId] = useState(null);
+	const [isDeleteNoteModalVisible, setIsDeleteNoteModalVisible] = useState(false);
+	const [deletingNote, setDeletingNote] = useState(false);
+	const [isEditingNote, setIsEditingNote] = useState(false);
+	const [editingNoteId, setEditingNoteId] = useState(null);
+
+	const { user: currentUser } = useAuth();
 
 	const tabAnim = useRef(new Animated.Value(0)).current;
 
@@ -202,13 +220,27 @@ const ContactDetailsScreen = ({ navigation, route }) => {
 		finally { setLoading(false); }
 	}, [contactId]);
 
-	useEffect(() => { fetchContact(); }, []);
+	const fetchNotes = useCallback(async () => {
+		if (!contactId) return;
+		try {
+			const res = await notesAPI.getAll({ entityType: 'contact', entityId: contactId });
+			if (res.success) {
+				const data = res.data?.data || res.data || [];
+				setContactNotes(Array.isArray(data) ? data : []);
+			}
+		} catch (_) { }
+	}, [contactId]);
+
+	useEffect(() => {
+		fetchContact();
+		fetchNotes();
+	}, []);
 
 	const onRefresh = useCallback(async () => {
 		setRefreshing(true);
-		await fetchContact();
+		await Promise.all([fetchContact(), fetchNotes()]);
 		setRefreshing(false);
-	}, [fetchContact]);
+	}, [fetchContact, fetchNotes]);
 
 	// ── Handlers ──────────────────────────────────────────────────────────────
 	const handleTabChange = (idx) => {
@@ -221,7 +253,10 @@ const ContactDetailsScreen = ({ navigation, route }) => {
 		setActiveTab(idx);
 	};
 
-	const handleEdit = () => navigation.navigate('EditContact', { contact });
+	const handleEdit = () => navigation.navigate('EditContact', {
+		contact,
+		refreshContacts: route?.params?.refreshContacts
+	});
 	const handleEmail = () => contactEmail && Linking.openURL(`mailto:${contactEmail}`);
 	const handleCall = () => contactPhone && Linking.openURL(`tel:${contactPhone}`);
 	const handleWA = () => {
@@ -230,22 +265,25 @@ const ContactDetailsScreen = ({ navigation, route }) => {
 	};
 
 	const handleDelete = () => {
-		Alert.alert('Delete Contact', `Remove "${displayName}"? This cannot be undone.`, [
-			{ text: 'Cancel', style: 'cancel' },
-			{
-				text: 'Delete',
-				style: 'destructive',
-				onPress: async () => {
-					const res = await contactsAPI.delete(contactId);
-					if (res.success) {
-						Alert.alert('Deleted', 'Contact removed.');
-						navigation.goBack();
-					} else {
-						Alert.alert('Error', res.error || 'Failed to delete contact');
-					}
-				},
-			},
-		]);
+		setDeleteModalVisible(true);
+	};
+
+	const confirmDelete = async () => {
+		setDeleting(true);
+		try {
+			const res = await contactsAPI.delete(contactId);
+			if (res.success) {
+				setDeleteModalVisible(false);
+				route?.params?.refreshContacts?.();
+				navigation.goBack();
+			} else {
+				Alert.alert('Error', res.error || 'Failed to delete contact');
+			}
+		} catch (error) {
+			Alert.alert('Error', 'Failed to delete contact');
+		} finally {
+			setDeleting(false);
+		}
 	};
 
 	const handleUploadDocument = () => {
@@ -270,12 +308,19 @@ const ContactDetailsScreen = ({ navigation, route }) => {
 						// Try to refresh documents list from server
 						const docsRes = await contactsAPI.getDocuments(contactId);
 						if (docsRes.success) {
-							const data = docsRes.data?.data || docsRes.data || [];
-							setDocuments(Array.isArray(data) ? data : []);
+							const data = docsRes.data?.data || docsRes.data || {};
+							const docs = data.documents || [];
+							setDocuments(Array.isArray(docs) ? docs : []);
 						} else {
-							// Fallback: append the returned doc
-							const newDoc = res.data?.data || res.data;
-							if (newDoc) setDocuments(prev => [...prev, newDoc]);
+							// Fallback: append the returned doc(s)
+							const newDocs = res.data?.data || res.data;
+							if (newDocs) {
+								if (Array.isArray(newDocs)) {
+									setDocuments(prev => [...prev, ...newDocs]);
+								} else {
+									setDocuments(prev => [...prev, newDocs]);
+								}
+							}
 						}
 					} else {
 						Alert.alert('Upload Failed', res.error || 'Could not upload document.');
@@ -311,6 +356,70 @@ const ContactDetailsScreen = ({ navigation, route }) => {
 				},
 			],
 		);
+	};
+
+	const handleAddNote = async () => {
+		if (!newNoteText.trim()) return;
+		setAddingNote(true);
+		try {
+			let res;
+			if (isEditingNote && editingNoteId) {
+				res = await notesAPI.update(editingNoteId, {
+					content: newNoteText.trim(),
+				});
+			} else {
+				res = await notesAPI.create({
+					entityType: 'contact',
+					entityId: contactId,
+					content: newNoteText.trim(),
+				});
+			}
+
+			if (res.success) {
+				setNewNoteText('');
+				setIsEditingNote(false);
+				setEditingNoteId(null);
+				fetchNotes();
+			} else {
+				Alert.alert('Error', res.error || `Failed to ${isEditingNote ? 'update' : 'add'} note`);
+			}
+		} catch (error) {
+			Alert.alert('Error', `Failed to ${isEditingNote ? 'update' : 'add'} note`);
+		} finally {
+			setAddingNote(false);
+		}
+	};
+
+	const handleEditNote = (note) => {
+		setNewNoteText(note.content);
+		setIsEditingNote(true);
+		setEditingNoteId(note._id || note.id);
+		// Scroll to top or to the input area might be needed in a large list
+	};
+
+	const cancelEditingNote = () => {
+		setNewNoteText('');
+		setIsEditingNote(false);
+		setEditingNoteId(null);
+	};
+
+	const confirmDeleteNote = async () => {
+		if (!deletingNoteId) return;
+		setDeletingNote(true);
+		try {
+			const res = await notesAPI.delete(deletingNoteId);
+			if (res.success) {
+				setContactNotes(prev => prev.filter(n => (n._id || n.id) !== deletingNoteId));
+				setIsDeleteNoteModalVisible(false);
+				setDeletingNoteId(null);
+			} else {
+				Alert.alert('Error', res.error || 'Failed to delete note');
+			}
+		} catch (error) {
+			Alert.alert('Error', 'Failed to delete note');
+		} finally {
+			setDeletingNote(false);
+		}
 	};
 
 	// ── Top Bar ───────────────────────────────────────────────────────────────
@@ -507,28 +616,186 @@ const ContactDetailsScreen = ({ navigation, route }) => {
 	);
 
 	// ── Notes Tab ─────────────────────────────────────────────────────────────
-	const renderNotes = () => (
-		<SectionCard icon="document-text-outline" title={`Notes (${notes.length})`}>
-			{notes.length > 0 ? notes.map((note, i) => (
-				<View key={note._id || note.id || i} style={styles.noteItem}>
-					<View style={styles.noteDot} />
-					<View style={{ flex: 1 }}>
-						{note.title ? (
-							<AppText size={13} weight="semiBold" color={Colors.textPrimary}>{note.title}</AppText>
-						) : null}
-						<AppText size={12} color={Colors.textSecondary} style={{ marginTop: 2 }}>
-							{note.content || note.body || note.text || ''}
+	const renderNotes = () => {
+		const filteredNotes = (contactNotes || []).filter(note => {
+			const noteContent = (note.content || '').toLowerCase();
+
+			// Robust creator name resolution
+			let creatorName = 'Unknown User';
+			if (typeof note.createdBy === 'object' && note.createdBy?.name) {
+				creatorName = note.createdBy.name;
+			} else {
+				const creatorId = typeof note.createdBy === 'object' ? (note.createdBy?._id || note.createdBy?.id) : note.createdBy;
+				const currentUserId = currentUser?._id || currentUser?.id;
+				if (creatorId && currentUserId && creatorId === currentUserId) {
+					creatorName = currentUser?.name || 'You';
+				}
+			}
+
+			const query = noteSearchQuery.toLowerCase();
+			return noteContent.includes(query) || creatorName.toLowerCase().includes(query);
+		});
+
+		return (
+			<View style={styles.notesContainer}>
+				{/* Notes Header with Search */}
+				<View style={styles.notesHeader}>
+					<View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
+						{/* <IonIcon name="chatbubble-outline" size={20} color={Colors.primary} /> */}
+						<AppText size='md' weight="semiBold" color={Colors.textPrimary} style={{ marginLeft: 8 }}>
+							Internal Notes
 						</AppText>
-						<AppText size={10} color={Colors.textTertiary} style={{ marginTop: 4 }}>
-							{formatDate(note.createdAt)}{note.createdBy?.name ? ` · ${note.createdBy.name}` : ''}
-						</AppText>
+						<TouchableOpacity style={{ marginLeft: 6 }}>
+							<IonIcon name="information-circle-outline" size={20} color={Colors.textTertiary} />
+						</TouchableOpacity>
 					</View>
 				</View>
-			)) : (
-				<EmptyState icon="document-text-outline" title="No notes yet" />
-			)}
-		</SectionCard>
-	);
+				<View style={styles.noteSearchContainer}>
+					<IonIcon name="search-outline" size={hs(18)} color={Colors.textTertiary} style={{ marginRight: 6 }} />
+					<TextInput
+						style={styles.noteSearchInput}
+						placeholder="Search notes..."
+						placeholderTextColor={Colors.textTertiary}
+						value={noteSearchQuery}
+						onChangeText={setNoteSearchQuery}
+					/>
+				</View>
+
+				{/* Add Note Input Area */}
+				<View style={styles.addNoteCard}>
+					<View style={{ flexDirection: 'row' }}>
+						<View style={[styles.noteAvatarCircle, { backgroundColor: Colors.primaryBackground }]}>
+							<AppText size={14} weight="medium" color={Colors.primary}>
+								{getInitials(currentUser?.name)}
+							</AppText>
+						</View>
+						<View style={styles.noteInputWrapper}>
+							<TextInput
+								style={styles.noteTextInput}
+								placeholder="Write a note..."
+								placeholderTextColor={Colors.textTertiary}
+								multiline
+								value={newNoteText}
+								onChangeText={setNewNoteText}
+							/>
+						</View>
+					</View>
+					<View style={{ flexDirection: 'row', justifyContent: 'flex-end', marginTop: 12 }}>
+						{isEditingNote && (
+							<TouchableOpacity
+								style={[styles.cancelNoteBtn, { marginRight: 8 }]}
+								onPress={cancelEditingNote}
+							>
+								<AppText color={Colors.textSecondary} weight="semiBold">Cancel</AppText>
+							</TouchableOpacity>
+						)}
+						<TouchableOpacity
+							style={[styles.addNoteBtn, (!newNoteText.trim() || addingNote) && { opacity: 0.6 }]}
+							onPress={handleAddNote}
+							disabled={!newNoteText.trim() || addingNote}
+						>
+							{addingNote ? (
+								<ActivityIndicator size="small" color={Colors.white} />
+							) : (
+								<>
+									<IonIcon name={isEditingNote ? "save-outline" : "send"} size={14} color={Colors.white} style={{ marginRight: 8 }} />
+									<AppText size='sm' color={Colors.white} weight="semiBold">{isEditingNote ? 'Update' : 'Add'}</AppText>
+								</>
+							)}
+						</TouchableOpacity>
+					</View>
+				</View>
+
+				{/* Notes List */}
+				{filteredNotes.length > 0 ? (
+					filteredNotes.map((note) => (
+						<View key={note._id || note.id} style={styles.noteItemCard}>
+							<View style={{ flexDirection: 'row' }}>
+								<View style={[styles.noteAvatarCircle, { backgroundColor: Colors.primaryBackground }]}>
+									<AppText size={14} weight="medium" color={Colors.primary}>
+										{(() => {
+											let name = '';
+											if (typeof note.createdBy === 'object' && note.createdBy?.name) {
+												name = note.createdBy.name;
+											} else {
+												const creatorId = typeof note.createdBy === 'object' ? (note.createdBy?._id || note.createdBy?.id) : note.createdBy;
+												const currentUserId = currentUser?._id || currentUser?.id;
+												if (creatorId && currentUserId && creatorId === currentUserId) {
+													name = currentUser?.name || '';
+												}
+											}
+											return getInitials(name);
+										})()}
+									</AppText>
+								</View>
+								<View style={{ flex: 1, marginLeft: 12 }}>
+									<View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+										<View>
+											<AppText weight="semiBold" color={Colors.textPrimary}>
+												{(() => {
+													if (typeof note.createdBy === 'object' && note.createdBy?.name) {
+														return note.createdBy.name;
+													} else {
+														const creatorId = typeof note.createdBy === 'object' ? (note.createdBy?._id || note.createdBy?.id) : note.createdBy;
+														const currentUserId = currentUser?._id || currentUser?.id;
+														if (creatorId && currentUserId && creatorId === currentUserId) {
+															return currentUser?.name || 'You';
+														}
+													}
+													return 'Unknown User';
+												})()}
+											</AppText>
+											<AppText size={12} color={Colors.textTertiary}>
+												{formatDateTime(note.createdAt)}
+											</AppText>
+										</View>
+										<View style={{ flexDirection: 'row' }}>
+											<TouchableOpacity
+												style={{ padding: 4 }}
+												onPress={() => handleEditNote(note)}
+											>
+												<IonIcon name="pencil-outline" size={18} color={Colors.textPrimary} />
+											</TouchableOpacity>
+											<TouchableOpacity
+												style={{ padding: 4, marginLeft: 12 }}
+												onPress={() => {
+													setDeletingNoteId(note._id || note.id);
+													setIsDeleteNoteModalVisible(true);
+												}}
+											>
+												<IonIcon name="trash-outline" size={18} color={Colors.error} />
+											</TouchableOpacity>
+										</View>
+									</View>
+									<AppText size={14} color={Colors.textPrimary} style={{ marginTop: 12, lineHeight: 20 }}>
+										{note.content}
+									</AppText>
+								</View>
+							</View>
+						</View>
+					))
+				) : (
+					<EmptyState
+						icon="chatbubble-outline"
+						title={noteSearchQuery ? "No matching notes" : "No notes yet"}
+						subtitle={noteSearchQuery ? "Try a different search term" : "Internal notes will appear here"}
+					/>
+				)}
+
+				<DeleteConfirmationModal
+					visible={isDeleteNoteModalVisible}
+					onCancel={() => {
+						setIsDeleteNoteModalVisible(false);
+						setDeletingNoteId(null);
+					}}
+					onDelete={confirmDeleteNote}
+					loading={deletingNote}
+					title="Delete Note"
+					message="Are you sure you want to delete this note? This action cannot be undone."
+				/>
+			</View>
+		);
+	};
 
 	// ── Leads Tab ─────────────────────────────────────────────────────────────
 	const renderLeads = () => (
@@ -768,33 +1035,47 @@ const ContactDetailsScreen = ({ navigation, route }) => {
 	}
 
 	return (
-		<SafeAreaView style={styles.container} edges={['top']}>
-			{renderHeader()}
-			<ScrollView
-				showsVerticalScrollIndicator={false}
-				refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[Colors.primary]} />}
-				contentContainerStyle={styles.scrollContent}
-			>
-				{/* Profile Card */}
-				{renderProfileCard()}
+		<KeyboardAvoidingView
+			style={styles.container}
+			behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+		>
+			<SafeAreaView style={styles.container} edges={['top']}>
+				{renderHeader()}
+				<ScrollView
+					showsVerticalScrollIndicator={false}
+					refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={[Colors.primary]} />}
+					contentContainerStyle={styles.scrollContent}
+				>
+					{/* Profile Card */}
+					{renderProfileCard()}
 
-				{/* Tabs + Content */}
-				<View style={styles.tabsCard}>
-					{renderTabs()}
-					<View style={styles.tabContent}>
-						{renderTabContent()}
+					{/* Tabs + Content */}
+					<View style={styles.tabsCard}>
+						{renderTabs()}
+						<View style={styles.tabContent}>
+							{renderTabContent()}
+						</View>
 					</View>
-				</View>
 
-				{/* Tasks */}
-				{renderTasks()}
+					{/* Tasks */}
+					{renderTasks()}
 
-				{/* Followups */}
-				{renderFollowups()}
+					{/* Followups */}
+					{renderFollowups()}
 
-				<View style={{ height: vs(40) }} />
-			</ScrollView>
-		</SafeAreaView>
+					<View style={{ height: vs(40) }} />
+				</ScrollView>
+
+				<DeleteConfirmationModal
+					visible={deleteModalVisible}
+					title="Delete Contact"
+					message={`Are you sure you want to delete "${displayName}"? This action cannot be undone.`}
+					onCancel={() => setDeleteModalVisible(false)}
+					onDelete={confirmDelete}
+					loading={deleting}
+				/>
+			</SafeAreaView>
+		</KeyboardAvoidingView>
 	);
 };
 
@@ -989,21 +1270,110 @@ const styles = StyleSheet.create({
 		borderColor: Colors.divider,
 	},
 	changesBox: {
-		marginTop: ms(6), padding: ms(8),
+		marginTop: ms(6),
+		padding: ms(8),
 		backgroundColor: Colors.primaryBackground,
 		borderRadius: ms(6),
 	},
 
 	// Notes
 	noteItem: {
-		flexDirection: 'row', alignItems: 'flex-start',
-		paddingVertical: ms(10), gap: ms(10),
-		borderBottomWidth: StyleSheet.hairlineWidth,
+		flexDirection: 'row',
+		paddingVertical: vs(12),
+		borderBottomWidth: 1,
 		borderBottomColor: Colors.divider,
 	},
 	noteDot: {
-		width: ms(8), height: ms(8), borderRadius: ms(4),
-		backgroundColor: Colors.primary, marginTop: ms(4),
+		width: 8,
+		height: 8,
+		borderRadius: 4,
+		backgroundColor: Colors.primary,
+		marginTop: 6,
+		marginRight: 12,
+	},
+	notesContainer: {
+		paddingBottom: 20,
+	},
+	notesHeader: {
+		flexDirection: 'row',
+		alignItems: 'center',
+		marginBottom: 16,
+		marginTop: 8,
+	},
+	noteSearchContainer: {
+		flexDirection: 'row',
+		alignItems: 'center',
+		width: '100%',
+		backgroundColor: '#F3F4F6',
+		borderRadius: 8,
+		paddingHorizontal: 10,
+		marginBottom: 10,
+		height: 40,
+	},
+	noteSearchInput: {
+		flex: 1,
+		fontSize: 13,
+		color: Colors.textPrimary,
+		padding: 0,
+	},
+	addNoteCard: {
+		backgroundColor: Colors.white,
+		borderRadius: 12,
+		padding: 16,
+		borderWidth: 1,
+		borderColor: Colors.border,
+		marginBottom: 16,
+		...Shadow.small,
+	},
+	noteAvatarCircle: {
+		width: 40,
+		height: 40,
+		borderRadius: 20,
+		backgroundColor: '#E8F5E9',
+		alignItems: 'center',
+		justifyContent: 'center',
+	},
+	noteInputWrapper: {
+		flex: 1,
+		marginLeft: 12,
+		backgroundColor: '#F9FAFB',
+		borderRadius: 8,
+		borderWidth: 1,
+		borderColor: Colors.border,
+		minHeight: 80,
+	},
+	noteTextInput: {
+		padding: 12,
+		fontSize: 14,
+		color: Colors.textPrimary,
+		textAlignVertical: 'top',
+	},
+	addNoteBtn: {
+		flexDirection: 'row',
+		alignItems: 'center',
+		backgroundColor: Colors.primary,
+		paddingHorizontal: 12,
+		paddingVertical: 10,
+		borderRadius: 8,
+	},
+	cancelNoteBtn: {
+		flexDirection: 'row',
+		alignItems: 'center',
+		backgroundColor: '#F3F4F6',
+		paddingHorizontal: 16,
+		paddingVertical: 10,
+		borderRadius: 8,
+		borderWidth: 1,
+		borderColor: Colors.border,
+	},
+	noteItemCard: {
+		backgroundColor: Colors.white,
+		borderRadius: 12,
+		padding: 16,
+		borderWidth: 1,
+		borderColor: Colors.border,
+		marginBottom: 12,
+		...Shadow.small,
 	},
 
 	// Leads

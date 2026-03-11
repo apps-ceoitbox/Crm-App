@@ -29,6 +29,7 @@ import { AppText, AppInput, AppButton, ModalLoader } from '../../components';
 import { useAuth } from '../../context/AuthContext';
 import { leadsAPI, tasksAPI } from '../../api';
 import { showError, showSuccess } from '../../utils';
+import { ROUTES } from '../../constants';
 
 // Maps for status conversion
 const API_STATUS_TO_UI = {
@@ -40,7 +41,7 @@ const API_STATUS_TO_UI = {
 const UI_STATUS_TO_API = {
   Pending: 'open',
   'In Progress': 'in_progress',
-  Completed: 'completed',
+  Completed: 'done',
 };
 
 // ─── Searchable Bottom-Sheet Picker ──────────────────────────────────────────
@@ -193,21 +194,46 @@ const EditTaskScreen = ({ navigation, route }) => {
   const { fetchAllUsers, allUsers } = useAuth();
   const fadeAnim = useRef(new Animated.Value(0)).current;
 
+  // Store initial form state for comparison to disable/enable Update button
+  const initialData = useMemo(() => {
+    return {
+      title: taskData.title || '',
+      description: taskData.description || '',
+      remarks: taskData.remark || taskData.remarks || '',
+      dueDate: taskData.dueAt ? new Date(taskData.dueAt) : (taskData.dueDate ? new Date(taskData.dueDate) : new Date()),
+      priority: taskData.priority
+        ? taskData.priority.charAt(0).toUpperCase() + taskData.priority.slice(1).toLowerCase()
+        : 'Medium',
+      status: API_STATUS_TO_UI[taskData.status?.toLowerCase()] || 'Pending',
+      assignedTo: typeof taskData.assignedTo === 'object' ? (taskData.assignedTo?._id || taskData.assignedTo?.id || null) : (taskData.assignedTo || null),
+      leadId: taskData.relatedTo?.entityId
+        ? (typeof taskData.relatedTo.entityId === 'object' ? (taskData.relatedTo.entityId._id || taskData.relatedTo.entityId.id) : taskData.relatedTo.entityId)
+        : null,
+    };
+  }, [taskData]);
+
   // Form state pre-filled from existing task
-  const [formData, setFormData] = useState({
-    title: taskData.title || '',
-    description: taskData.description || '',
-    remarks: taskData.remark || taskData.remarks || '',
-    dueDate: taskData.dueAt ? new Date(taskData.dueAt) : (taskData.dueDate ? new Date(taskData.dueDate) : new Date()),
-    priority: taskData.priority
-      ? taskData.priority.charAt(0).toUpperCase() + taskData.priority.slice(1).toLowerCase()
-      : 'Medium',
-    status: API_STATUS_TO_UI[taskData.status?.toLowerCase()] || 'Pending',
-    assignedTo: typeof taskData.assignedTo === 'object' ? (taskData.assignedTo?._id || taskData.assignedTo?.id || null) : (taskData.assignedTo || null),
-    leadId: taskData.relatedTo?.entityId
-      ? (typeof taskData.relatedTo.entityId === 'object' ? (taskData.relatedTo.entityId._id || taskData.relatedTo.entityId.id) : taskData.relatedTo.entityId)
-      : null,
-  });
+  const [formData, setFormData] = useState(initialData);
+
+  // Determine if form has been modified
+  const isModified = useMemo(() => {
+    // Check if any field changed
+    const basicChanges =
+      formData.title !== initialData.title ||
+      formData.description !== initialData.description ||
+      formData.remarks !== initialData.remarks ||
+      formData.priority !== initialData.priority ||
+      formData.status !== initialData.status ||
+      formData.assignedTo !== initialData.assignedTo ||
+      formData.leadId !== initialData.leadId;
+
+    if (basicChanges) return true;
+
+    // Check if due date changed (ignoring slight time differences if any, for better UX)
+    const date1 = new Date(formData.dueDate).getTime();
+    const date2 = new Date(initialData.dueDate).getTime();
+    return Math.abs(date1 - date2) > 1000; // Ignore sub-second differences
+  }, [formData, initialData]);
 
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({});
@@ -301,6 +327,8 @@ const EditTaskScreen = ({ navigation, route }) => {
   const validateForm = () => {
     const newErrors = {};
     if (!formData.title.trim()) newErrors.title = 'Title is required';
+    if (!formData.dueDate) newErrors.dueDate = 'Due date is required';
+    if (!formData.leadId) newErrors.leadId = 'Lead is required';
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -331,8 +359,22 @@ const EditTaskScreen = ({ navigation, route }) => {
 
       const result = await tasksAPI.update(taskId, apiPayload);
       if (result.success) {
+        // Automatically update lead followup date (as on website)
+        if (formData.leadId && formData.dueDate) {
+          try {
+            await leadsAPI.update(formData.leadId, {
+              followup: formData.dueDate.toISOString()
+            });
+          } catch (error) {
+            console.error('Failed to update lead followup:', error);
+          }
+        }
+
         showSuccess('Success', 'Task updated successfully!');
-        navigation.goBack();
+        navigation.navigate(ROUTES.MAIN_TABS, {
+          screen: ROUTES.TASKS,
+          params: { refresh: true },
+        });
       } else {
         showError('Error', result.error || 'Failed to update task');
       }
@@ -377,13 +419,13 @@ const EditTaskScreen = ({ navigation, route }) => {
             Edit Task
           </AppText>
           <AppText size="xs" color={Colors.textMuted} numberOfLines={1}>
-            Update task: {taskData.title || 'Task'}
+            {taskData.title || 'Task'}
           </AppText>
         </View>
         <TouchableOpacity
-          style={[styles.saveHeaderBtn, loading && { opacity: 0.6 }]}
+          style={[styles.saveHeaderBtn, (loading || !isModified) && { opacity: 0.6 }]}
           onPress={handleUpdate}
-          disabled={loading}
+          disabled={loading || !isModified}
           activeOpacity={0.8}
         >
           <Icon name="checkmark" size={ms(18)} color={Colors.white} />
@@ -448,7 +490,9 @@ const EditTaskScreen = ({ navigation, route }) => {
                   hasValue={!!formData.leadId}
                   onPress={() => setActivePicker('lead')}
                   icon="person-add-outline"
+                  error={!!errors.leadId}
                 />
+                {errors.leadId && <Text style={styles.errorInlineText}>{errors.leadId}</Text>}
               </View>
 
               <View style={styles.inputFieldContainer}>
@@ -470,7 +514,7 @@ const EditTaskScreen = ({ navigation, route }) => {
               <View style={styles.inputFieldContainer}>
                 <Text style={styles.dropdownLabel}>Due Date *</Text>
                 <TouchableOpacity
-                  style={styles.dateTrigger}
+                  style={[styles.dateTrigger, !!errors.dueDate && { borderColor: Colors.error }]}
                   onPress={() => setShowDatePicker(true)}
                   activeOpacity={0.7}
                 >
@@ -480,6 +524,7 @@ const EditTaskScreen = ({ navigation, route }) => {
                   </Text>
                   <Icon name="chevron-expand-outline" size={ms(15)} color={Colors.textTertiary} />
                 </TouchableOpacity>
+                {errors.dueDate && <Text style={styles.errorInlineText}>{errors.dueDate}</Text>}
               </View>
 
               <Text style={styles.dropdownLabel}>Priority</Text>
@@ -672,6 +717,7 @@ const styles = StyleSheet.create({
     gap: ms(6),
   },
   pillText: { fontSize: ms(13), fontWeight: '600', color: Colors.textSecondary },
+  errorInlineText: { color: Colors.error, fontSize: ms(11), marginTop: vs(4), marginLeft: ms(4) },
   bottomSpacer: { height: vs(20) },
 
   // Modal Sheet Styles

@@ -417,6 +417,9 @@ const EditLeadScreen = ({ navigation, route }) => {
                 try {
                     route?.params?.onUpdate && route.params.onUpdate(updatedLead);
                 } catch (e) { }
+                route?.params?.refreshLeads?.();
+                route?.params?.refreshPipeline?.();
+                route?.params?.refreshFollowUps?.();
                 navigation.goBack();
             } else {
                 showError(result.error || 'Failed to update lead');
@@ -483,7 +486,8 @@ const EditLeadScreen = ({ navigation, route }) => {
 
             <KeyboardAvoidingView
                 style={styles.flex}
-                behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+                behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+                keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
             >
                 <ScrollView
                     style={styles.flex}

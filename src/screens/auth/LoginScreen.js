@@ -25,6 +25,7 @@ import { ms, vs, wp } from '../../utils/Responsive';
 import { isValidEmail } from '../../utils/Helpers';
 import { useAuth } from '../../context';
 import { AppText, AppButton, AppInput, ModalLoader } from '../../components';
+import { ROUTES } from '../../constants';
 
 const LoginScreen = ({ navigation }) => {
   const { login, googleLogin, appleLogin, rememberedEmail, verifyTwoFactor } =
@@ -123,8 +124,7 @@ const LoginScreen = ({ navigation }) => {
   };
 
   const handleForgotPassword = () => {
-    // Navigate to forgot password screen (can be added later)
-    console.log('Forgot password pressed');
+    navigation.navigate(ROUTES.FORGOT_PASSWORD);
   };
 
   const handleGoogleLogin = async () => {
@@ -274,7 +274,7 @@ const LoginScreen = ({ navigation }) => {
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.keyboardAvoid}
-        keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
       >
         <ScrollView
           contentContainerStyle={styles.scrollContent}

@@ -30,6 +30,7 @@ import { useAuth } from '../../context/AuthContext';
 import { useTasks } from '../../context';
 import { leadsAPI } from '../../api';
 import { showError, showSuccess } from '../../utils';
+import { ROUTES } from '../../constants';
 
 // ─── Searchable Bottom-Sheet Picker ──────────────────────────────────────────
 const SearchablePicker = ({
@@ -189,7 +190,7 @@ const AddTaskScreen = ({ navigation }) => {
     dueDate: new Date(),
     priority: 'Medium',
     status: 'Pending',
-    assignedTo: null,
+    assignedTo: user?._id || user?.id || null,
     leadId: null,
   });
 
@@ -284,6 +285,7 @@ const AddTaskScreen = ({ navigation }) => {
   const validateForm = () => {
     const newErrors = {};
     if (!formData.title.trim()) newErrors.title = 'Title is required';
+    if (!formData.dueDate) newErrors.dueDate = 'Due date is required';
     if (!formData.leadId) newErrors.leadId = 'Lead is required';
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -298,8 +300,15 @@ const AddTaskScreen = ({ navigation }) => {
 
     setLoading(true);
     try {
+      const mapStatusToBackend = (status) => {
+        if (status === 'Pending') return 'open';
+        if (status === 'In Progress') return 'in_progress';
+        if (status === 'Completed') return 'done';
+        return 'open';
+      };
+
       const apiPayload = {
-        assignedTo: formData.assignedTo || undefined,
+        assignedTo: formData.assignedTo || user?._id,
         description: formData.description,
         dueAt: formData.dueDate ? new Date(formData.dueDate).toISOString() : undefined,
         priority: formData.priority.toLowerCase(),
@@ -308,14 +317,28 @@ const AddTaskScreen = ({ navigation }) => {
           entityId: formData.leadId
         },
         remark: formData.remarks,
-        status: formData.status === 'In Progress' ? 'open' : formData.status.toLowerCase(),
+        status: mapStatusToBackend(formData.status),
         title: formData.title,
       };
 
       const result = await addTask(apiPayload);
       if (result.success) {
+        // Automatically update lead followup date (as on website)
+        if (formData.leadId && formData.dueDate) {
+          try {
+            await leadsAPI.update(formData.leadId, {
+              followup: formData.dueDate.toISOString()
+            });
+          } catch (error) {
+            console.error('Failed to update lead followup:', error);
+          }
+        }
+
         showSuccess('Success', 'Task created successfully!');
-        navigation.goBack();
+        navigation.navigate(ROUTES.MAIN_TABS, {
+          screen: ROUTES.TASKS,
+          params: { refresh: true },
+        });
       } else {
         showError('Error', result.error || 'Failed to create task');
       }

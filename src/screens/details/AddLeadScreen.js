@@ -438,6 +438,9 @@ const AddLeadScreen = ({ navigation }) => {
             setLoading(false);
             if (result.success) {
                 showSuccess('Lead created successfully!');
+                route?.params?.refreshLeads?.();
+                route?.params?.refreshPipeline?.();
+                route?.params?.refreshFollowUps?.();
                 navigation.goBack();
             } else {
                 showError(result.error || 'Failed to create lead');

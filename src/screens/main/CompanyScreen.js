@@ -24,9 +24,9 @@ import { Spacing, BorderRadius, Shadow } from '../../constants/Spacing';
 import { ROUTES } from '../../constants';
 import { ms, vs, wp } from '../../utils/Responsive';
 import { useAuth } from '../../context';
-import { AppText } from '../../components';
 import { companiesAPI } from '../../api';
-import { showError } from '../../utils';
+import { showError, showSuccess } from '../../utils';
+import { DeleteConfirmationModal } from '../../components';
 
 const LIMIT = 50;
 
@@ -166,6 +166,11 @@ const CompanyScreen = ({ navigation }) => {
   const isInitialLoadRef = useRef(true);
   const nav = useNavigation();
 
+  // Delete modal state
+  const [isDeleteModalVisible, setIsDeleteModalVisible] = useState(false);
+  const [companyToDelete, setCompanyToDelete] = useState(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+
   // Debounced search
   useEffect(() => {
     if (isInitialLoadRef.current) return;
@@ -188,11 +193,7 @@ const CompanyScreen = ({ navigation }) => {
     isInitialLoadRef.current = false;
   }, []);
 
-  useFocusEffect(
-    useCallback(() => {
-      if (!loading) fetchCompanies(1, true);
-    }, []),
-  );
+  // Removed useFocusEffect in favor of callback refresh flow
 
   const fetchCompanies = async (
     pageNum = 1,
@@ -247,6 +248,7 @@ const CompanyScreen = ({ navigation }) => {
   const handleEditCompany = company => {
     nav.navigate('EditCompany', {
       company,
+      refreshCompanies: () => fetchCompanies(1, true),
       onUpdate: (updatedCompany) => {
         setCompanies(prev => prev.map(c =>
           (c._id === updatedCompany._id || c.id === updatedCompany.id)
@@ -258,31 +260,30 @@ const CompanyScreen = ({ navigation }) => {
   };
 
   const handleDeleteCompany = company => {
-    Alert.alert('Delete Company', `Remove "${company.name}"?`, [
-      { text: 'Cancel', style: 'cancel' },
-      {
-        text: 'Delete',
-        style: 'destructive',
-        onPress: async () => {
-          const id = company._id || company.id;
-          try {
-            setOverlayLoading(true);
-            const res = await companiesAPI.delete(id);
-            if (res && res.success) {
-              // Remove from local state without refetch
-              setCompanies(prev => prev.filter(c => (c._id || c.id) !== id));
-              Alert.alert('Deleted', 'Company removed successfully.');
-            } else {
-              showError('Error', res?.error || 'Failed to delete company');
-            }
-          } catch (error) {
-            showError('Error', 'Failed to delete company');
-          } finally {
-            setOverlayLoading(false);
-          }
-        },
-      },
-    ]);
+    setCompanyToDelete(company);
+    setIsDeleteModalVisible(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!companyToDelete) return;
+
+    const id = companyToDelete._id || companyToDelete.id;
+    setIsDeleting(true);
+    try {
+      const res = await companiesAPI.delete(id);
+      if (res && res.success) {
+        setCompanies(prev => prev.filter(c => (c._id || c.id) !== id));
+        setIsDeleteModalVisible(false);
+        setCompanyToDelete(null);
+        showSuccess('Success', 'Company removed successfully.');
+      } else {
+        showError('Error', res?.error || 'Failed to delete company');
+      }
+    } catch (error) {
+      showError('Error', 'Failed to delete company');
+    } finally {
+      setIsDeleting(false);
+    }
   };
 
   const renderFooter = () => {
@@ -328,6 +329,7 @@ const CompanyScreen = ({ navigation }) => {
             style={styles.addBtnRound}
             onPress={() =>
               navigation.navigate('AddCompany', {
+                refreshCompanies: () => fetchCompanies(1, true),
                 onCreate: newCompany =>
                   setCompanies(prev => [newCompany, ...prev]),
               })
@@ -369,8 +371,8 @@ const CompanyScreen = ({ navigation }) => {
           <FlatList
             data={companies}
             keyExtractor={item => item._id || item.id || String(Math.random())}
-            contentContainerStyle={styles.listContent}
             showsVerticalScrollIndicator={false}
+            contentContainerStyle={[styles.listContent, { flexGrow: 1 }]}
             renderItem={({ item }) => (
               <CompanyCard
                 company={item}
@@ -378,6 +380,7 @@ const CompanyScreen = ({ navigation }) => {
                   navigation.navigate('CompanyDetails', {
                     company: item,
                     companyId: item._id || item.id,
+                    refreshCompanies: () => fetchCompanies(1, true),
                   })
                 }
                 onEdit={handleEditCompany}
@@ -402,6 +405,18 @@ const CompanyScreen = ({ navigation }) => {
             <ActivityIndicator size="large" color={Colors.primary} />
           </View>
         ) : null}
+
+        <DeleteConfirmationModal
+          visible={isDeleteModalVisible}
+          onCancel={() => {
+            setIsDeleteModalVisible(false);
+            setCompanyToDelete(null);
+          }}
+          onDelete={handleConfirmDelete}
+          title="Delete Company"
+          message={`Are you sure you want to remove "${companyToDelete?.name}"? This action cannot be undone.`}
+          loading={isDeleting}
+        />
       </SafeAreaView>
     </View>
   );

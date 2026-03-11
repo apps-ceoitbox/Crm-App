@@ -13,6 +13,8 @@ import {
     ActivityIndicator,
     RefreshControl,
     Image,
+    Modal,
+    TouchableWithoutFeedback,
 } from 'react-native';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import IonIcon from 'react-native-vector-icons/Ionicons';
@@ -63,7 +65,7 @@ const timeAgo = (timestamp) => {
     return `${days}d ago`;
 };
 
-const NotificationItem = ({ item, onPress, onMarkRead }) => (
+const NotificationItem = ({ item, onPress, onImagePress, onMarkRead }) => (
     <TouchableOpacity
         style={[styles.notifCard, !item.read && styles.notifCardUnread]}
         onPress={() => {
@@ -74,9 +76,16 @@ const NotificationItem = ({ item, onPress, onMarkRead }) => (
     >
         {!item.read ? <View style={styles.unreadDot} /> : null}
         {isValidImageUrl(item.imageUrl) && (
-            <View style={styles.thumb}>
+            <TouchableOpacity
+                style={styles.thumb}
+                activeOpacity={0.8}
+                onPress={() => {
+                    onMarkRead(item._id);
+                    if (onImagePress) onImagePress(item.imageUrl);
+                }}
+            >
                 <Image source={{ uri: item.imageUrl }} style={styles.thumbImage} />
-            </View>
+            </TouchableOpacity>
         )}
         <View style={styles.notifContent}>
             <Text style={[styles.notifTitle, !item.read && { fontWeight: '700' }]}>{item.title}</Text>
@@ -90,6 +99,10 @@ const NotificationsScreen = () => {
     const navigation = useNavigation();
     const [activeCat, setActiveCat] = useState('CRM');
     const [activeSub, setActiveSub] = useState('Leads');
+
+    // Image Preview State
+    const [previewVisible, setPreviewVisible] = useState(false);
+    const [previewImageUri, setPreviewImageUri] = useState(null);
     const {
         notifications,
         notificationsLoading,
@@ -185,6 +198,16 @@ const NotificationsScreen = () => {
         }
     };
 
+    const handleImagePress = (uri) => {
+        setPreviewImageUri(uri);
+        setPreviewVisible(true);
+    };
+
+    const closeImagePreview = () => {
+        setPreviewVisible(false);
+        setPreviewImageUri(null);
+    };
+
     if (notificationsLoading && notifications.length === 0) {
         return (
             <ScreenWrapper>
@@ -274,6 +297,7 @@ const NotificationsScreen = () => {
                     <NotificationItem
                         item={item}
                         onPress={handleNotificationPress}
+                        onImagePress={handleImagePress}
                         onMarkRead={markNotificationAsRead}
                     />
                 )}
@@ -304,6 +328,37 @@ const NotificationsScreen = () => {
                     />
                 }
             />
+
+            {/* Image Preview Modal */}
+            <Modal
+                visible={previewVisible}
+                transparent={true}
+                animationType="fade"
+                onRequestClose={closeImagePreview}
+            >
+                <TouchableWithoutFeedback onPress={closeImagePreview}>
+                    <View style={styles.modalOverlay}>
+                        <TouchableWithoutFeedback onPress={(e) => e.stopPropagation()}>
+                            <View style={styles.modalContent}>
+                                <TouchableOpacity
+                                    style={styles.closePreviewBtn}
+                                    onPress={closeImagePreview}
+                                    activeOpacity={0.7}
+                                >
+                                    <IonIcon name="close" size={ms(28)} color="#fff" />
+                                </TouchableOpacity>
+                                {previewImageUri && (
+                                    <Image
+                                        source={{ uri: previewImageUri }}
+                                        style={styles.previewImage}
+                                        resizeMode="contain"
+                                    />
+                                )}
+                            </View>
+                        </TouchableWithoutFeedback>
+                    </View>
+                </TouchableWithoutFeedback>
+            </Modal>
         </ScreenWrapper>
     );
 };
@@ -375,7 +430,7 @@ const styles = StyleSheet.create({
         borderBottomColor: Colors.primary,
     },
     catText: {
-        fontSize: ms(13),
+        fontSize: ms(14),
         fontWeight: '600',
         color: Colors.textTertiary,
     },
@@ -419,7 +474,7 @@ const styles = StyleSheet.create({
         backgroundColor: Colors.primary,
     },
     subText: {
-        fontSize: ms(13),
+        fontSize: ms(14),
         fontWeight: '600',
         color: Colors.textSecondary,
     },
@@ -482,12 +537,12 @@ const styles = StyleSheet.create({
         flex: 1,
     },
     notifTitle: {
-        fontSize: ms(14),
+        fontSize: ms(14.5),
         fontWeight: '600',
         color: Colors.textPrimary,
     },
     notifBody: {
-        fontSize: ms(12),
+        fontSize: ms(12.5),
         color: Colors.textSecondary,
         marginTop: 2,
         lineHeight: ms(18),
@@ -524,6 +579,34 @@ const styles = StyleSheet.create({
         color: Colors.textTertiary,
         marginTop: 4,
         textAlign: 'center',
+    },
+
+    // Image Preview Modal Styles
+    modalOverlay: {
+        flex: 1,
+        backgroundColor: 'rgba(0, 0, 0, 0.9)',
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    modalContent: {
+        width: '100%',
+        height: '100%',
+        justifyContent: 'center',
+        alignItems: 'center',
+        position: 'relative',
+    },
+    closePreviewBtn: {
+        position: 'absolute',
+        top: vs(50),
+        right: ms(20),
+        zIndex: 10,
+        padding: ms(8),
+        backgroundColor: 'rgba(255, 255, 255, 0.2)',
+        borderRadius: ms(20),
+    },
+    previewImage: {
+        width: '100%',
+        height: '75%',
     },
 });
 
