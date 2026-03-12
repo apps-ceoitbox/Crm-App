@@ -22,6 +22,7 @@ import {
   Platform,
   Alert,
   ActivityIndicator,
+  Modal,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import LinearGradient from 'react-native-linear-gradient';
@@ -33,6 +34,7 @@ import { Spacing, BorderRadius, Shadow } from '../../constants/Spacing';
 import { ms, wp } from '../../utils/Responsive';
 import { useAuth } from '../../context';
 import { userAPI, aiAPI } from '../../api';
+import { showToast } from '../../utils';
 
 // ─── Colour aliases to mirror the Expo theme exactly ─────────────────────────
 const C = {
@@ -73,6 +75,7 @@ const ProfileField = ({
   keyboardType = 'default',
 }) => {
   const [focused, setFocused] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   return (
     <View style={[fieldStyles.container, focused && fieldStyles.focused]}>
@@ -86,19 +89,33 @@ const ProfileField = ({
           {label}
         </Text>
       </View>
-      <TextInput
-        style={[fieldStyles.input, disabled && fieldStyles.inputDisabled]}
-        value={value}
-        onChangeText={onChangeText}
-        editable={!disabled}
-        secureTextEntry={secure}
-        keyboardType={keyboardType}
-        onFocus={() => setFocused(true)}
-        onBlur={() => setFocused(false)}
-        placeholderTextColor={C.textTertiary}
-        autoCorrect={false}
-        autoCapitalize="none"
-      />
+      <View style={[fieldStyles.inputWrapper, disabled && fieldStyles.inputWrapperDisabled]}>
+        <TextInput
+          style={[fieldStyles.input, disabled && fieldStyles.inputDisabled]}
+          value={value}
+          onChangeText={onChangeText}
+          editable={!disabled}
+          secureTextEntry={secure && !showPassword}
+          keyboardType={keyboardType}
+          onFocus={() => setFocused(true)}
+          onBlur={() => setFocused(false)}
+          placeholderTextColor={C.textTertiary}
+          autoCorrect={false}
+          autoCapitalize="none"
+        />
+        {secure && (
+          <TouchableOpacity
+            style={fieldStyles.eyeIcon}
+            onPress={() => setShowPassword(!showPassword)}
+          >
+            <IonIcon
+              name={showPassword ? 'eye-outline' : 'eye-off-outline'}
+              size={ms(20)}
+              color={C.textTertiary}
+            />
+          </TouchableOpacity>
+        )}
+      </View>
       {note ? <Text style={fieldStyles.note}>{note}</Text> : null}
     </View>
   );
@@ -109,8 +126,8 @@ const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
 // ─── Main Screen ──────────────────────────────────────────────────────────────
 const ProfileScreen = ({ navigation }) => {
   const { user, logout, updateUser, isAppleReviewMode } = useAuth();
-  console.log(108, isAppleReviewMode);
-  // ── Tab state
+  // console.log(108, isAppleReviewMode);
+  // // ── Tab state
   const [tab, setTab] = useState('personal'); // 'personal' | 'security'
 
   // ── Personal form
@@ -130,6 +147,7 @@ const ProfileScreen = ({ navigation }) => {
   const [apiStatus, setApiStatus] = useState('');
   const [apiAdminLevel, setApiAdminLevel] = useState('');
   const [apiCompany, setApiCompany] = useState('');
+  const [apiIsSuperAdmin, setApiIsSuperAdmin] = useState(false);
 
   // ── AI Plan status
   const [planStatus, setPlanStatus] = useState(null);
@@ -137,11 +155,21 @@ const ProfileScreen = ({ navigation }) => {
   // ── Loading state
   const [loadingProfile, setLoadingProfile] = useState(true);
 
+  // ── Pristine State for tracking modifications ──
+  const [pristinePersonal, setPristinePersonal] = useState({
+    displayName: '',
+    mobile: '',
+    phone: '',
+  });
+
   // ── Security form
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [savingPassword, setSavingPassword] = useState(false);
+
+  // ── Logout Modal
+  const [isLogoutModalVisible, setIsLogoutModalVisible] = useState(false);
 
   // Fetch profile and plan status on mount
   useEffect(() => {
@@ -149,20 +177,33 @@ const ProfileScreen = ({ navigation }) => {
       setLoadingProfile(true);
       try {
         const [profileRes, planRes] = await Promise.all([
-          userAPI.getMyProfile(),
+          userAPI.getProfile(),
           aiAPI.getPlanStatus(),
         ]);
         if (profileRes.success && profileRes.data) {
-          const p = profileRes.data;
-          setDisplayName(p.name || p.displayName || user?.name || '');
-          setMobile(p.mobile || p.phone || user?.mobile || '');
-          setPhone(p.phone2 || user?.phone2 || '');
-          setProfilePhoto(p.photo || p.profilePhoto || null);
+          const p = profileRes.data.data;
+
+          const initialDisplayName = p.name || '';
+          const initialMobile = p.mobile || '';
+          const initialPhone = p.phone || '';
+
+          setDisplayName(initialDisplayName);
+          setMobile(initialMobile);
+          setPhone(initialPhone);
+
+          setPristinePersonal({
+            displayName: initialDisplayName,
+            mobile: initialMobile,
+            phone: initialPhone,
+          });
+
+          setProfilePhoto(p?.photo || null);
           setApiEmail(p.email || user?.email || '');
-          setApiRole(p.role || user?.role || 'User');
-          setApiStatus(p.status || user?.status || 'Active');
-          setApiAdminLevel(p.adminLevel || user?.adminLevel || '');
-          setApiCompany(p.organization || p.company || user?.organization || user?.company || '');
+          setApiRole(p.role || '');
+          setApiStatus(p.status || 'Active');
+          setApiAdminLevel(p.isAdmin || false);
+          setApiCompany(p.organization?.name || '');
+          setApiIsSuperAdmin(p.isSuperAdmin || false);
         } else {
           // Fall back to context user
           setDisplayName(user?.displayName || user?.name || '');
@@ -175,7 +216,8 @@ const ProfileScreen = ({ navigation }) => {
           setApiCompany(user?.organization || user?.company || '');
         }
         if (planRes.success && planRes.data) {
-          setPlanStatus(planRes.data);
+          // console.log('planRes.data.data : ', planRes.data.data)
+          setPlanStatus(planRes.data.data);
         }
       } catch {
         // Fall back gracefully
@@ -203,16 +245,28 @@ const ProfileScreen = ({ navigation }) => {
         mobile: mobile.trim() || undefined,
         phone: phone.trim() || undefined,
       };
+      // console.log('api calling');
       const res = await userAPI.updateMyProfile(payload);
+      // console.log('res : ', res);
       if (res.success) {
         await updateUser({
           name: displayName.trim() || user?.name,
           displayName: displayName.trim() || undefined,
           mobile: mobile.trim() || undefined,
         });
-        Alert.alert('Saved', 'Profile updated successfully.');
+
+        // Update pristine state to reflect newly saved values
+        setPristinePersonal({
+          displayName: displayName.trim(),
+          mobile: mobile.trim(),
+          phone: phone.trim(),
+        });
+
+        showToast('success', 'Profile updated successfully.');
+        // Alert.alert('Saved', 'Profile updated successfully.');
       } else {
-        Alert.alert('Error', res.error || 'Failed to update profile.');
+        showToast('error', res.error || 'Failed to update profile.');
+        // Alert.alert('Error', res.error || 'Failed to update profile.');
       }
     } catch (e) {
       Alert.alert('Error', e.message || 'Something went wrong.');
@@ -238,12 +292,17 @@ const ProfileScreen = ({ navigation }) => {
         confirmPassword,
       });
       if (res.success) {
-        Alert.alert('Success', 'Password updated successfully.');
+        // console.log('res : ', res)
+        // Alert.alert('Success', 'Password updated successfully.');
         setCurrentPassword('');
         setNewPassword('');
         setConfirmPassword('');
+        showToast('success', 'Password updated successfully.');
       } else {
+        // Alert.alert('Error', res.error || 'Failed to update password.');
+        // console.log('res : ', res)
         Alert.alert('Error', res.error || 'Failed to update password.');
+        // showToast('error', res.error || 'Failed to update password.');
       }
     } catch (e) {
       Alert.alert('Error', e.message || 'Something went wrong.');
@@ -253,17 +312,13 @@ const ProfileScreen = ({ navigation }) => {
   };
 
   const handleLogout = () => {
-    Alert.alert('Logout', 'Are you sure you want to logout?', [
-      { text: 'Cancel', style: 'cancel' },
-      {
-        text: 'Logout',
-        style: 'destructive',
-        onPress: async () => {
-          await logout();
-          navigation.reset({ index: 0, routes: [{ name: 'Login' }] });
-        },
-      },
-    ]);
+    setIsLogoutModalVisible(true);
+  };
+
+  const confirmLogout = async () => {
+    setIsLogoutModalVisible(false);
+    await logout();
+    navigation.reset({ index: 0, routes: [{ name: 'Login' }] });
   };
 
   // ── Image picker + upload ─────────────────────────────────────────────────
@@ -286,7 +341,7 @@ const ProfileScreen = ({ navigation }) => {
           const res = await userAPI.uploadProfilePhoto(formData);
           if (res.success) {
             // Re-fetch profile to get the real Cloudinary URL from the server
-            const refreshed = await userAPI.getMyProfile();
+            const refreshed = await userAPI.getProfile();
             if (refreshed.success && refreshed.data) {
               const url = refreshed.data.photo || refreshed.data.profilePhoto || asset.uri;
               setProfilePhoto(url);
@@ -301,12 +356,15 @@ const ProfileScreen = ({ navigation }) => {
           }
         } catch (e) {
           Alert.alert('Error', e.message || 'Failed to upload photo.');
+          // console.log('e : ', e)
         } finally {
           setUploadingPhoto(false);
         }
       },
     );
   };
+
+  // console.log('user : ', user)
 
   // ── Derived values ─ now use API-fetched state as source of truth ─────────────
   const profile = {
@@ -317,7 +375,21 @@ const ProfileScreen = ({ navigation }) => {
     status: apiStatus || user?.status || 'Active',
     adminLevel: apiAdminLevel || user?.adminLevel || '',
     company: apiCompany || user?.organization || user?.company || '',
+    isSuperAdmin: apiIsSuperAdmin || user?.isSuperAdmin || false,
+    phone2: phone || user?.phone2 || '',
   };
+
+  // Enable Save Changes only when personal info differs from loaded (pristine) profile
+  const personalInfoDirty =
+    displayName.trim() !== pristinePersonal.displayName ||
+    mobile.trim() !== pristinePersonal.mobile ||
+    phone.trim() !== pristinePersonal.phone;
+
+  // Enable Update Password only when all three password fields have input
+  const passwordFormFilled =
+    currentPassword.trim() !== '' &&
+    newPassword.trim() !== '' &&
+    confirmPassword.trim() !== '';
 
   if (!user || loadingProfile) {
     return (
@@ -332,7 +404,11 @@ const ProfileScreen = ({ navigation }) => {
 
   // ── Render ────────────────────────────────────────────────────────────────
   return (
-    <View style={styles.container}>
+    <KeyboardAvoidingView
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
+      style={styles.container}
+    >
       <SafeAreaView edges={['top']} style={{ flex: 1 }}>
         {/* ─── Header ─────────────────────────────────────────────── */}
         <View style={styles.header}>
@@ -347,8 +423,8 @@ const ProfileScreen = ({ navigation }) => {
             </TouchableOpacity>
             <View>
               <Text style={styles.headerTitle}>My Profile</Text>
-              <Text style={styles.headerSubtitle}>
-                Manage your profile and settings
+              <Text numberOfLines={1} style={styles.headerSubtitle}>
+                Manage your profile, job details, and responsibilities
               </Text>
             </View>
           </View>
@@ -357,10 +433,7 @@ const ProfileScreen = ({ navigation }) => {
           </TouchableOpacity>
         </View>
 
-        <KeyboardAvoidingView
-          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-          style={{ flex: 1 }}
-        >
+        <View style={{ flex: 1 }}>
           <ScrollView
             contentContainerStyle={styles.scrollContent}
             showsVerticalScrollIndicator={false}
@@ -404,21 +477,21 @@ const ProfileScreen = ({ navigation }) => {
                       <View style={styles.badgeRow}>
                         {!!profile.role && (
                           <View style={styles.roleBadge}>
-                            <IonIcon name="shield-checkmark" size={11} color={C.primary} />
+                            <IonIcon name="shield-outline" size={12} color={'#4B5563'} />
                             <Text style={styles.roleBadgeText}>{profile.role}</Text>
                           </View>
                         )}
                         {!!profile.status && (
-                          <View style={[styles.statusBadge, { backgroundColor: C.successBg }]}>
-                            <Text style={[styles.statusBadgeText, { color: C.success }]}>
-                              {profile.status}
+                          <View style={[styles.statusBadge, { backgroundColor: '#F0FDF4', borderColor: '#BBF7D0' }]}>
+                            <Text style={[styles.statusBadgeText, { color: '#16A34A' }]}>
+                              * {profile.status}
                             </Text>
                           </View>
                         )}
-                        {!!profile.adminLevel && (
-                          <View style={[styles.statusBadge, { backgroundColor: '#EDE7FF' }]}>
-                            <Text style={[styles.statusBadgeText, { color: '#7C3AED' }]}>
-                              {profile.adminLevel}
+                        {(profile.isSuperAdmin || profile.adminLevel) && (
+                          <View style={[styles.statusBadge, { backgroundColor: '#FAF5FF', borderColor: '#E9D5FF' }]}>
+                            <Text style={[styles.statusBadgeText, { color: '#9333EA' }]}>
+                              {profile.isSuperAdmin ? 'Super Admin' : profile.adminLevel}
                             </Text>
                           </View>
                         )}
@@ -426,13 +499,17 @@ const ProfileScreen = ({ navigation }) => {
 
                       {/* Contact info row */}
                       <View style={styles.contactRow}>
-                        <IonIcon name="call" size={12} color={C.textTertiary} />
-                        <Text style={styles.contactText}>{profile.mobile || '—'}</Text>
+                        {!!profile.mobile && (
+                          <View style={styles.contactItem}>
+                            <IonIcon name="call-outline" size={14} color={C.textSecondary} />
+                            <Text style={styles.contactText}>{profile.mobile}</Text>
+                          </View>
+                        )}
                         {!!profile.company && (
-                          <>
-                            <IonIcon name="grid" size={12} color={C.textTertiary} style={{ marginLeft: 8 }} />
+                          <View style={styles.contactItem}>
+                            <IonIcon name="business-outline" size={14} color={C.textSecondary} />
                             <Text style={styles.contactText}>{profile.company}</Text>
-                          </>
+                          </View>
                         )}
                       </View>
                     </View>
@@ -452,42 +529,50 @@ const ProfileScreen = ({ navigation }) => {
                   </TouchableOpacity>
                 </View>
 
-                {/* RIGHT SIDE: AI Credits panel */}
-                {planStatus?.data?.data && (() => {
-                  const { planName, usedCredits, totalCredits, remainingCredits, resetDate } = planStatus.data.data;
-                  const progress = Math.min(100, ((usedCredits || 0) / (totalCredits || 1)) * 100);
-                  const isLow = (remainingCredits || 0) < 50;
-                  return (
-                    <View style={styles.aiCreditsPanel}>
-                      <View style={styles.aiCreditsPanelTop}>
-                        <IonIcon name="flash" size={ms(14)} color={C.primary} />
-                        <View>
-                          <Text style={styles.aiCreditsPanelTitle}>AI Credits</Text>
-                          <Text style={styles.aiCreditsPanelPlan}>{planName || 'Basic plan'}</Text>
-                        </View>
-                      </View>
-                      <View style={styles.aiCreditsPanelUsedRow}>
-                        <Text style={styles.aiCreditsPanelUsed}>{usedCredits} / {totalCredits} used</Text>
-                        <Text style={[styles.aiCreditsPanelLeft, { color: isLow ? C.danger : C.primary }]}>
-                          {remainingCredits} left
-                        </Text>
-                      </View>
-                      <View style={styles.aiProgressBg}>
-                        <View
-                          style={[
-                            styles.aiProgressFill,
-                            { width: `${progress}%`, backgroundColor: isLow ? C.danger : C.primary },
-                          ]}
-                        />
-                      </View>
-                      <Text style={styles.aiCreditsReset}>
-                        Resets {resetDate ? new Date(resetDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'numeric', year: 'numeric' }) : '—'}
-                      </Text>
-                    </View>
-                  );
-                })()}
               </View>
             </View>
+
+            {/* AI Credits Card (Below Profile Header) */}
+            {planStatus && (() => {
+              const { planName, usedCredits, totalCredits, remainingCredits, resetDate } = planStatus;
+              const progress = Math.min(100, ((usedCredits || 0) / (totalCredits || 1)) * 100);
+              const isLow = (remainingCredits || 0) < 50;
+
+              const dt = resetDate ? new Date(resetDate) : null;
+              const resetStr = dt ? `${dt.getDate()}/${dt.getMonth() + 1}/${dt.getFullYear()}` : '—';
+
+              return (
+                <View style={styles.aiCreditsNewCard}>
+                  <View style={styles.aiCreditsNewHeader}>
+                    <IonIcon name="flash-outline" size={ms(24)} color={C.primary} />
+                    <View style={styles.aiCreditsNewHeaderText}>
+                      <Text style={styles.aiCreditsNewTitle}>AI Credits</Text>
+                      <Text style={styles.aiCreditsNewPlan}>{planName || 'Basic plan'}</Text>
+                    </View>
+                  </View>
+
+                  <View style={styles.aiCreditsNewStatsRow}>
+                    <Text style={styles.aiCreditsNewUsed}>{usedCredits} / {totalCredits} used</Text>
+                    <Text style={[styles.aiCreditsNewLeft, { color: isLow ? C.danger : C.primary }]}>
+                      {remainingCredits} left
+                    </Text>
+                  </View>
+
+                  <View style={styles.aiCreditsNewProgressBg}>
+                    <View
+                      style={[
+                        styles.aiCreditsNewProgressFill,
+                        { width: `${progress}%`, backgroundColor: isLow ? C.danger : C.primary },
+                      ]}
+                    />
+                  </View>
+
+                  <Text style={styles.aiCreditsNewReset}>
+                    Resets {resetDate ? new Date(resetDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'numeric', year: 'numeric' }) : '—'}
+                  </Text>
+                </View>
+              );
+            })()}
 
             {/* ─── Tabs ─────────────────────────────────────────── */}
             <View style={styles.tabRow}>
@@ -552,10 +637,10 @@ const ProfileScreen = ({ navigation }) => {
                 <TouchableOpacity
                   style={[
                     styles.saveButton,
-                    savingPersonal && { opacity: 0.55 },
+                    (savingPersonal || !personalInfoDirty) && { opacity: 0.55 },
                   ]}
                   onPress={handleSavePersonal}
-                  disabled={savingPersonal}
+                  disabled={savingPersonal || !personalInfoDirty}
                   activeOpacity={0.85}
                 >
                   <LinearGradient
@@ -696,10 +781,10 @@ const ProfileScreen = ({ navigation }) => {
                 <TouchableOpacity
                   style={[
                     styles.saveButton,
-                    savingPassword && { opacity: 0.55 },
+                    (savingPassword || !passwordFormFilled) && { opacity: 0.55 },
                   ]}
                   onPress={handleUpdatePassword}
-                  disabled={savingPassword}
+                  disabled={savingPassword || !passwordFormFilled}
                   activeOpacity={0.85}
                 >
                   <LinearGradient
@@ -725,20 +810,6 @@ const ProfileScreen = ({ navigation }) => {
               </View>
             )}
 
-            {/* ─── Logout Button ────────────────────────────────── */}
-            {/* <TouchableOpacity
-                            style={styles.logoutBtn}
-                            onPress={handleLogout}
-                            activeOpacity={0.8}
-                        >
-                            <IonIcon
-                                name="log-out-outline"
-                                size={ms(18)}
-                                color={C.danger}
-                            />
-                            <Text style={styles.logoutBtnText}>Logout</Text>
-                        </TouchableOpacity> */}
-
             {/* ─── Footer Links ─────────────────────────────────── */}
             <View style={styles.footerLinks}>
               <Text style={styles.footerDot}>•</Text>
@@ -756,13 +827,47 @@ const ProfileScreen = ({ navigation }) => {
             </View>
 
             {/* Version label */}
-            <Text style={styles.versionText}>CRM Pro v1.0.0</Text>
+            <Text style={styles.versionText}>CBXCRM v1.0.0</Text>
 
             <View style={{ height: ms(40) }} />
           </ScrollView>
-        </KeyboardAvoidingView>
+        </View>
       </SafeAreaView>
-    </View>
+
+      {/* ─── Logout Modal ─────────────────────────────────── */}
+      <Modal
+        visible={isLogoutModalVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setIsLogoutModalVisible(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalIconContainer}>
+              <IonIcon name="log-out-outline" size={ms(32)} color={Colors.white} />
+            </View>
+            <Text style={styles.modalTitle}>Logout</Text>
+            <Text style={styles.modalMessage}>Are you sure you want to log out of your account?</Text>
+            <View style={styles.modalButtonRow}>
+              <TouchableOpacity
+                style={styles.modalCancelBtn}
+                onPress={() => setIsLogoutModalVisible(false)}
+                activeOpacity={0.8}
+              >
+                <Text style={styles.modalCancelBtnText}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.modalLogoutBtn}
+                onPress={confirmLogout}
+                activeOpacity={0.8}
+              >
+                <Text style={styles.modalLogoutBtnText}>Logout</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+    </KeyboardAvoidingView>
   );
 };
 
@@ -786,19 +891,30 @@ const fieldStyles = StyleSheet.create({
     fontWeight: '600',
     color: C.textSecondary,
   },
+  inputWrapper: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: C.background,
+    borderRadius: ms(10),
+    marginTop: 4,
+  },
+  inputWrapperDisabled: {
+    backgroundColor: C.divider,
+  },
   input: {
+    flex: 1,
     fontSize: ms(15),
     fontWeight: '500',
     color: C.text,
     paddingVertical: ms(14),
     paddingHorizontal: ms(22),
-    backgroundColor: C.background,
-    borderRadius: ms(10),
-    marginTop: 4,
   },
   inputDisabled: {
-    backgroundColor: C.divider,
     color: C.textTertiary,
+  },
+  eyeIcon: {
+    paddingRight: ms(18),
+    paddingLeft: ms(10),
   },
   note: {
     fontSize: ms(11),
@@ -869,7 +985,7 @@ const styles = StyleSheet.create({
     gap: ms(10),
   },
   profileLeftCol: {
-    flex: 1.2,
+    flex: 1,
   },
   profileRow: {
     flexDirection: 'row',
@@ -923,100 +1039,60 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     color: C.textSecondary,
   },
-  // AI Credits right-column panel (side by side with profile info)
-  aiCreditsPanel: {
-    flex: 1,
-    backgroundColor: C.background,
-    borderRadius: ms(10),
-    padding: ms(10),
-    borderWidth: 1,
-    borderColor: C.primaryBorder,
-    justifyContent: 'space-between',
+  // AI Credits Card (Below Header)
+  aiCreditsNewCard: {
+    backgroundColor: C.surface,
+    borderRadius: BorderRadius.xl,
+    padding: ms(16),
+    marginTop: Spacing.md,
+    ...Shadow.sm,
   },
-  aiCreditsPanelTop: {
+  aiCreditsNewHeader: {
     flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: 5,
-    marginBottom: ms(6),
+    alignItems: 'center',
+    marginBottom: ms(16),
   },
-  aiCreditsPanelTitle: {
-    fontSize: ms(13),
+  aiCreditsNewHeaderText: {
+    marginLeft: ms(8),
+  },
+  aiCreditsNewTitle: {
+    fontSize: ms(16),
     fontWeight: '700',
     color: C.text,
   },
-  aiCreditsPanelPlan: {
-    fontSize: ms(10),
-    color: C.textTertiary,
-    marginTop: 1,
+  aiCreditsNewPlan: {
+    fontSize: ms(13),
+    color: C.textSecondary,
+    marginTop: 2,
   },
-  aiCreditsPanelUsedRow: {
+  aiCreditsNewStatsRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: ms(5),
+    marginBottom: ms(8),
   },
-  aiCreditsPanelUsed: {
-    fontSize: ms(11),
+  aiCreditsNewUsed: {
+    fontSize: ms(13),
     color: C.textSecondary,
   },
-  aiCreditsPanelLeft: {
+  aiCreditsNewLeft: {
     fontSize: ms(13),
-    fontWeight: '700',
+    fontWeight: '500',
   },
-  // AI Credits card
-  aiCreditsCard: {
-    marginTop: ms(12),
-    marginHorizontal: ms(4),
-    padding: ms(12),
-    backgroundColor: C.background,
-    borderRadius: ms(12),
-    borderWidth: 1,
-    borderColor: C.primaryBorder,
+  aiCreditsNewProgressBg: {
+    height: ms(5),
+    backgroundColor: '#F3F4F6',
+    borderRadius: ms(4),
+    overflow: 'hidden',
+    marginBottom: ms(14),
   },
-  aiCreditsTop: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: ms(4),
+  aiCreditsNewProgressFill: {
+    height: '100%',
+    borderRadius: ms(4),
   },
-  aiCreditsLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 5,
-  },
-  aiCreditsTitle: {
-    fontSize: ms(14),
-    fontWeight: '700',
-    color: C.text,
-  },
-  aiCreditsPlan: {
-    fontSize: ms(11),
-    color: C.textTertiary,
-    marginLeft: ms(2),
-  },
-  aiCreditsLeft2: {
-    fontSize: ms(14),
-    fontWeight: '700',
-  },
-  aiCreditsUsed: {
+  aiCreditsNewReset: {
     fontSize: ms(12),
     color: C.textSecondary,
-    marginBottom: ms(6),
-  },
-  aiProgressBg: {
-    height: ms(6),
-    backgroundColor: C.divider,
-    borderRadius: ms(3),
-    overflow: 'hidden',
-    marginBottom: ms(6),
-  },
-  aiProgressFill: {
-    height: '100%',
-    borderRadius: ms(3),
-  },
-  aiCreditsReset: {
-    fontSize: ms(11),
-    color: C.textTertiary,
   },
   profileInfo: {
     flex: 1,
@@ -1035,41 +1111,52 @@ const styles = StyleSheet.create({
   badgeRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 6,
-    marginTop: ms(8),
+    gap: 8,
+    marginTop: ms(10),
   },
   roleBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 3,
-    backgroundColor: C.primaryBg,
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 8,
+    gap: 4,
+    backgroundColor: '#F3F4F6',
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 14,
   },
   roleBadgeText: {
     fontSize: ms(11),
-    fontWeight: '600',
-    color: C.text,
+    fontWeight: '500',
+    color: '#4B5563',
+    textTransform: 'capitalize',
   },
   statusBadge: {
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 14,
+    borderWidth: 1,
   },
   statusBadgeText: {
     fontSize: ms(11),
-    fontWeight: '600',
+    fontWeight: '500',
+    textTransform: 'capitalize',
   },
   contactRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: ms(8),
-    gap: 4,
+    marginTop: ms(14),
+    gap: ms(16),
+  },
+  contactItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
   },
   contactText: {
-    fontSize: ms(12),
+    fontSize: ms(14),
     color: C.textSecondary,
+    fontWeight: '500',
   },
 
   // Tabs
@@ -1194,6 +1281,77 @@ const styles = StyleSheet.create({
     fontSize: ms(11),
     color: C.textTertiary,
     marginTop: Spacing.md,
+  },
+
+  // Modal Styles
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalContent: {
+    width: wp(85),
+    backgroundColor: '#fff',
+    borderRadius: BorderRadius.xl,
+    padding: ms(24),
+    alignItems: 'center',
+    ...Shadow.lg,
+  },
+  modalIconContainer: {
+    width: ms(64),
+    height: ms(64),
+    borderRadius: ms(32),
+    backgroundColor: Colors.primary,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: Spacing.md,
+  },
+  modalTitle: {
+    fontSize: ms(22),
+    fontWeight: '700',
+    color: C.text,
+    marginBottom: Spacing.xs,
+  },
+  modalMessage: {
+    fontSize: ms(15),
+    color: C.textSecondary,
+    textAlign: 'center',
+    marginBottom: Spacing.xl,
+    paddingHorizontal: Spacing.sm,
+    lineHeight: ms(22),
+  },
+  modalButtonRow: {
+    flexDirection: 'row',
+    gap: Spacing.md,
+    width: '100%',
+  },
+  modalCancelBtn: {
+    flex: 1,
+    paddingVertical: ms(14),
+    borderRadius: ms(12),
+    backgroundColor: '#F3F4F6',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalCancelBtnText: {
+    fontSize: ms(15),
+    fontWeight: '700',
+    color: C.textSecondary,
+  },
+  modalLogoutBtn: {
+    flex: 1,
+    paddingVertical: ms(14),
+    borderRadius: ms(12),
+    backgroundColor: C.danger,
+    justifyContent: 'center',
+    alignItems: 'center',
+    ...Shadow.sm,
+  },
+  modalLogoutBtnText: {
+    fontSize: ms(15),
+    fontWeight: '700',
+    color: '#fff',
   },
 });
 

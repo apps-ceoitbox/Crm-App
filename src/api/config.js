@@ -4,7 +4,7 @@
  */
 
 // Base URL for the API
-// export const API_BASE_URL = 'https://crm.ceoitbox.com/api';
+export const API_BASE_URL = 'https://crm.ceoitbox.com/api';
 // export const API_BASE_URL = 'https://gsvmdl68-3001.inc1.devtunnels.ms/api';
 export const API_BASE_URL = 'https://dmdk3dwt-3001.inc1.devtunnels.ms/api'; // Param for local development: http://localhost:3000/api
 
@@ -17,7 +17,9 @@ export const API_ENDPOINTS = {
     GOOGLE_LOGIN: '/auth/google',
     LOGOUT: '/auth/logout',
     REFRESH_TOKEN: '/auth/refresh',
-    FORGOT_PASSWORD: '/auth/forgot-password',
+    FORGOT_PASSWORD_SEND_OTP: '/auth/forgot-password/send-otp',
+    FORGOT_PASSWORD_VERIFY_OTP: '/auth/forgot-password/verify-otp',
+    FORGOT_PASSWORD_RESET_PASSWORD: '/auth/forgot-password/reset-password',
     RESET_PASSWORD: '/auth/reset-password',
     VERIFY_EMAIL: '/auth/verify-email',
     ME: '/auth/me',
@@ -26,13 +28,15 @@ export const API_ENDPOINTS = {
 
   // Users
   USERS: {
-    PROFILE: '/users/profile',
-    UPDATE_PROFILE: '/users/profile',
-    CHANGE_PASSWORD: '/users/change-password',
+    PROFILE: '/users/me/profile',
+    UPDATE_PROFILE: '/users/me/profile',
+    CHANGE_PASSWORD: '/users/me/password',
     UPLOAD_AVATAR: '/users/avatar',
     MY_PROFILE: '/users/me/profile',
     MY_PHOTO_UPLOAD: '/users/me/photo/upload',
     MY_PHOTO: '/users/me/photo',
+    LIST: '/users',
+    DETAIL: id => `/users/${id}`,
   },
 
   // Leads
@@ -47,6 +51,8 @@ export const API_ENDPOINTS = {
     EXPORT: '/leads/export',
     IMPORT: '/leads/import',
     ACTIVITIES: id => `/leads/${id}/activities`,
+    DOCUMENTS: id => `/leads/${id}/documents`,
+    DELETE_DOCUMENT: (id, docId) => `/leads/${id}/documents/${docId}`,
   },
 
   // Follow ups
@@ -101,6 +107,8 @@ export const API_ENDPOINTS = {
     DETAIL: id => `/companies/${id}`,
     UPDATE: id => `/companies/${id}`,
     DELETE: id => `/companies/${id}`,
+    DOCUMENTS: id => `/companies/${id}/documents`,
+    DELETE_DOCUMENT: (id, docId) => `/companies/${id}/documents/${docId}`,
   },
 
   // Contacts
@@ -151,11 +159,7 @@ export const API_ENDPOINTS = {
     LIST: '/lead-sources',
   },
 
-  // Users (for salesperson / telesales dropdowns)
-  USERS: {
-    LIST: '/users',
-    DETAIL: id => `/users/${id}`,
-  },
+
 
   // Reports
   REPORTS: {
@@ -174,6 +178,16 @@ export const API_ENDPOINTS = {
     MESSAGE: '/ai/chat/message',
     PLAN_STATUS: '/ai/plan-status',
     DELETE_SESSION: sessionId => `/ai/chat/sessions/${sessionId}`,
+  },
+
+  // Notes
+  NOTES: {
+    CREATE: '/notes',
+    LIST: '/notes',
+    DETAIL: id => `/notes/${id}`,
+    UPDATE: id => `/notes/${id}`,
+    DELETE: id => `/notes/${id}`,
+    ADD_COMMENT: id => `/notes/${id}/comments`,
   },
 };
 

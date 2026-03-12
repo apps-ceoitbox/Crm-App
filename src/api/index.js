@@ -42,5 +42,7 @@ export {
   leadTagsAPI,
   leadSourcesAPI,
   usersAPI,
+  notesAPI,
+  uploadAPI,
 } from './services';
 export { default as API } from './services';

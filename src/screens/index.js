@@ -3,7 +3,7 @@
  */
 
 // Auth Screens
-export { SplashScreen, LoginScreen, RegisterScreen, OnboardingScreen } from './auth';
+export { SplashScreen, LoginScreen, RegisterScreen, OnboardingScreen, ForgotPasswordScreen } from './auth';
 
 // Main Screens
 export {

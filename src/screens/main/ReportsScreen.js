@@ -20,10 +20,12 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import IonIcon from 'react-native-vector-icons/Ionicons';
+import DateTimePicker from '@react-native-community/datetimepicker';
 import { useFocusEffect } from '@react-navigation/native';
 import { Colors } from '../../constants/Colors';
 import { BorderRadius, Shadow } from '../../constants/Spacing';
 import { ms, vs, wp } from '../../utils/Responsive';
+
 import { reportsAPI, settingsAPI } from '../../api';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
@@ -91,11 +93,11 @@ const SectionHeader = ({ icon, title, badge }) => (
             </View>
             <Text style={styles.sectionTitle}>{title}</Text>
         </View>
-        {badge != null && (
+        {/* {badge != null && (
             <View style={styles.sectionBadge}>
                 <Text style={styles.sectionBadgeText}>{badge}</Text>
             </View>
-        )}
+        )} */}
     </View>
 );
 
@@ -128,18 +130,21 @@ const KpiCard = ({ icon, iconBg, label, value, trend = 0 }) => (
 );
 
 /** Date picker button */
-const DateButton = ({ label, date, onPress }) => (
-    <TouchableOpacity style={styles.dateBtn} onPress={onPress} activeOpacity={0.75}>
-        <View style={styles.dateBtnLeft}>
-            <IonIcon name="calendar-outline" size={ms(15)} color={Colors.primary} />
-        </View>
+const DateButton = ({ label, date, onPress, active }) => (
+    <TouchableOpacity
+        style={[styles.dateBtn, active && styles.dateBtnActive]}
+        onPress={onPress}
+        activeOpacity={0.75}
+    >
+        <IonIcon name="calendar-outline" size={ms(14)} color={active ? Colors.primary : Colors.textSecondary} />
         <View style={styles.dateBtnBody}>
             <Text style={styles.dateBtnLabel}>{label}</Text>
             <Text style={styles.dateBtnValue}>{toDisplayFormat(date)}</Text>
         </View>
-        <IonIcon name="chevron-down" size={ms(14)} color={Colors.textTertiary} />
+        <IonIcon name="chevron-down" size={ms(12)} color={Colors.textTertiary} />
     </TouchableOpacity>
 );
+
 
 // ─── Chart: Horizontal Funnel ─────────────────────────────────────────────────
 
@@ -283,7 +288,7 @@ const UserRow = ({ item, isLast }) => {
                     <Text style={styles.userAvatarText}>{initials}</Text>
                 </View>
                 <Text style={styles.tableRowMain} numberOfLines={1}>
-                    {item.userName || 'Unknown'}
+                    {item.userName}
                 </Text>
             </View>
             <Text style={styles.tableRowNum}>{item.leadsAssigned ?? 0}</Text>
@@ -309,11 +314,10 @@ const ReportsScreen = ({ navigation }) => {
     const [fromDate, setFromDate] = useState(yearStart);
     const [toDate, setToDate] = useState(today);
 
-    // Simple modal date picker state
-    const [pickerOpen, setPickerOpen] = useState(null); // 'from' | 'to' | null
-    const [inputDay, setInputDay] = useState('');
-    const [inputMonth, setInputMonth] = useState('');
-    const [inputYear, setInputYear] = useState('');
+    // Native Date Picker State
+    const [showNativePicker, setShowNativePicker] = useState(false);
+    const [pickerMode, setPickerMode] = useState('from'); // 'from' | 'to'
+
 
     const [reportData, setReportData] = useState(null);
     const [callingEnabled, setCallingEnabled] = useState(false);
@@ -360,39 +364,30 @@ const ReportsScreen = ({ navigation }) => {
         }, [])
     );
 
-    // ── Simple modal date picker handlers ─────────────────────────────────────
+    // ── Native Date Picker Handlers ──────────────────────────────────────────
 
-    const openPicker = (field) => {
-        const d = field === 'from' ? fromDate : toDate;
-        setInputDay(String(d.getDate()).padStart(2, '0'));
-        setInputMonth(String(d.getMonth() + 1).padStart(2, '0'));
-        setInputYear(String(d.getFullYear()));
-        setPickerOpen(field);
+    const openPicker = (mode) => {
+        setPickerMode(mode);
+        setShowNativePicker(true);
     };
 
-    const confirmPicker = () => {
-        const day = parseInt(inputDay, 10);
-        const month = parseInt(inputMonth, 10);
-        const year = parseInt(inputYear, 10);
-
-        if (!day || !month || !year || day < 1 || day > 31 || month < 1 || month > 12 || year < 2000 || year > 2100) {
-            Alert.alert('Invalid Date', 'Please enter a valid date (DD / MM / YYYY).');
-            return;
-        }
-
-        const selected = new Date(year, month - 1, day);
-        setPickerOpen(null);
-
-        if (pickerOpen === 'from') {
-            const d = selected > toDate ? toDate : selected;
-            setFromDate(d);
-            fetchReport(d, toDate);
-        } else {
-            const d = selected < fromDate ? fromDate : selected;
-            setToDate(d);
-            fetchReport(fromDate, d);
+    const onNativeDateChange = (event, selectedDate) => {
+        setShowNativePicker(false);
+        if (event.type === 'set' && selectedDate) {
+            if (pickerMode === 'from') {
+                const d = selectedDate > toDate ? toDate : selectedDate;
+                setFromDate(d);
+                fetchReport(d, toDate);
+            } else {
+                const d = selectedDate < fromDate ? fromDate : selectedDate;
+                setToDate(d);
+                fetchReport(fromDate, d);
+            }
         }
     };
+
+
+
 
     const handleReset = () => {
         setFromDate(yearStart);
@@ -401,50 +396,51 @@ const ReportsScreen = ({ navigation }) => {
     };
 
     // ── Computed KPI data ─────────────────────────────────────────────────────
-
+    // console.log('reportData : ', reportData)
     const ov = reportData?.overview || {};
+    // console.log('ov : ', ov)
     const kpiItems = [
         {
             icon: 'people-outline',
             iconBg: Colors.infoBg,
             label: 'Total Leads',
             value: String(ov.totalLeads ?? 0),
-            trend: ov.totalLeadsTrend,
+            trend: ov.totalLeadsTrend ?? 0,
         },
         {
             icon: 'stats-chart-outline',
             iconBg: Colors.successBg,
             label: 'Conversion Rate',
             value: `${(ov.conversionRate ?? 0).toFixed(1)}%`,
-            trend: ov.conversionRateTrend,
+            trend: ov.conversionRateTrend ?? 0,
         },
         {
             icon: 'bar-chart-outline',
             iconBg: Colors.primaryBackground,
             label: 'Pipeline Value',
-            value: formatINR(ov.pipelineValue),
-            trend: ov.pipelineValueTrend,
+            value: formatINR(ov.pipelineValue ?? 0),
+            trend: ov.pipelineValueTrend ?? 0,
         },
         {
             icon: 'cash-outline',
             iconBg: Colors.successBg,
             label: 'Closed Won',
-            value: formatINR(ov.closedWonValue),
-            trend: ov.closedWonTrend,
+            value: formatINR(ov.closedWonValue ?? 0),
+            trend: ov.closedWonTrend ?? 0,
         },
         {
             icon: 'time-outline',
             iconBg: Colors.warningBg,
             label: 'Avg Sales Cycle',
-            value: `${ov.avgSalesCycle ?? 0}d`,
-            trend: ov.avgSalesCycleTrend,
+            value: `${ov.avgSalesCycle ?? 0} days`,
+            trend: ov.avgSalesCycleTrend ?? 0,
         },
         {
             icon: 'person-outline',
             iconBg: Colors.infoBg,
             label: 'Active Contacts',
             value: String(ov.activeContacts ?? 0),
-            trend: ov.activeContactsTrend,
+            trend: ov.activeContactsTrend ?? 0,
         },
     ];
 
@@ -482,19 +478,25 @@ const ReportsScreen = ({ navigation }) => {
                 }
             >
                 {/* ══ DATE FILTER CARD ══ */}
-                <Card>
-                    <SectionHeader icon="calendar-outline" title="Date Range" />
+                <Card style={styles.filterCard}>
+                    <SectionHeader icon="calendar-outline" title="Date Range Filter" />
                     <Divider />
                     <View style={styles.dateRow}>
-                        <View style={{ flex: 1 }}>
-                            <DateButton label="From" date={fromDate} onPress={() => openPicker('from')} />
+                        <DateButton
+                            label="From"
+                            date={fromDate}
+                            onPress={() => openPicker('from')}
+                            active={pickerMode === 'from' && showNativePicker}
+                        />
+                        <View style={styles.dateArrowBox}>
+                            <IonIcon name="arrow-forward" size={ms(12)} color={Colors.textTertiary} />
                         </View>
-                        <View style={styles.dateArrow}>
-                            <IonIcon name="arrow-forward" size={ms(14)} color={Colors.textTertiary} />
-                        </View>
-                        <View style={{ flex: 1 }}>
-                            <DateButton label="To" date={toDate} onPress={() => openPicker('to')} />
-                        </View>
+                        <DateButton
+                            label="To"
+                            date={toDate}
+                            onPress={() => openPicker('to')}
+                            active={pickerMode === 'to' && showNativePicker}
+                        />
                     </View>
                     <TouchableOpacity
                         style={[styles.applyBtn, loading && { opacity: 0.65 }]}
@@ -506,12 +508,13 @@ const ReportsScreen = ({ navigation }) => {
                             <ActivityIndicator size="small" color="#fff" />
                         ) : (
                             <>
-                                <IonIcon name="search-outline" size={ms(15)} color="#fff" />
-                                <Text style={styles.applyBtnText}>Fetch Report</Text>
+                                <IonIcon name="sync-outline" size={ms(15)} color="#fff" style={{ marginRight: ms(6) }} />
+                                <Text style={styles.applyBtnText}>Apply Filter</Text>
                             </>
                         )}
                     </TouchableOpacity>
                 </Card>
+
 
                 {/* ══ REPORTS MODULE NAV ══ */}
                 <Card style={{ paddingHorizontal: 0, paddingBottom: ms(6) }}>
@@ -586,85 +589,16 @@ const ReportsScreen = ({ navigation }) => {
                 </Card>
 
 
-                {/* ── Date Picker Modal ──
- */}
-                <Modal
-                    visible={pickerOpen !== null}
-                    transparent
-                    animationType="fade"
-                    onRequestClose={() => setPickerOpen(null)}
-                >
-                    <TouchableOpacity
-                        style={styles.modalOverlay}
-                        activeOpacity={1}
-                        onPress={() => setPickerOpen(null)}
-                    >
-                        <TouchableOpacity activeOpacity={1} style={styles.modalBox}>
-                            <View style={styles.modalHeader}>
-                                <IonIcon name="calendar-outline" size={ms(18)} color={Colors.primary} />
-                                <Text style={styles.modalTitle}>
-                                    Select {pickerOpen === 'from' ? 'From' : 'To'} Date
-                                </Text>
-                            </View>
+                {/* ── Native Date Picker ── */}
+                {showNativePicker && (
+                    <DateTimePicker
+                        value={pickerMode === 'from' ? fromDate : toDate}
+                        mode="date"
+                        display="default"
+                        onChange={onNativeDateChange}
+                    />
+                )}
 
-                            <View style={styles.dateInputRow}>
-                                <View style={styles.dateInputBlock}>
-                                    <Text style={styles.dateInputLabel}>Day</Text>
-                                    <TextInput
-                                        style={styles.dateInput}
-                                        value={inputDay}
-                                        onChangeText={setInputDay}
-                                        keyboardType="numeric"
-                                        maxLength={2}
-                                        placeholder="DD"
-                                        placeholderTextColor={Colors.textTertiary}
-                                    />
-                                </View>
-                                <Text style={styles.dateInputSep}>/</Text>
-                                <View style={styles.dateInputBlock}>
-                                    <Text style={styles.dateInputLabel}>Month</Text>
-                                    <TextInput
-                                        style={styles.dateInput}
-                                        value={inputMonth}
-                                        onChangeText={setInputMonth}
-                                        keyboardType="numeric"
-                                        maxLength={2}
-                                        placeholder="MM"
-                                        placeholderTextColor={Colors.textTertiary}
-                                    />
-                                </View>
-                                <Text style={styles.dateInputSep}>/</Text>
-                                <View style={[styles.dateInputBlock, { flex: 1.5 }]}>
-                                    <Text style={styles.dateInputLabel}>Year</Text>
-                                    <TextInput
-                                        style={styles.dateInput}
-                                        value={inputYear}
-                                        onChangeText={setInputYear}
-                                        keyboardType="numeric"
-                                        maxLength={4}
-                                        placeholder="YYYY"
-                                        placeholderTextColor={Colors.textTertiary}
-                                    />
-                                </View>
-                            </View>
-
-                            <View style={styles.modalBtnRow}>
-                                <TouchableOpacity
-                                    style={styles.modalCancelBtn}
-                                    onPress={() => setPickerOpen(null)}
-                                >
-                                    <Text style={styles.modalCancelText}>Cancel</Text>
-                                </TouchableOpacity>
-                                <TouchableOpacity
-                                    style={styles.modalConfirmBtn}
-                                    onPress={confirmPicker}
-                                >
-                                    <Text style={styles.modalConfirmText}>Confirm</Text>
-                                </TouchableOpacity>
-                            </View>
-                        </TouchableOpacity>
-                    </TouchableOpacity>
-                </Modal>
 
                 {/* ── Content gating ── */}
                 {loading && !reportData ? (
@@ -695,7 +629,7 @@ const ReportsScreen = ({ navigation }) => {
                             </View>
                         </Card>
 
-                        {/* ══ PIPELINE HIGHLIGHTS ══ */}
+                        {/* ══ PIPELINE HIGHLIGHTS ══
                         <View style={styles.highlightRow}>
                             <View style={[styles.highlightCard, { backgroundColor: Colors.primaryBackground }]}>
                                 <IonIcon name="bar-chart" size={ms(22)} color={Colors.primary} />
@@ -718,7 +652,7 @@ const ReportsScreen = ({ navigation }) => {
                                 </Text>
                                 <Text style={styles.highlightLabel}>Contacts</Text>
                             </View>
-                        </View>
+                        </View> */}
 
                         {/* ══ SALES FUNNEL ══ */}
                         <Card>
@@ -748,7 +682,7 @@ const ReportsScreen = ({ navigation }) => {
                             <Divider />
                             <ScrollView horizontal showsHorizontalScrollIndicator={false}>
                                 <View>
-                                    <TableHeader cols={['Source', 'Leads', 'Conv.', 'Conv.%', 'Value']} />
+                                    <TableHeader cols={['Source', 'Leads', 'Converter', 'Conv.%', 'Value']} />
                                     {reportData.leadSourceStats && reportData.leadSourceStats.length > 0
                                         ? reportData.leadSourceStats.map((item, idx) => (
                                             <SourceRow
@@ -1096,6 +1030,74 @@ const styles = StyleSheet.create({
         fontWeight: '600',
     },
 
+    // ── Date Filter ──
+    filterCard: {
+        marginTop: ms(10),
+        marginHorizontal: ms(14),
+        backgroundColor: Colors.surface,
+        borderRadius: ms(20),
+        ...Shadow.md,
+    },
+    dateRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: ms(8),
+        marginBottom: ms(14),
+    },
+    dateBtn: {
+        flex: 1,
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: '#F1F5F9',
+        borderRadius: ms(20),
+        borderWidth: 1,
+        borderColor: '#E2E8F0',
+        paddingHorizontal: ms(12),
+        paddingVertical: ms(8),
+        gap: ms(8),
+    },
+    dateBtnActive: {
+        borderColor: Colors.primary,
+        backgroundColor: Colors.primaryBackground,
+    },
+    dateBtnBody: {
+        flex: 1,
+    },
+    dateBtnLabel: {
+        fontSize: ms(8),
+        color: Colors.textTertiary,
+        fontWeight: '700',
+        textTransform: 'uppercase',
+    },
+    dateBtnValue: {
+        fontSize: ms(12),
+        color: Colors.textPrimary,
+        fontWeight: '700',
+    },
+    dateArrowBox: {
+        width: ms(24),
+        height: ms(24),
+        borderRadius: ms(12),
+        backgroundColor: Colors.background,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    applyBtn: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: Colors.primary,
+        borderRadius: ms(20),
+        paddingVertical: ms(10),
+        ...Shadow.sm,
+    },
+    applyBtnText: {
+        fontSize: ms(13),
+        fontWeight: '700',
+        color: '#fff',
+    },
+
+
     // ── Funnel Chart ──
     funnelWrap: { gap: ms(9) },
     funnelRow: {
@@ -1344,96 +1346,7 @@ const styles = StyleSheet.create({
         fontStyle: 'italic',
     },
 
-    // ── Date Picker Modal ──
-    modalOverlay: {
-        flex: 1,
-        backgroundColor: 'rgba(0,0,0,0.45)',
-        justifyContent: 'center',
-        alignItems: 'center',
-        paddingHorizontal: ms(24),
-    },
-    modalBox: {
-        width: '100%',
-        backgroundColor: Colors.surface,
-        borderRadius: BorderRadius.lg,
-        padding: ms(20),
-        ...Shadow.sm,
-    },
-    modalHeader: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: ms(8),
-        marginBottom: ms(18),
-    },
-    modalTitle: {
-        fontSize: ms(15),
-        fontWeight: '700',
-        color: Colors.textPrimary,
-    },
-    dateInputRow: {
-        flexDirection: 'row',
-        alignItems: 'flex-end',
-        gap: ms(4),
-        marginBottom: ms(20),
-    },
-    dateInputBlock: {
-        flex: 1,
-    },
-    dateInputLabel: {
-        fontSize: ms(10),
-        color: Colors.textTertiary,
-        fontWeight: '600',
-        marginBottom: ms(4),
-        textTransform: 'uppercase',
-        letterSpacing: 0.5,
-    },
-    dateInput: {
-        borderWidth: 1.5,
-        borderColor: Colors.surfaceBorder,
-        borderRadius: BorderRadius.sm,
-        paddingHorizontal: ms(10),
-        paddingVertical: ms(10),
-        fontSize: ms(16),
-        fontWeight: '700',
-        color: Colors.textPrimary,
-        textAlign: 'center',
-        backgroundColor: Colors.background,
-    },
-    dateInputSep: {
-        fontSize: ms(18),
-        color: Colors.textTertiary,
-        fontWeight: '700',
-        paddingBottom: ms(10),
-    },
-    modalBtnRow: {
-        flexDirection: 'row',
-        gap: ms(10),
-    },
-    modalCancelBtn: {
-        flex: 1,
-        paddingVertical: ms(12),
-        borderRadius: BorderRadius.md,
-        borderWidth: 1.5,
-        borderColor: Colors.surfaceBorder,
-        alignItems: 'center',
-    },
-    modalCancelText: {
-        fontSize: ms(14),
-        fontWeight: '600',
-        color: Colors.textSecondary,
-    },
-    modalConfirmBtn: {
-        flex: 1,
-        paddingVertical: ms(12),
-        borderRadius: BorderRadius.md,
-        backgroundColor: Colors.primary,
-        alignItems: 'center',
-    },
-    modalConfirmText: {
-        fontSize: ms(14),
-        fontWeight: '700',
-        color: '#fff',
-    },
+
 
     // ── Module Nav List (sidebar-style) ──
     moduleRow: {

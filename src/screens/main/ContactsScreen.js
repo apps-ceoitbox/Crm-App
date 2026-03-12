@@ -15,17 +15,18 @@ import {
     TextInput,
     Linking,
     Alert,
+    KeyboardAvoidingView,
+    Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import IonIcon from 'react-native-vector-icons/Ionicons';
-import { Colors } from '../../constants/Colors';
 import { Spacing, BorderRadius, Shadow } from '../../constants/Spacing';
 import { ms, vs, wp } from '../../utils/Responsive';
-import { AppText, AppButton } from '../../components';
+import { AppText, AppButton, DeleteConfirmationModal } from '../../components';
 import { useAuth } from '../../context';
 import { contactsAPI } from '../../api';
 import { showError } from '../../utils';
-import { ROUTES } from '../../constants';
+import { Colors, ROUTES } from '../../constants';
 
 const LIMIT = 50;
 
@@ -135,16 +136,19 @@ const ContactCard = ({ contact, onEdit, onDelete, onPress }) => {
 const ContactsScreen = ({ navigation }) => {
     const [searchQuery, setSearchQuery] = useState('');
     const [statusFilter, setStatusFilter] = useState(null);
-    const [page, setPage] = useState(1);
+    const [page, setPage] = useState(page => 1);
     const [loading, setLoading] = useState(true);
     const [loadingMore, setLoadingMore] = useState(false);
     const [refreshing, setRefreshing] = useState(false);
     const [hasMore, setHasMore] = useState(true);
     const [contacts, setContacts] = useState([]);
-    const { user } = useAuth();
     const searchTimeoutRef = useRef(null);
     const currentSearchRef = useRef('');
     const isInitialLoadRef = useRef(true);
+
+    const [deleteModalVisible, setDeleteModalVisible] = useState(false);
+    const [contactToDelete, setContactToDelete] = useState(null);
+    const [deleting, setDeleting] = useState(false);
 
     // Debounced search effect
     useEffect(() => {
@@ -209,15 +213,36 @@ const ContactsScreen = ({ navigation }) => {
     }, [loadingMore, hasMore, loading, page, searchQuery]);
 
     const handleEditContact = (contact) => {
-        navigation.navigate(ROUTES.EDIT_CONTACT, { contact });
+        navigation.navigate(ROUTES.EDIT_CONTACT, {
+            contact,
+            refreshContacts: () => fetchContacts(1, true)
+        });
     };
 
     const handleDeleteContact = (contact) => {
-        const name = `${contact.firstName || ''} ${contact.lastName || ''}`.trim() || 'this contact';
-        Alert.alert('Delete Contact', `Remove "${name}"?`, [
-            { text: 'Cancel', style: 'cancel' },
-            { text: 'Delete', style: 'destructive', onPress: () => console.log('Delete:', contact._id) },
-        ]);
+        setContactToDelete(contact);
+        setDeleteModalVisible(true);
+    };
+
+    const confirmDeleteContact = async () => {
+        if (!contactToDelete) return;
+        setDeleting(true);
+        try {
+            const contactId = contactToDelete._id || contactToDelete.id;
+            const res = await contactsAPI.delete(contactId);
+            if (res.success) {
+                setDeleteModalVisible(false);
+                setContactToDelete(null);
+                // Refresh list after successful deletion
+                fetchContacts(1, false, searchQuery.trim());
+            } else {
+                showError('Error', res.error || 'Failed to delete contact');
+            }
+        } catch (error) {
+            showError('Error', 'Failed to delete contact');
+        } finally {
+            setDeleting(false);
+        }
     };
 
     // Filtered contacts
@@ -248,7 +273,10 @@ const ContactsScreen = ({ navigation }) => {
     };
 
     return (
-        <View style={styles.container}>
+        <KeyboardAvoidingView
+            style={styles.container}
+            behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        >
             <SafeAreaView edges={['top']} style={{ flex: 1 }}>
                 {/* Header — matching Expo */}
                 <View style={styles.header}>
@@ -261,7 +289,9 @@ const ContactsScreen = ({ navigation }) => {
                     </View>
                     <TouchableOpacity
                         style={styles.addBtnSmall}
-                        onPress={() => navigation.navigate('AddContact')}
+                        onPress={() => navigation.navigate('AddContact', {
+                            refreshContacts: () => fetchContacts(1, true)
+                        })}
                     >
                         <IonIcon name="add" size={22} color="#fff" />
                     </TouchableOpacity>
@@ -287,7 +317,7 @@ const ContactsScreen = ({ navigation }) => {
                 </View>
 
                 {/* Status filter chips */}
-                <View style={styles.filterRow}>
+                {/* <View style={styles.filterRow}>
                     <TouchableOpacity
                         style={[styles.filterChip, !statusFilter && styles.filterChipActive]}
                         onPress={() => setStatusFilter(null)}
@@ -307,7 +337,7 @@ const ContactsScreen = ({ navigation }) => {
                             <Text style={[styles.filterChipText, statusFilter === status && { color: '#fff' }]}>{status}</Text>
                         </TouchableOpacity>
                     ))}
-                </View>
+                </View> */}
 
                 {/* List */}
                 {loading ? (
@@ -323,9 +353,10 @@ const ContactsScreen = ({ navigation }) => {
                         renderItem={({ item }) => (
                             <ContactCard
                                 contact={item}
-                                onPress={() => navigation.navigate('ContactDetails', {
+                                onPress={() => navigation.navigate(ROUTES.CONTACT_DETAILS, {
                                     contact: item,
                                     contactId: item._id || item.id,
+                                    refreshContacts: () => fetchContacts(1, true),
                                 })}
                                 onEdit={handleEditContact}
                                 onDelete={handleDeleteContact}
@@ -345,7 +376,19 @@ const ContactsScreen = ({ navigation }) => {
                     />
                 )}
             </SafeAreaView>
-        </View>
+
+            <DeleteConfirmationModal
+                visible={deleteModalVisible}
+                title="Delete Contact"
+                message={`Are you sure you want to delete "${contactToDelete ? (contactToDelete.name || `${contactToDelete.firstName || ''} ${contactToDelete.lastName || ''}`.trim()) : 'this contact'}"? This action cannot be undone.`}
+                onCancel={() => {
+                    setDeleteModalVisible(false);
+                    setContactToDelete(null);
+                }}
+                onDelete={confirmDeleteContact}
+                loading={deleting}
+            />
+        </KeyboardAvoidingView>
     );
 };
 

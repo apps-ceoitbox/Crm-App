@@ -897,30 +897,31 @@ const styles = StyleSheet.create({
     borderRadius: 2,
   },
 
-  // ── Welcome ──
-  contentContainer: {
-    flexGrow: 1,
-    justifyContent: 'center',
-    paddingHorizontal: ms(20),
-    paddingBottom: ms(20),
-  },
-  welcomeContainer: {
-    alignItems: 'center',
-    marginBottom: ms(28),
-  },
-  welcomeIconContainer: {
-    width: ms(64),
-    height: ms(64),
-    borderRadius: ms(32),
-    backgroundColor: THEME_COLOR + '18',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: ms(16),
-  },
-  welcomeTitle: {
-    textAlign: 'center',
-    color: Colors.textPrimary,
-  },
+    // ── Welcome ──
+    contentContainer: {
+        flexGrow: 1,
+        justifyContent: 'center',
+        paddingHorizontal: ms(20),
+        paddingVertical: ms(20),
+
+    },
+    welcomeContainer: {
+        alignItems: 'center',
+        marginBottom: ms(28),
+    },
+    welcomeIconContainer: {
+        width: ms(64),
+        height: ms(64),
+        borderRadius: ms(32),
+        backgroundColor: THEME_COLOR + '18',
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginBottom: ms(16),
+    },
+    welcomeTitle: {
+        textAlign: 'center',
+        color: Colors.textPrimary,
+    },
 
   // ── Suggestions ──
   suggestionsContainer: {

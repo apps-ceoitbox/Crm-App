@@ -20,9 +20,11 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import IonIcon from 'react-native-vector-icons/Ionicons';
+import DateTimePicker from '@react-native-community/datetimepicker';
 import { useFocusEffect } from '@react-navigation/native';
 import { Colors } from '../../constants/Colors';
 import { BorderRadius, Shadow, Spacing } from '../../constants/Spacing';
+
 import { ms, vs } from '../../utils/Responsive';
 import { reportsAPI } from '../../api';
 
@@ -80,20 +82,27 @@ const formatPeriod = (from, to) => {
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 const formatINR = (val) => {
-    if (!val && val !== 0) return '₹0';
+    if (val === null || val === undefined) return '₹0';
     const n = Number(val);
-    if (n >= 10000000) return `₹${(n / 10000000).toFixed(2)}Cr`;
-    if (n >= 100000) return `₹${(n / 100000).toFixed(1)}L`;
-    if (n >= 1000) return `₹${(n / 1000).toFixed(0)}K`;
     return `₹${n.toLocaleString('en-IN')}`;
 };
 
-const formatINRShort = (val) => {
-    const n = Number(val ?? 0);
-    if (n >= 100000) return `₹${(n / 100000).toFixed(1)}L`;
-    if (n >= 1000) return `₹${(n / 1000).toFixed(0)}K`;
-    return `₹${n}`;
+const formatINRShort = (val, abbreviate = false) => {
+    if (val === null || val === undefined) return '0';
+    const n = Number(val);
+    if (isNaN(n)) return '0';
+
+    if (abbreviate) {
+        if (Math.abs(n) >= 10000000) return '₹' + (n / 10000000).toFixed(1) + 'C';
+        if (Math.abs(n) >= 100000) return '₹' + (n / 100000).toFixed(1) + 'L';
+        if (Math.abs(n) >= 1000) return '₹' + (n / 1000).toFixed(0) + 'K';
+        return '₹' + n.toString();
+    }
+
+    return n.toLocaleString('en-IN');
 };
+
+
 
 const formatDate = (str) => {
     if (!str) return 'N/A';
@@ -147,6 +156,24 @@ const SelectorModal = ({ visible, title, options, selected, onSelect, onClose })
         </TouchableOpacity>
     </Modal>
 );
+
+/** Date picker button */
+const DateButton = ({ label, date, onPress, active }) => (
+    <TouchableOpacity
+        style={[styles.dateBtn, active && styles.dateBtnActive]}
+        onPress={onPress}
+        activeOpacity={0.75}
+    >
+        <IonIcon name="calendar-outline" size={ms(14)} color={active ? Colors.primary : Colors.textSecondary} />
+        <View style={styles.dateBtnBody}>
+            <Text style={styles.dateBtnLabel}>{label}</Text>
+            <Text style={styles.dateBtnValue}>{formatDate(date)}</Text>
+        </View>
+        <IonIcon name="chevron-down" size={ms(12)} color={Colors.textTertiary} />
+    </TouchableOpacity>
+);
+
+
 
 /** KPI summary card 2-column grid */
 const MetricCard = ({ label, value, subtitle, icon, accentColor }) => (
@@ -205,39 +232,76 @@ const VerticalBarChart = ({ data }) => {
             </View>
         );
     }
-    const CHART_H = vs(100);
+    console.log('chart data : ', data)
+
+    const CHART_H = vs(150);
+    const Y_AXIS_W = ms(40);
+
     const maxVal = Math.max(
-        ...data.map(d => Math.max(d.forecasted || 0, d.actual || 0)),
+        ...data.map(d => Math.max(d.forecast || 0, d.actual || 0)),
         1
     );
 
+    // Calculate Y-axis steps (matched to screenshot: 5 steps)
+    const steps = [4, 3, 2, 0.9, 0]; // Special mapping for the example labels if needed, but let's be dynamic
+    // To match screenshot precisely: 0, 900, 2K, 3K, 4K
+    // Let's just use 5 even steps for robustness
+    const ySteps = [1, 0.75, 0.5, 0.25, 0];
+
     return (
-        <View>
-            <View style={{ flexDirection: 'row', alignItems: 'flex-end', height: CHART_H, gap: ms(8) }}>
-                {data.map((item, idx) => {
-                    const fH = Math.max(((item.forecasted || 0) / maxVal) * CHART_H, ms(2));
-                    const aH = Math.max(((item.actual || 0) / maxVal) * CHART_H, ms(2));
-                    return (
-                        <View key={idx} style={{ flex: 1, alignItems: 'center', flexDirection: 'row', gap: ms(3), justifyContent: 'center' }}>
-                            <View style={{ alignItems: 'center' }}>
-                                <View style={[styles.vBar, { height: fH, backgroundColor: Colors.primary + 'CC' }]} />
-                                <Text style={styles.vBarLabel} numberOfLines={1}>{item.label || item.month || `M${idx + 1}`}</Text>
-                            </View>
-                            <View style={{ alignItems: 'center' }}>
-                                <View style={[styles.vBar, { height: aH, backgroundColor: Colors.success + 'CC' }]} />
-                            </View>
-                        </View>
-                    );
-                })}
+        <View style={styles.chartContainer}>
+            <View style={{ flexDirection: 'row', height: CHART_H }}>
+                {/* Y-Axis Labels */}
+                <View style={[styles.yAxis, { width: Y_AXIS_W }]}>
+                    {ySteps.map((s, i) => (
+                        <Text key={i} style={styles.yAxisLabel}>
+                            {formatINRShort(s * maxVal, true)}
+                        </Text>
+                    ))}
+                </View>
+
+
+                {/* Chart Area */}
+                <View style={styles.chartArea}>
+                    {/* Grid Lines */}
+                    <View style={styles.gridLayer}>
+                        {ySteps.map((_, i) => (
+                            <View key={i} style={styles.gridLine} />
+                        ))}
+                    </View>
+
+                    {/* Bars */}
+                    <View style={styles.barsLayer}>
+                        {data.map((item, idx) => {
+                            const fVal = item.forecasted || item.forecast || 0;
+                            const aVal = item.actual || 0;
+                            const fH = (fVal / maxVal) * CHART_H;
+                            const aH = (aVal / maxVal) * CHART_H;
+
+                            return (
+                                <View key={idx} style={styles.barGroup}>
+                                    <View style={styles.barPair}>
+                                        <View style={[styles.groupedBar, { height: fH, backgroundColor: '#2D8A66' }]} />
+                                        <View style={[styles.groupedBar, { height: aH, backgroundColor: '#4CAF50' }]} />
+                                    </View>
+                                    {/* <Text style={styles.xAxisLabel} numberOfLines={1}>
+                                        {item.label || item.month || `M${idx + 1}`}
+                                    </Text> */}
+                                </View>
+                            );
+                        })}
+                    </View>
+                </View>
             </View>
-            {/* Legend */}
-            <View style={styles.legendRow}>
+
+            {/* Legend - Squarish icons as per screenshot */}
+            <View style={styles.chartLegend}>
                 <View style={styles.legendItem}>
-                    <View style={[styles.legendDot, { backgroundColor: Colors.primary }]} />
+                    <View style={[styles.legendSquare, { backgroundColor: '#2D8A66' }]} />
                     <Text style={styles.legendText}>Forecasted</Text>
                 </View>
                 <View style={styles.legendItem}>
-                    <View style={[styles.legendDot, { backgroundColor: Colors.success }]} />
+                    <View style={[styles.legendSquare, { backgroundColor: '#4CAF50' }]} />
                     <Text style={styles.legendText}>Actual</Text>
                 </View>
             </View>
@@ -245,9 +309,21 @@ const VerticalBarChart = ({ data }) => {
     );
 };
 
+
 // ─── Main Screen ──────────────────────────────────────────────────────────────
 
 const ForecastScreen = ({ navigation }) => {
+    const today = new Date();
+    const monthStart = new Date(today.getFullYear(), today.getMonth(), 1);
+
+    const [fromDate, setFromDate] = useState(monthStart);
+    const [toDate, setToDate] = useState(today);
+
+    // Native Date Picker State
+    const [showNativePicker, setShowNativePicker] = useState(false);
+    const [pickerMode, setPickerMode] = useState('from'); // 'from' | 'to'
+
+
     const [timeframe, setTimeframe] = useState(TIMEFRAMES[0]); // This Month
     const [ownerFilter, setOwnerFilter] = useState(OWNER_FILTERS[0]); // My Team
     const [showTimePicker, setShowTimePicker] = useState(false);
@@ -260,13 +336,13 @@ const ForecastScreen = ({ navigation }) => {
     const [refreshing, setRefreshing] = useState(false);
     const [error, setError] = useState(null);
 
+
     // ── Fetch ─────────────────────────────────────────────────────────────────
 
-    const fetchData = useCallback(async (tf, of, isRefresh = false) => {
+    const fetchData = useCallback(async (from, to, of, isRefresh = false) => {
         if (isRefresh) setRefreshing(true);
         else setLoading(true);
         setError(null);
-        const { from, to } = getDateRange(tf.value);
         try {
             const res = await reportsAPI.getForecast({
                 from: from.toISOString(),
@@ -274,6 +350,7 @@ const ForecastScreen = ({ navigation }) => {
                 ownerFilter: of.value,
             });
             if (res.success) {
+                console.log(res.data);
                 setData(res.data);
                 // Pre-fill monthly target from server if provided
                 if (res.data?.monthlyTarget && !monthlyTarget) {
@@ -288,27 +365,62 @@ const ForecastScreen = ({ navigation }) => {
             setLoading(false);
             setRefreshing(false);
         }
-    }, []);
+    }, [monthlyTarget]);
 
     useFocusEffect(
         useCallback(() => {
-            fetchData(timeframe, ownerFilter);
-        }, [])
+            fetchData(fromDate, toDate, ownerFilter);
+        }, [fromDate, toDate, ownerFilter, fetchData])
     );
+
+    // ── Native Date Picker Handlers ──────────────────────────────────────────
+
+    const openPicker = (mode) => {
+        setPickerMode(mode);
+        setShowNativePicker(true);
+    };
+
+    const onNativeDateChange = (event, selectedDate) => {
+        setShowNativePicker(false);
+        if (event.type === 'set' && selectedDate) {
+            if (pickerMode === 'from') {
+                const d = selectedDate > toDate ? toDate : selectedDate;
+                setFromDate(d);
+                fetchData(d, toDate, ownerFilter);
+            } else {
+                const d = selectedDate < fromDate ? fromDate : selectedDate;
+                setToDate(d);
+                fetchData(fromDate, d, ownerFilter);
+            }
+        }
+    };
+
+
+    const handleReset = () => {
+        setFromDate(monthStart);
+        setToDate(today);
+        setTimeframe(TIMEFRAMES[0]);
+        fetchData(monthStart, today, ownerFilter);
+    };
 
     const onTimeframeSelect = (opt) => {
         setTimeframe(opt);
-        fetchData(opt, ownerFilter);
+        const { from: f, to: t } = getDateRange(opt.value);
+        setFromDate(f);
+        setToDate(t);
+        fetchData(f, t, ownerFilter);
     };
 
     const onOwnerSelect = (opt) => {
         setOwnerFilter(opt);
-        fetchData(timeframe, opt);
+        fetchData(fromDate, toDate, opt);
     };
+
 
     const { from, to } = getDateRange(timeframe.value);
 
     // ── Derived values ────────────────────────────────────────────────────────
+    console.log("data", data);
 
     const forecastedRevenue = data?.forecastedRevenue ?? 0;
     const weightedPipeline = data?.weightedPipeline ?? 0;
@@ -318,10 +430,11 @@ const ForecastScreen = ({ navigation }) => {
     const forecastVsTarget = forecastedRevenue - target;
     const actualVsTarget = actualRevenue - target;
 
-    const pipelineByStage = data?.openPipelineByStage || data?.pipelineByStage || [];
-    const chartData = data?.forecastVsActual || data?.chartData || [];
-    const forecastBySalesRep = data?.forecastBySalesRep || data?.salesRepForecast || [];
-    const deals = data?.deals || data?.dealsContributing || [];
+    const pipelineByStage = data?.pipelineByStage || data?.openPipelineByStage || [];
+    const chartData = data?.monthlyChartData || data?.forecastVsActual || data?.chartData || [];
+    const forecastBySalesRep = data?.repBreakdown || data?.forecastBySalesRep || data?.salesRepForecast || [];
+    const deals = data?.dealsContributingToForecast || data?.deals || data?.dealsContributing || [];
+
 
     // ── Render ────────────────────────────────────────────────────────────────
 
@@ -339,11 +452,50 @@ const ForecastScreen = ({ navigation }) => {
                 </View>
                 <TouchableOpacity
                     style={styles.navRefreshBtn}
-                    onPress={() => fetchData(timeframe, ownerFilter, true)}
+                    onPress={handleReset}
                 >
                     <IonIcon name="refresh-outline" size={ms(18)} color={Colors.primary} />
                 </TouchableOpacity>
             </View>
+
+            {/* ══ DATE FILTER CARD ══ */}
+            <Card style={styles.filterCard}>
+                <SectionHeader icon="calendar-outline" title="Date Range Filter" />
+                <Divider />
+                <View style={styles.dateRow}>
+                    <DateButton
+                        label="From"
+                        date={fromDate}
+                        onPress={() => openPicker('from')}
+                        active={pickerMode === 'from' && showNativePicker}
+                    />
+                    <View style={styles.dateArrowBox}>
+                        <IonIcon name="arrow-forward" size={ms(12)} color={Colors.textTertiary} />
+                    </View>
+                    <DateButton
+                        label="To"
+                        date={toDate}
+                        onPress={() => openPicker('to')}
+                        active={pickerMode === 'to' && showNativePicker}
+                    />
+                </View>
+                <TouchableOpacity
+                    style={[styles.applyBtn, loading && { opacity: 0.65 }]}
+                    onPress={() => fetchData(fromDate, toDate, ownerFilter)}
+                    disabled={loading}
+                    activeOpacity={0.8}
+                >
+                    {loading ? (
+                        <ActivityIndicator size="small" color="#fff" />
+                    ) : (
+                        <>
+                            <IonIcon name="sync-outline" size={ms(15)} color="#fff" style={{ marginRight: ms(6) }} />
+                            <Text style={styles.applyBtnText}>Apply Filter</Text>
+                        </>
+                    )}
+                </TouchableOpacity>
+            </Card>
+
 
             {/* ── Filters ── */}
             <View style={styles.filtersBar}>
@@ -358,6 +510,7 @@ const ForecastScreen = ({ navigation }) => {
                     <IonIcon name="chevron-down" size={ms(12)} color={Colors.textTertiary} />
                 </TouchableOpacity>
             </View>
+
             <View style={styles.periodBanner}>
                 <IonIcon name="calendar-outline" size={ms(12)} color={Colors.textTertiary} />
                 <Text style={styles.periodText}>Period: {formatPeriod(from, to)}</Text>
@@ -369,12 +522,13 @@ const ForecastScreen = ({ navigation }) => {
                 refreshControl={
                     <RefreshControl
                         refreshing={refreshing}
-                        onRefresh={() => fetchData(timeframe, ownerFilter, true)}
+                        onRefresh={() => fetchData(fromDate, toDate, ownerFilter, true)}
                         colors={[Colors.primary]}
                         tintColor={Colors.primary}
                     />
                 }
             >
+
                 {loading && !data ? (
                     <View style={styles.centeredState}>
                         <ActivityIndicator size="large" color={Colors.primary} />
@@ -546,26 +700,52 @@ const ForecastScreen = ({ navigation }) => {
                                     <View>
                                         {/* Table Header */}
                                         <View style={styles.dealsTableHeader}>
-                                            <Text style={[styles.dealHeadCell, { width: ms(130) }]}>Deal</Text>
-                                            <Text style={styles.dealHeadCell}>Stage</Text>
-                                            <Text style={styles.dealHeadCell}>Prob%</Text>
-                                            <Text style={styles.dealHeadCell}>Amount</Text>
-                                            <Text style={styles.dealHeadCell}>Weighted</Text>
-                                            <Text style={styles.dealHeadCell}>Close</Text>
+                                            <Text style={[styles.dealHeadCell, { width: ms(130), textAlign: 'left' }]}>Deal Name</Text>
+                                            <Text style={[styles.dealHeadCell, { width: ms(100), textAlign: 'left' }]}>Company</Text>
+                                            <Text style={[styles.dealHeadCell, { width: ms(90) }]}>Stage</Text>
+                                            <View style={[styles.dealHeadCell, styles.sortCell, { width: ms(100) }]}>
+                                                <Text style={styles.dealHeadText}>Probability</Text>
+                                                <IonIcon name="swap-vertical" size={ms(12)} color={Colors.textTertiary} />
+                                            </View>
+                                            <View style={[styles.dealHeadCell, styles.sortCell, { width: ms(90) }]}>
+                                                <Text style={styles.dealHeadText}>Amount</Text>
+                                                <IonIcon name="swap-vertical" size={ms(12)} color={Colors.textTertiary} />
+                                            </View>
+                                            <View style={[styles.dealHeadCell, styles.sortCell, { width: ms(100) }]}>
+                                                <Text style={styles.dealHeadText}>Weighted</Text>
+                                                <IonIcon name="swap-vertical" size={ms(12)} color={Colors.textTertiary} />
+                                            </View>
+                                            <View style={[styles.dealHeadCell, styles.sortCell, { width: ms(110) }]}>
+                                                <Text style={styles.dealHeadText}>Close Date</Text>
+                                                <IonIcon name="chevron-up" size={ms(12)} color={Colors.textTertiary} />
+                                            </View>
+                                            <Text style={[styles.dealHeadCell, { width: ms(110) }]}>Owner</Text>
                                         </View>
                                         {deals.map((deal, idx) => (
                                             <View key={idx} style={[styles.dealRow, idx === deals.length - 1 && { borderBottomWidth: 0 }]}>
                                                 <View style={{ width: ms(130) }}>
                                                     <Text style={styles.dealName} numberOfLines={1}>{deal.title || deal.name || 'N/A'}</Text>
-                                                    <Text style={styles.dealCompany} numberOfLines={1}>{deal.company || deal.companyName || ''}</Text>
                                                 </View>
-                                                <Text style={styles.dealCell}>{deal.stage || 'N/A'}</Text>
-                                                <Text style={[styles.dealCell, { color: Colors.info }]}>{deal.probability ?? 0}%</Text>
-                                                <Text style={styles.dealCell}>{formatINR(deal.amount || deal.value)}</Text>
-                                                <Text style={[styles.dealCell, { color: Colors.success }]}>{formatINR(deal.weighted || deal.weightedValue)}</Text>
-                                                <Text style={styles.dealCell}>{formatDate(deal.closeDate || deal.expectedCloseDate)}</Text>
+                                                <View style={{ width: ms(100) }}>
+                                                    <Text style={styles.dealCompany} numberOfLines={1}>{deal.companyName || ''}</Text>
+                                                </View>
+                                                <View style={{ width: ms(90), alignItems: 'center' }}>
+                                                    <View style={styles.stagePill}>
+                                                        <Text style={styles.stagePillText}>{deal.stageName || 'N/A'}</Text>
+                                                    </View>
+                                                </View>
+                                                <View style={{ width: ms(100), alignItems: 'center' }}>
+                                                    <View style={styles.probPill}>
+                                                        <Text style={styles.probPillText}>{deal.probability ?? 0}%</Text>
+                                                    </View>
+                                                </View>
+                                                <Text style={[styles.dealCell, { width: ms(90) }]}>{formatINR(deal.amount || deal.value)}</Text>
+                                                <Text style={[styles.dealCell, { width: ms(100), color: Colors.success }]}>{formatINR(deal.weightedAmount)}</Text>
+                                                <Text style={[styles.dealCell, { width: ms(110) }]}>{formatDate(deal.closeDate || deal.expectedCloseDate)}</Text>
+                                                <Text style={[styles.dealCell, { width: ms(110) }]}>{deal.ownerName || 'N/A'}</Text>
                                             </View>
                                         ))}
+
                                     </View>
                                 </ScrollView>
                             )}
@@ -595,9 +775,21 @@ const ForecastScreen = ({ navigation }) => {
                 onSelect={onOwnerSelect}
                 onClose={() => setShowOwnerPicker(false)}
             />
+
+            {/* ── Native Date Picker ── */}
+            {showNativePicker && (
+                <DateTimePicker
+                    value={pickerMode === 'from' ? fromDate : toDate}
+                    mode="date"
+                    display="default"
+                    onChange={onNativeDateChange}
+                />
+            )}
+
         </SafeAreaView>
     );
 };
+
 
 // ─── Styles ───────────────────────────────────────────────────────────────────
 
@@ -912,6 +1104,76 @@ const styles = StyleSheet.create({
         fontWeight: '500',
     },
 
+    // ── Enhanced Chart Styles ──
+    chartContainer: {
+        marginTop: ms(10),
+    },
+    yAxis: {
+        justifyContent: 'space-between',
+        paddingVertical: ms(4),
+    },
+    yAxisLabel: {
+        fontSize: ms(9),
+        color: Colors.textTertiary,
+        textAlign: 'right',
+        paddingRight: ms(8),
+    },
+    chartArea: {
+        flex: 1,
+        borderLeftWidth: 1,
+        borderBottomWidth: 1,
+        borderColor: Colors.surfaceBorder,
+    },
+    gridLayer: {
+        ...StyleSheet.absoluteFillObject,
+        justifyContent: 'space-between',
+        paddingVertical: ms(4),
+    },
+    gridLine: {
+        height: 1,
+        backgroundColor: Colors.surfaceBorder,
+        width: '100%',
+        opacity: 0.5,
+    },
+    barsLayer: {
+        flex: 1,
+        flexDirection: 'row',
+        alignItems: 'flex-end',
+        justifyContent: 'space-around',
+        paddingHorizontal: ms(10),
+    },
+    barGroup: {
+        alignItems: 'center',
+    },
+    barPair: {
+        flexDirection: 'row',
+        alignItems: 'flex-end',
+        gap: 1,
+    },
+    groupedBar: {
+        width: ms(35),
+        borderTopLeftRadius: ms(2),
+        borderTopRightRadius: ms(2),
+    },
+    xAxisLabel: {
+        fontSize: ms(9),
+        color: Colors.textTertiary,
+        marginTop: ms(6),
+        textAlign: 'center',
+    },
+    chartLegend: {
+        flexDirection: 'row',
+        justifyContent: 'center',
+        gap: ms(20),
+        marginTop: ms(16),
+    },
+    legendSquare: {
+        width: ms(10),
+        height: ms(10),
+        borderRadius: ms(1),
+    },
+
+
     // ── Sales Rep ──
     repRow: {
         flexDirection: 'row',
@@ -995,12 +1257,48 @@ const styles = StyleSheet.create({
         marginTop: ms(1),
     },
     dealCell: {
-        width: ms(80),
         fontSize: ms(12),
         fontWeight: '600',
         color: Colors.textPrimary,
         textAlign: 'center',
     },
+    sortCell: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: ms(4),
+    },
+    dealHeadText: {
+        fontSize: ms(11),
+        fontWeight: '700',
+        color: Colors.textTertiary,
+        textTransform: 'uppercase',
+    },
+    stagePill: {
+        backgroundColor: Colors.background,
+        borderWidth: 1,
+        borderColor: Colors.surfaceBorder,
+        borderRadius: BorderRadius.full,
+        paddingHorizontal: ms(10),
+        paddingVertical: ms(3),
+    },
+    stagePillText: {
+        fontSize: ms(11),
+        fontWeight: '700',
+        color: Colors.textPrimary,
+    },
+    probPill: {
+        backgroundColor: '#FFF5E6',
+        borderRadius: BorderRadius.sm,
+        paddingHorizontal: ms(10),
+        paddingVertical: ms(4),
+    },
+    probPillText: {
+        fontSize: ms(11),
+        fontWeight: '700',
+        color: '#FFA500',
+    },
+
 
     // ── States ──
     centeredState: {
@@ -1097,6 +1395,83 @@ const styles = StyleSheet.create({
         color: Colors.primary,
         fontWeight: '700',
     },
+
+    // ── Date Selection ──
+    filterCard: {
+        marginHorizontal: ms(14),
+        marginTop: ms(10),
+        backgroundColor: Colors.surface,
+        borderRadius: BorderRadius.lg,
+        padding: ms(14),
+        borderWidth: 1,
+        borderColor: Colors.surfaceBorder,
+        ...Shadow.sm,
+    },
+    dateRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: ms(4),
+    },
+    dateBtn: {
+        flex: 1,
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingHorizontal: ms(12),
+        paddingVertical: ms(10),
+        borderRadius: BorderRadius.md,
+        backgroundColor: Colors.background,
+        borderWidth: 1.5,
+        borderColor: Colors.surfaceBorder,
+        gap: ms(8),
+    },
+    dateBtnActive: {
+        borderColor: Colors.primary,
+        backgroundColor: Colors.primaryBackground,
+    },
+    dateBtnBody: {
+        flex: 1,
+    },
+    dateBtnLabel: {
+        fontSize: ms(10),
+        color: Colors.textTertiary,
+        fontWeight: '600',
+        textTransform: 'uppercase',
+    },
+    dateBtnValue: {
+        fontSize: ms(13),
+        color: Colors.textPrimary,
+        fontWeight: '700',
+        marginTop: ms(1),
+    },
+    dateArrowBox: {
+        width: ms(24),
+        height: ms(24),
+        borderRadius: ms(12),
+        backgroundColor: Colors.background,
+        justifyContent: 'center',
+        alignItems: 'center',
+        borderWidth: 1,
+        borderColor: Colors.surfaceBorder,
+        zIndex: 1,
+    },
+    applyBtn: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: Colors.primary,
+        borderRadius: BorderRadius.md,
+        paddingVertical: ms(12),
+        marginTop: ms(14),
+        gap: ms(8),
+        ...Shadow.md,
+    },
+    applyBtnText: {
+        color: '#fff',
+        fontSize: ms(14),
+        fontWeight: '700',
+    },
+
+
 });
 
 export default ForecastScreen;

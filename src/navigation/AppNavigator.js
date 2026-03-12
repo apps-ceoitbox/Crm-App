@@ -10,8 +10,8 @@ import { ROUTES } from '../constants';
 import { setNavigationRef } from '../api';
 
 // Import screens
+import SplashScreen from '../screens/auth/SplashScreen';
 import {
-  SplashScreen,
   LoginScreen,
   RegisterScreen,
   OnboardingScreen,
@@ -33,6 +33,7 @@ import {
   FollowUpEngineScreen,
   NotificationsScreen,
   AIAssistantScreen,
+  ForgotPasswordScreen,
 } from '../screens';
 import AddContactScreen from '../screens/details/AddContactScreen';
 // Import company screens
@@ -104,7 +105,14 @@ const AppNavigator = () => {
           component={LoginScreen}
           options={{ animation: 'fade' }}
         />
-        <Stack.Screen name={ROUTES.REGISTER} component={RegisterScreen} />
+        <Stack.Screen name={ROUTES.REGISTER}
+          component={RegisterScreen}
+          options={{ animation: 'fade' }}
+        />
+        <Stack.Screen name={ROUTES.FORGOT_PASSWORD}
+          component={ForgotPasswordScreen}
+          options={{ animation: 'fade' }}
+        />
 
         {/* Main Tab Navigator */}
         <Stack.Screen
@@ -117,6 +125,10 @@ const AppNavigator = () => {
         <Stack.Screen
           name={ROUTES.LEAD_DETAILS}
           component={LeadDetailsScreen}
+        />
+        <Stack.Screen
+          name={ROUTES.CONTACT_DETAILS}
+          component={ContactDetailsScreen}
         />
         <Stack.Screen
           name={ROUTES.TASK_DETAILS}

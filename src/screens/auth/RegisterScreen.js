@@ -37,7 +37,6 @@ const RegisterScreen = ({ navigation }) => {
         organization: '',
         email: '',
         password: '',
-        confirmPassword: '',
     });
     const [agreeTerms, setAgreeTerms] = useState(false);
     const [loading, setLoading] = useState(false);
@@ -46,7 +45,6 @@ const RegisterScreen = ({ navigation }) => {
     const organizationRef = useRef(null);
     const emailRef = useRef(null);
     const passwordRef = useRef(null);
-    const confirmPasswordRef = useRef(null);
     const fadeAnim = useRef(new Animated.Value(0)).current;
     const slideAnim = useRef(new Animated.Value(30)).current;
 
@@ -90,12 +88,6 @@ const RegisterScreen = ({ navigation }) => {
             newErrors.password = 'Password is required';
         } else if (formData.password.length < 6) {
             newErrors.password = 'Password must be at least 6 characters';
-        }
-
-        if (!formData.confirmPassword.trim()) {
-            newErrors.confirmPassword = 'Please confirm your password';
-        } else if (formData.password !== formData.confirmPassword) {
-            newErrors.confirmPassword = 'Passwords do not match';
         }
 
         if (!agreeTerms) {
@@ -157,7 +149,7 @@ const RegisterScreen = ({ navigation }) => {
             <KeyboardAvoidingView
                 behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
                 style={styles.keyboardAvoid}
-                keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
+                keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
             >
                 <ScrollView
                     contentContainerStyle={styles.scrollContent}
@@ -269,21 +261,6 @@ const RegisterScreen = ({ navigation }) => {
                                 error={!!errors.password}
                                 errorMessage={errors.password}
                                 helperText="At least 6 characters"
-                                returnKeyType="next"
-                                onSubmitEditing={() => confirmPasswordRef.current?.focus()}
-                            />
-
-                            {/* Confirm Password Input */}
-                            <AppInput
-                                ref={confirmPasswordRef}
-                                label="Confirm Password"
-                                placeholder="Re-enter your password"
-                                value={formData.confirmPassword}
-                                onChangeText={(text) => updateField('confirmPassword', text)}
-                                secureTextEntry
-                                leftIcon="lock-closed-outline"
-                                error={!!errors.confirmPassword}
-                                errorMessage={errors.confirmPassword}
                                 returnKeyType="done"
                                 onSubmitEditing={handleRegister}
                             />

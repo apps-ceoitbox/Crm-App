@@ -17,6 +17,7 @@ import {
     Platform,
     UIManager,
     Alert,
+    ScrollView,
 } from 'react-native';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -24,12 +25,12 @@ import IonIcon from 'react-native-vector-icons/Ionicons';
 import { Colors } from '../../constants/Colors';
 import { Spacing, BorderRadius, Shadow } from '../../constants/Spacing';
 import { ms, vs, wp } from '../../utils/Responsive';
-import { AppText, AppButton } from '../../components';
+import { AppText, AppButton, DeleteConfirmationModal } from '../../components';
 import { tasksAPI } from '../../api';
 import { showError } from '../../utils';
-import { useAuth } from '../../context';
-import CommonHeader from '../../components/CommonHeader';
+import { useAuth, useNotification } from '../../context';
 import { ROUTES } from '../../constants';
+import CommonHeader from '../../components/CommonHeader';
 
 // Enable LayoutAnimation for Android
 if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
@@ -207,9 +208,10 @@ const TaskCard = ({ task, onPress, onEdit, onDelete, onToggleComplete }) => {
     );
 };
 
-const TasksScreen = ({ navigation }) => {
+const TasksScreen = ({ navigation, route }) => {
     const nav = useNavigation();
     const { user } = useAuth();
+    const { unreadCount } = useNotification();
     const searchTimeoutRef = useRef(null);
     const currentSearchRef = useRef('');
     const isInitialLoadRef = useRef(true);
@@ -224,6 +226,9 @@ const TasksScreen = ({ navigation }) => {
     const [refreshing, setRefreshing] = useState(false);
     const [hasMore, setHasMore] = useState(true);
     const [tasks, setTasks] = useState([]);
+    const [isDeleteModalVisible, setIsDeleteModalVisible] = useState(false);
+    const [taskToDelete, setTaskToDelete] = useState(null);
+    const [isDeleting, setIsDeleting] = useState(false);
 
     // Map filter name to the matching API status(es)
     const statusMatchesFilter = (taskStatus, filterName) => {
@@ -261,12 +266,21 @@ const TasksScreen = ({ navigation }) => {
         };
     }, [searchQuery]);
 
-    // Refetch tasks every time screen gains focus (covers create, edit, delete from other screens)
+    // Initial load
+    useEffect(() => {
+        fetchTasks(1, true, searchQuery.trim());
+        isInitialLoadRef.current = false;
+    }, []);
+
+    // Refresh when navigating back from Add/Edit/Delete screens
     useFocusEffect(
         useCallback(() => {
-            fetchTasks(1, true, searchQuery.trim());
-            isInitialLoadRef.current = false;
-        }, [])
+            if (route.params?.refresh) {
+                fetchTasks(1, true, searchQuery.trim());
+                // Clear the refresh param
+                navigation.setParams({ refresh: undefined });
+            }
+        }, [route.params?.refresh])
     );
 
     const fetchTasks = async (pageNum = 1, showLoader = false, search = '') => {
@@ -320,34 +334,38 @@ const TasksScreen = ({ navigation }) => {
         nav.navigate(ROUTES.EDIT_TASK, { task });
     };
 
+    const handleSearchToggle = () => {
+        LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+        setSearchOpen(!searchOpen);
+        if (searchOpen) setSearchQuery('');
+    };
+
     const handleDeleteTask = (task) => {
-        const taskId = task._id || task.id;
-        Alert.alert(
-            'Delete Task',
-            `Are you sure you want to delete "${task.title}"?`,
-            [
-                { text: 'Cancel', style: 'cancel' },
-                {
-                    text: 'Delete',
-                    style: 'destructive',
-                    onPress: async () => {
-                        try {
-                            const response = await tasksAPI.delete(taskId);
-                            console.log('Delete response:', response);
-                            if (response.success) {
-                                // Remove from local state
-                                setTasks(prev => prev.filter(t => (t._id || t.id) !== taskId));
-                            } else {
-                                Alert.alert('Error', response.error || 'Failed to delete task');
-                            }
-                        } catch (error) {
-                            console.error('Error deleting task:', error);
-                            Alert.alert('Error', 'Failed to delete task');
-                        }
-                    },
-                },
-            ],
-        );
+        setTaskToDelete(task);
+        setIsDeleteModalVisible(true);
+    };
+
+    const handleConfirmDelete = async () => {
+        if (!taskToDelete) return;
+
+        const taskId = taskToDelete._id || taskToDelete.id;
+        setIsDeleting(true);
+        try {
+            const response = await tasksAPI.delete(taskId);
+            if (response.success) {
+                // Refresh list on successful delete
+                fetchTasks(1, true, searchQuery.trim());
+                setIsDeleteModalVisible(false);
+                setTaskToDelete(null);
+            } else {
+                showError('Error', response.error || 'Failed to delete task');
+            }
+        } catch (error) {
+            console.error('Error deleting task:', error);
+            showError('Error', 'Failed to delete task');
+        } finally {
+            setIsDeleting(false);
+        }
     };
 
     const handleTaskPress = (task) => {
@@ -368,6 +386,80 @@ const TasksScreen = ({ navigation }) => {
             onToggleComplete={handleToggleComplete}
         />
     );
+
+    const renderHeader = () => (
+        <View style={styles.header}>
+            <View style={styles.headerLeft}>
+                <AppText size={28} weight="extraBold" color={Colors.textPrimary} style={{ letterSpacing: -0.5 }}>
+                    Tasks
+                </AppText>
+                {tasks.length > 0 && (
+                    <View style={styles.countBadge}>
+                        <AppText size={13} weight="bold" color={Colors.primary}>
+                            {tasks.length}
+                        </AppText>
+                    </View>
+                )}
+            </View>
+
+            <View style={styles.headerRight}>
+                <TouchableOpacity
+                    style={styles.headerIconBtn}
+                    onPress={handleSearchToggle}
+                >
+                    <IonIcon
+                        name={searchOpen ? 'close' : 'search'}
+                        size={20}
+                        color={Colors.textPrimary}
+                    />
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                    style={styles.headerIconBtn}
+                    onPress={() => navigation.navigate(ROUTES.NOTIFICATIONS)}
+                >
+                    <IonIcon name="notifications-outline" size={ms(22)} color={Colors.textPrimary} />
+                    {unreadCount > 0 && (
+                        <View style={styles.notificationBadge}>
+                            <AppText size={10} weight="bold" color="#fff">
+                                {unreadCount > 9 ? '9+' : unreadCount}
+                            </AppText>
+                        </View>
+                    )}
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                    style={styles.fab}
+                    onPress={() => navigation.navigate('AddTask')}
+                    activeOpacity={0.85}
+                >
+                    <IonIcon name="add" size={22} color="#fff" />
+                </TouchableOpacity>
+            </View>
+        </View>
+    );
+
+    const renderSearchBar = () => {
+        if (!searchOpen) return null;
+        return (
+            <View style={styles.searchWrap}>
+                <View style={styles.searchBar}>
+                    <IonIcon name="search" size={17} color={Colors.textTertiary} />
+                    <TextInput
+                        style={styles.searchInput}
+                        placeholder="Search tasks..."
+                        placeholderTextColor={Colors.textTertiary}
+                        value={searchQuery}
+                        onChangeText={setSearchQuery}
+                        autoFocus
+                    />
+                    <TouchableOpacity onPress={handleSearchToggle}>
+                        <IonIcon name="close-circle" size={17} color={Colors.textTertiary} />
+                    </TouchableOpacity>
+                </View>
+            </View>
+        );
+    };
 
     const renderFooter = () => {
         if (!loadingMore) return null;
@@ -407,69 +499,40 @@ const TasksScreen = ({ navigation }) => {
 
     return (
         <SafeAreaView style={styles.container} edges={['top']}>
-            {/* Header */}
-            <CommonHeader navigation={navigation} />
+            {renderHeader()}
+            {renderSearchBar()}
 
-            {/* Search bar (toggle) */}
-            {searchOpen ? (
-                <View style={styles.searchWrap}>
-                    <View style={styles.searchBar}>
-                        <IonIcon name="search" size={17} color={Colors.textTertiary} />
-                        <TextInput
-                            style={styles.searchInput}
-                            placeholder="Search tasks..."
-                            placeholderTextColor={Colors.textTertiary}
-                            value={searchQuery}
-                            onChangeText={setSearchQuery}
-                            autoFocus
-                        />
-                        <TouchableOpacity onPress={() => { setSearchOpen(false); setSearchQuery(''); }}>
-                            <IonIcon name="close-circle" size={17} color={Colors.textTertiary} />
-                        </TouchableOpacity>
-                    </View>
-                </View>
-            ) : null}
-
-            {/* Title + Actions row */}
-            <View style={styles.titleRow}>
-                <View>
-                    <Text style={styles.sectionTitle}>Tasks</Text>
-                    <Text style={styles.subtitleText}>{pendingCount} pending</Text>
-                </View>
-                <View style={styles.titleActions}>
-                    <TouchableOpacity style={styles.iconBtn} onPress={() => setSearchOpen(!searchOpen)}>
-                        <IonIcon name="search" size={18} color={Colors.textPrimary} />
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                        style={styles.addBtn}
-                        onPress={() => navigation.navigate('AddTask')}
-                    >
-                        <IonIcon name="add" size={18} color="#fff" />
-                        <Text style={styles.addBtnText}>Add Task</Text>
-                    </TouchableOpacity>
-                </View>
+            {/* Subtitle row */}
+            <View style={styles.subtitleRow}>
+                <Text style={styles.subtitleText}>{pendingCount} pending</Text>
             </View>
 
             {/* Filter pills */}
-            <View style={styles.filterRow}>
-                {FILTERS.map((f) => {
-                    const count = getCount(f);
-                    const isActive = filter === f;
-                    return (
-                        <TouchableOpacity
-                            key={f}
-                            style={[styles.filterPill, isActive && styles.filterPillActive]}
-                            onPress={() => setFilter(f)}
-                        >
-                            <Text style={[styles.filterPillText, isActive && styles.filterPillTextActive]}>
-                                {f}
-                            </Text>
-                            <View style={[styles.filterCount, isActive && styles.filterCountActive]}>
-                                <Text style={[styles.filterCountText, isActive && { color: '#fff' }]}>{count}</Text>
-                            </View>
-                        </TouchableOpacity>
-                    );
-                })}
+            <View style={styles.filterContainer}>
+                <ScrollView
+                    horizontal
+                    showsHorizontalScrollIndicator={false}
+                    contentContainerStyle={styles.filterRow}
+                >
+                    {FILTERS.map((f) => {
+                        const count = getCount(f);
+                        const isActive = filter === f;
+                        return (
+                            <TouchableOpacity
+                                key={f}
+                                style={[styles.filterPill, isActive && styles.filterPillActive]}
+                                onPress={() => setFilter(f)}
+                            >
+                                <Text style={[styles.filterPillText, isActive && styles.filterPillTextActive]}>
+                                    {f}
+                                </Text>
+                                <View style={[styles.filterCount, isActive && styles.filterCountActive]}>
+                                    <Text style={[styles.filterCountText, isActive && { color: '#fff' }]}>{count}</Text>
+                                </View>
+                            </TouchableOpacity>
+                        );
+                    })}
+                </ScrollView>
             </View>
 
             <FlatList
@@ -491,6 +554,18 @@ const TasksScreen = ({ navigation }) => {
                 contentContainerStyle={styles.listContent}
                 showsVerticalScrollIndicator={false}
             />
+
+            <DeleteConfirmationModal
+                visible={isDeleteModalVisible}
+                title="Delete Task"
+                message={`Are you sure you want to delete "${taskToDelete?.title}"? This action cannot be undone.`}
+                onCancel={() => {
+                    setIsDeleteModalVisible(false);
+                    setTaskToDelete(null);
+                }}
+                onDelete={handleConfirmDelete}
+                loading={isDeleting}
+            />
         </SafeAreaView>
     );
 };
@@ -498,6 +573,62 @@ const TasksScreen = ({ navigation }) => {
 const styles = StyleSheet.create({
     container: { flex: 1, backgroundColor: Colors.background },
     centered: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+
+    // Header
+    header: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        paddingHorizontal: Spacing.lg,
+        paddingTop: Spacing.sm,
+        paddingBottom: Spacing.md,
+    },
+    headerLeft: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: Spacing.sm,
+    },
+    countBadge: {
+        backgroundColor: Colors.primaryBackground,
+        paddingHorizontal: ms(8),
+        paddingVertical: ms(2),
+        borderRadius: ms(10),
+    },
+    headerRight: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: Spacing.md,
+    },
+    headerIconBtn: {
+        width: ms(40),
+        height: ms(40),
+        borderRadius: ms(20),
+        backgroundColor: Colors.surface,
+        justifyContent: 'center',
+        alignItems: 'center',
+        ...Shadow.sm,
+    },
+    notificationBadge: {
+        position: 'absolute',
+        top: -2,
+        right: -2,
+        minWidth: ms(18),
+        height: ms(18),
+        borderRadius: ms(9),
+        backgroundColor: Colors.error,
+        justifyContent: 'center',
+        alignItems: 'center',
+        paddingHorizontal: 4,
+    },
+    fab: {
+        width: ms(44),
+        height: ms(44),
+        borderRadius: ms(14),
+        backgroundColor: Colors.primary,
+        justifyContent: 'center',
+        alignItems: 'center',
+        ...Shadow.md,
+    },
 
     // Search
     searchWrap: { paddingHorizontal: Spacing.lg, paddingBottom: Spacing.sm },
@@ -509,29 +640,18 @@ const styles = StyleSheet.create({
     },
     searchInput: { flex: 1, marginLeft: Spacing.sm, fontSize: ms(14), color: Colors.textPrimary },
 
-    // Title row
-    titleRow: {
-        flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
+    // Subtitle row
+    subtitleRow: {
         paddingHorizontal: Spacing.lg, paddingBottom: Spacing.sm,
     },
-    sectionTitle: { fontSize: ms(24), fontWeight: '800', color: Colors.textPrimary },
     subtitleText: { fontSize: ms(12), color: Colors.textTertiary, marginTop: 1 },
-    titleActions: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm },
-    iconBtn: {
-        width: ms(38), height: ms(38), borderRadius: ms(12),
-        backgroundColor: Colors.surface, justifyContent: 'center', alignItems: 'center', ...Shadow.sm,
-    },
-    addBtn: {
-        flexDirection: 'row', alignItems: 'center',
-        backgroundColor: Colors.primary, paddingHorizontal: ms(14),
-        paddingVertical: ms(10), borderRadius: ms(14), gap: 4,
-    },
-    addBtnText: { fontSize: ms(13), fontWeight: '700', color: '#fff' },
 
     // Filter pills
+    filterContainer: { marginBottom: Spacing.md },
     filterRow: {
-        flexDirection: 'row', paddingHorizontal: Spacing.lg,
-        gap: Spacing.sm, marginBottom: Spacing.md,
+        flexDirection: 'row',
+        paddingHorizontal: Spacing.lg,
+        gap: Spacing.sm,
     },
     filterPill: {
         flexDirection: 'row', alignItems: 'center', paddingHorizontal: ms(14),

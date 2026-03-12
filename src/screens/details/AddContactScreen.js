@@ -162,7 +162,7 @@ const InputField = ({ icon, label, ...props }) => (
 	</View>
 );
 
-const AddContactScreen = ({ navigation }) => {
+const AddContactScreen = ({ navigation, route }) => {
 	const { user } = useAuth();
 	const fadeAnim = useRef(new Animated.Value(0)).current;
 
@@ -367,6 +367,7 @@ const AddContactScreen = ({ navigation }) => {
 
 			if (response.success) {
 				showSuccess('Success', 'Contact created successfully');
+				route?.params?.refreshContacts?.();
 				navigation.goBack();
 			} else {
 				showError('Error', response.error || 'Failed to create contact');

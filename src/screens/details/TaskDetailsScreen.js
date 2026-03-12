@@ -17,7 +17,7 @@ import Icon from 'react-native-vector-icons/Ionicons';
 import { Colors } from '../../constants/Colors';
 import { Spacing, BorderRadius, Shadow } from '../../constants/Spacing';
 import { ms, vs } from '../../utils/Responsive';
-import { ScreenWrapper, AppText, AppButton } from '../../components';
+import { ScreenWrapper, AppText, AppButton, DeleteConfirmationModal } from '../../components';
 import { tasksAPI, leadsAPI } from '../../api';
 import { useFocusEffect } from '@react-navigation/native';
 import { ROUTES } from '../../constants';
@@ -30,6 +30,8 @@ const TaskDetailsScreen = ({ route, navigation }) => {
   const [isCompleted, setIsCompleted] = useState(
     initialTask?.status === 'completed',
   );
+  const [isDeleteModalVisible, setIsDeleteModalVisible] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   // Fetch task details from API
   const fetchTaskDetails = useCallback(
@@ -148,33 +150,34 @@ const TaskDetailsScreen = ({ route, navigation }) => {
   };
 
   const handleDelete = () => {
-    Alert.alert('Delete Task', 'Are you sure you want to delete this task?', [
-      { text: 'Cancel', style: 'cancel' },
-      {
-        text: 'Delete',
-        style: 'destructive',
-        onPress: async () => {
-          try {
-            const id = currentTask?._id || currentTask?.id;
-            const response = await tasksAPI.delete(id);
-            console.log('Delete response:', response);
-            if (response.success) {
-              navigation.goBack();
-            } else {
-              Alert.alert('Error', 'Failed to delete task');
-            }
-          } catch (error) {
-            Alert.alert('Error', 'Failed to delete task');
-          }
-        },
-      },
-    ]);
+    setIsDeleteModalVisible(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    setIsDeleting(true);
+    try {
+      const id = currentTask?._id || currentTask?.id;
+      const response = await tasksAPI.delete(id);
+      if (response.success) {
+        setIsDeleteModalVisible(false);
+        navigation.navigate(ROUTES.MAIN_TABS, {
+          screen: ROUTES.TASKS,
+          params: { refresh: true },
+        });
+      } else {
+        Alert.alert('Error', 'Failed to delete task');
+      }
+    } catch (error) {
+      Alert.alert('Error', 'Failed to delete task');
+    } finally {
+      setIsDeleting(false);
+    }
   };
 
   // Loading State
   if (loading) {
     return (
-      <ScreenWrapper withPadding backgroundColor={Colors.background}>
+      <ScreenWrapper backgroundColor={Colors.background}>
         <View style={styles.header}>
           <TouchableOpacity
             style={styles.backButton}
@@ -186,13 +189,13 @@ const TaskDetailsScreen = ({ route, navigation }) => {
             <AppText size="lg" weight="semiBold" style={styles.headerTitle}>
               Task Details
             </AppText>
-            <AppText
+            {/* <AppText
               size="sm"
               color={Colors.textMuted}
               style={styles.headerSubtitle}
             >
               Loading…
-            </AppText>
+            </AppText> */}
           </View>
         </View>
         <View style={styles.loadingContainer}>
@@ -254,6 +257,8 @@ const TaskDetailsScreen = ({ route, navigation }) => {
 
   const renderHeader = () => (
     <View style={styles.header}>
+
+      {/* Back Button */}
       <TouchableOpacity
         style={styles.backButton}
         onPress={() => navigation.goBack()}
@@ -261,36 +266,53 @@ const TaskDetailsScreen = ({ route, navigation }) => {
         <Icon name="close" size={ms(20)} color={Colors.textPrimary} />
       </TouchableOpacity>
 
+      {/* Title Section */}
       <View style={styles.headerCenter}>
         <AppText
-          size="lg"
+          size='md'
           weight="semiBold"
           numberOfLines={1}
           style={styles.headerTitle}
         >
           {currentTask?.title || 'Task Details'}
         </AppText>
-        <AppText
-          size="sm"
-          color={Colors.textMuted}
-          style={styles.headerSubtitle}
-          numberOfLines={1}
-        >
-          {currentTask?.subtitle ||
-            (currentTask?.leadName ? `for ${currentTask.leadName}` : '')}
-        </AppText>
+
+        {!!(currentTask?.subtitle || currentTask?.leadName) && (
+          <AppText
+            size="sm"
+            color={Colors.textMuted}
+            numberOfLines={1}
+            style={styles.headerSubtitle}
+          >
+            {currentTask?.subtitle ||
+              (currentTask?.leadName ? `for ${currentTask.leadName}` : '')}
+          </AppText>
+        )}
       </View>
 
-      <TouchableOpacity style={styles.headerButton} onPress={handleEdit}>
-        <Icon name="create-outline" size={ms(20)} color={Colors.info} />
-      </TouchableOpacity>
+      {/* Header Actions */}
+      <View style={styles.headerActions}>
+        <TouchableOpacity
+          style={styles.headerButton}
+          onPress={handleDelete}
+        >
+          <Icon name="trash-outline" size={ms(18)} color={Colors.error} />
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={styles.headerButton}
+          onPress={handleEdit}
+        >
+          <Icon name="create-outline" size={ms(18)} color={Colors.info} />
+        </TouchableOpacity>
+      </View>
+
     </View>
   );
-
   const renderTaskCard = () => (
     <View style={styles.taskCard}>
       {/* Title with Status & Priority Badges */}
-      <AppText size="xl" weight="bold" style={styles.taskTitle}>
+      <AppText size="md" weight="semiBold" style={styles.taskTitle}>
         {currentTask.title || 'Untitled Task'}
       </AppText>
 
@@ -611,25 +633,6 @@ const TaskDetailsScreen = ({ route, navigation }) => {
     </>
   );
 
-  const renderActions = () => (
-    <View style={styles.actionsContainer}>
-      <AppButton
-        title="Edit Task"
-        variant="primary"
-        icon="create-outline"
-        onPress={handleEdit}
-        style={styles.editButton}
-      />
-      <AppButton
-        title="Delete"
-        variant="outline"
-        icon="trash-outline"
-        onPress={handleDelete}
-        style={styles.deleteButton}
-        textStyle={{ color: Colors.error }}
-      />
-    </View>
-  );
 
   return (
     <ScreenWrapper withPadding backgroundColor={Colors.background}>
@@ -650,60 +653,69 @@ const TaskDetailsScreen = ({ route, navigation }) => {
         {renderRelatedToSection()}
         {renderActivitySection()}
         {renderTaskDetailsSection()}
-        {renderActions()}
         <View style={styles.bottomSpacer} />
       </ScrollView>
+
+      <DeleteConfirmationModal
+        visible={isDeleteModalVisible}
+        title="Delete Task"
+        message={`Are you sure you want to delete "${currentTask?.title}"? This action cannot be undone.`}
+        onCancel={() => setIsDeleteModalVisible(false)}
+        onDelete={handleConfirmDelete}
+        loading={isDeleting}
+      />
     </ScreenWrapper>
   );
 };
 
 const styles = StyleSheet.create({
   header: {
-    height: ms(72),
-    justifyContent: 'center',
+    flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: vs(12),
-    position: 'relative',
+    justifyContent: 'space-between',
+    paddingHorizontal: ms(1),
+    marginBottom: vs(15),
+    backgroundColor: Colors.background,
   },
-  backButton: {
-    position: 'absolute',
-    left: 0,
-    top: 0,
-    marginLeft: ms(4),
-    marginTop: vs(4),
-    width: ms(44),
-    height: ms(44),
-    borderRadius: BorderRadius.round,
-    backgroundColor: Colors.white,
-    justifyContent: 'center',
-    alignItems: 'center',
-    ...Shadow.sm,
-  },
-  headerButton: {
-    position: 'absolute',
-    right: 0,
-    top: 0,
-    marginRight: ms(4),
-    marginTop: vs(4),
-    width: ms(44),
-    height: ms(44),
-    borderRadius: BorderRadius.round,
-    backgroundColor: Colors.white,
-    justifyContent: 'center',
-    alignItems: 'center',
-    ...Shadow.sm,
-  },
+
   headerCenter: {
+    flex: 1,
     alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: ms(8),
   },
+
   headerTitle: {
     textAlign: 'center',
-    // slightly larger title
-    fontWeight: '700',
+    fontWeight: '600',
   },
+
   headerSubtitle: {
-    marginTop: vs(2),
     textAlign: 'center',
+  },
+
+  backButton: {
+    width: ms(40),
+    height: ms(40),
+    borderRadius: BorderRadius.round,
+    backgroundColor: Colors.white,
+    justifyContent: 'center',
+    alignItems: 'center',
+    ...Shadow.sm,
+  },
+
+  headerButton: {
+    width: ms(36),
+    height: ms(36),
+    borderRadius: BorderRadius.round,
+    backgroundColor: Colors.white,
+    justifyContent: 'center',
+    alignItems: 'center',
+    ...Shadow.sm,
+  },
+  headerActions: {
+    flexDirection: 'row',
+    gap: ms(8),
   },
   loadingContainer: {
     flex: 1,
@@ -722,6 +734,7 @@ const styles = StyleSheet.create({
     borderRadius: BorderRadius.card,
     padding: Spacing.lg,
     marginBottom: vs(16),
+    marginHorizontal: ms(1),
     ...Shadow.md,
   },
   taskTitle: {
@@ -771,6 +784,7 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.white,
     borderRadius: BorderRadius.card,
     padding: Spacing.md,
+    marginHorizontal: ms(1),
     ...Shadow.sm,
   },
 

@@ -303,7 +303,13 @@ const FollowUpEngineScreen = ({ navigation }) => {
     const handlePress = (item) => {
         if (item._id || item.id) {
             if (activeTab === TAB_OVERDUE) {
-                navigation.navigate(ROUTES.LEAD_DETAILS, { lead: item, id: item._id || item.id });
+                navigation.navigate(ROUTES.LEAD_DETAILS, {
+                    lead: item,
+                    id: item._id || item.id,
+                    refreshFollowUps: () => {
+                        fetchTabData(TAB_OVERDUE, 1, false);
+                    }
+                });
             }
         }
     };

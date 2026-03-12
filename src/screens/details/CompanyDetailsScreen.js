@@ -21,21 +21,27 @@ import {
 	RefreshControl,
 	Animated,
 	Text,
+	TextInput,
 } from 'react-native';
+import { launchImageLibrary } from 'react-native-image-picker';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import IonIcon from 'react-native-vector-icons/Ionicons';
 
 import AppText from '../../components/AppText';
+import { DeleteConfirmationModal } from '../../components';
 import { CenteredLoader } from '../../components/Loader';
 
 import { Colors } from '../../constants/Colors';
 import { Spacing, BorderRadius, Shadow } from '../../constants/Spacing';
 import { ms, vs } from '../../utils/Responsive';
 
-import { companiesAPI } from '../../api';
+import { companiesAPI, notesAPI, uploadAPI } from '../../api';
+import { useAuth } from '../../context/AuthContext';
+import { showSuccess, showError } from '../../utils';
+import { ROUTES } from '../../constants';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
-const TABS = ['Overview', 'Contacts', 'Leads', 'Activities', 'Notes'];
+const TABS = ['Overview', 'Contacts', 'Leads', 'Activities', 'Notes', 'Documents'];
 
 const INDUSTRY_CONFIG = {
 	SaaS: { icon: 'cloud', color: '#3B82F6', bg: '#EFF6FF' },
@@ -60,7 +66,7 @@ function formatDateTime(dateStr) {
 	const d = new Date(dateStr);
 	if (isNaN(d)) return dateStr;
 	return d.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })
-		+ ' ' + d.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
+		+ ' • ' + d.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
 }
 
 function formatCurrency(val, currency = 'INR') {
@@ -202,8 +208,24 @@ const CompanyDetailsScreen = ({ navigation, route }) => {
 	const [loading, setLoading] = useState(true);
 	const [refreshing, setRefreshing] = useState(false);
 	const [activeTab, setActiveTab] = useState(0);
+	const [uploading, setUploading] = useState(false);
+	const [documents, setDocuments] = useState([]);
 
 	const tabAnim = useRef(new Animated.Value(0)).current;
+
+	const [companyNotes, setCompanyNotes] = useState([]);
+	const [noteSearchQuery, setNoteSearchQuery] = useState('');
+	const [newNoteText, setNewNoteText] = useState('');
+	const [addingNote, setAddingNote] = useState(false);
+	const [deletingNoteId, setDeletingNoteId] = useState(null);
+	const [isDeleteNoteModalVisible, setIsDeleteNoteModalVisible] = useState(false);
+	const [deletingNote, setDeletingNote] = useState(false);
+	const [isEditingNote, setIsEditingNote] = useState(false);
+	const [editingNoteId, setEditingNoteId] = useState(null);
+	const [isDeleteCompanyModalVisible, setIsDeleteCompanyModalVisible] = useState(false);
+	const [isDeletingCompany, setIsDeletingCompany] = useState(false);
+
+	const { user: currentUser } = useAuth();
 
 	// ── Derived data ──────────────────────────────────────────────────────────
 	const contacts = company?.contacts || [];
@@ -224,13 +246,42 @@ const CompanyDetailsScreen = ({ navigation, route }) => {
 	const ic = getIndustryConfig(company?.industry);
 
 	// ── API ───────────────────────────────────────────────────────────────────
+	const fetchDocuments = useCallback(async () => {
+		if (!companyId) return;
+		try {
+			const res = await companiesAPI.getDocuments(companyId);
+			if (res.success) {
+				const data = res.data?.data || res.data || {};
+				const docs = data.documents || [];
+				setDocuments(Array.isArray(docs) ? docs : []);
+			}
+		} catch (error) {
+			console.error('Error fetching company documents:', error);
+		}
+	}, [companyId]);
+
+	const fetchNotes = useCallback(async () => {
+		if (!companyId) return;
+		try {
+			const res = await notesAPI.getAll({ entityType: 'company', entityId: companyId });
+			if (res.success) {
+				setCompanyNotes(res.data?.data || res.data || []);
+			}
+		} catch (error) {
+			console.error('Error fetching company notes:', error);
+		}
+	}, [companyId]);
+
 	const fetchCompany = useCallback(async () => {
 		if (!companyId) { setLoading(false); return; }
 		try {
 			const res = await companiesAPI.getById(companyId);
 			if (res.success) {
 				const data = res.data?.data || res.data;
-				if (data) setCompany(data);
+				if (data) {
+					setCompany(data);
+					if (data.documents) setDocuments(data.documents);
+				}
 			}
 		} catch (e) {
 			// keep initial data
@@ -239,15 +290,97 @@ const CompanyDetailsScreen = ({ navigation, route }) => {
 		}
 	}, [companyId]);
 
-	useEffect(() => { fetchCompany(); }, []);
+	useEffect(() => {
+		fetchCompany();
+		fetchNotes();
+		fetchDocuments();
+	}, []);
 
 	const onRefresh = useCallback(async () => {
 		setRefreshing(true);
-		await fetchCompany();
+		await Promise.all([fetchCompany(), fetchNotes(), fetchDocuments()]);
 		setRefreshing(false);
-	}, [fetchCompany]);
+	}, [fetchCompany, fetchNotes, fetchDocuments]);
 
 	// ── Handlers ─────────────────────────────────────────────────────────────
+	const handleUploadDocument = () => {
+		launchImageLibrary(
+			{ mediaType: 'mixed', quality: 0.9, selectionLimit: 1 },
+			async (response) => {
+				if (response.didCancel || response.errorCode) return;
+				const asset = response.assets?.[0];
+				if (!asset) return;
+
+				// Step 1: Upload file to /api/upload (field name: 'file')
+				const formData = new FormData();
+				formData.append('file', {
+					uri: asset.uri,
+					type: asset.type || 'image/jpeg',
+					name: asset.fileName || `doc_${Date.now()}.jpg`,
+				});
+
+				setUploading(true);
+				try {
+					const uploadRes = await uploadAPI.uploadFile(formData);
+					if (!uploadRes.success) {
+						Alert.alert('Upload Failed', uploadRes.error || 'Could not upload file.');
+						return;
+					}
+
+					// Step 2: Build document object and push to company via PUT
+					const uploadData = uploadRes.data?.data || uploadRes.data || {};
+					const newDoc = {
+						id: uploadData.publicId || `doc_${Date.now()}`,
+						name: uploadData.fileName || asset.fileName || `doc_${Date.now()}.jpg`,
+						url: uploadData.fileUrl || '',
+						publicId: uploadData.publicId || '',
+						format: (uploadData.fileName || asset.fileName || '').split('.').pop() || '',
+						size: uploadData.fileSize || asset.fileSize || 0,
+						type: 'company_profile',
+						createdAt: new Date().toISOString(),
+					};
+
+					const updatedDocs = [...documents, newDoc];
+					const patchRes = await companiesAPI.update(companyId, { documents: updatedDocs });
+					if (patchRes.success) {
+						setDocuments(updatedDocs);
+					} else {
+						Alert.alert('Save Failed', patchRes.error || 'Could not save document to company.');
+					}
+				} catch (e) {
+					Alert.alert('Error', 'Something went wrong during upload.');
+				} finally {
+					setUploading(false);
+				}
+			},
+		);
+	};
+
+	const handleDeleteDocument = (doc) => {
+		const docId = doc._id || doc.id;
+		const docName = doc.name || doc.fileName || doc.originalName || 'this document';
+		Alert.alert(
+			'Delete Document',
+			`Remove "${docName}"? This cannot be undone.`,
+			[
+				{ text: 'Cancel', style: 'cancel' },
+				{
+					text: 'Delete',
+					style: 'destructive',
+					onPress: async () => {
+						// Remove doc from array and PUT back to the server
+						const updatedDocs = documents.filter(d => (d._id || d.id) !== docId);
+						const res = await companiesAPI.update(companyId, { documents: updatedDocs });
+						if (res.success) {
+							setDocuments(updatedDocs);
+						} else {
+							Alert.alert('Error', res.error || 'Failed to delete document.');
+						}
+					},
+				},
+			],
+		);
+	};
 	const handleTabChange = (idx) => {
 		Animated.spring(tabAnim, {
 			toValue: idx,
@@ -261,6 +394,7 @@ const CompanyDetailsScreen = ({ navigation, route }) => {
 	const handleEdit = () => {
 		navigation.navigate('EditCompany', {
 			company,
+			refreshCompanies: route?.params?.refreshCompanies,
 			onUpdate: (updatedCompany) => {
 				setCompany(updatedCompany);
 			}
@@ -268,26 +402,26 @@ const CompanyDetailsScreen = ({ navigation, route }) => {
 	};
 
 	const handleDelete = () => {
-		Alert.alert('Delete Company', `Remove "${company?.name}"? This cannot be undone.`, [
-			{ text: 'Cancel', style: 'cancel' },
-			{
-				text: 'Delete',
-				style: 'destructive',
-				onPress: async () => {
-					try {
-						const res = await companiesAPI.delete(companyId);
-						if (res.success) {
-							Alert.alert('Deleted', 'Company removed.');
-							navigation.goBack();
-						} else {
-							Alert.alert('Error', res.error || 'Failed to delete company');
-						}
-					} catch {
-						Alert.alert('Error', 'Failed to delete company');
-					}
-				},
-			},
-		]);
+		setIsDeleteCompanyModalVisible(true);
+	};
+
+	const handleConfirmDelete = async () => {
+		setIsDeletingCompany(true);
+		try {
+			const res = await companiesAPI.delete(companyId);
+			if (res.success) {
+				setIsDeleteCompanyModalVisible(false);
+				// Call refresh callback from parent if provided
+				route?.params?.refreshCompanies?.();
+				navigation.goBack();
+			} else {
+				showError('Error', res.error || 'Failed to delete company');
+			}
+		} catch {
+			showError('Error', 'Failed to delete company');
+		} finally {
+			setIsDeletingCompany(false);
+		}
 	};
 
 	const handleEmail = () => companyEmail && Linking.openURL(`mailto:${companyEmail}`);
@@ -295,6 +429,70 @@ const CompanyDetailsScreen = ({ navigation, route }) => {
 	const handleWhatsApp = () => {
 		const phone = companyPhone.replace(/\D/g, '');
 		if (phone) Linking.openURL(`https://wa.me/${phone}`);
+	};
+
+	// ── Notes Handlers ───────────────────────────────────────────────────────
+	const handleAddNote = async () => {
+		if (!newNoteText.trim()) return;
+		setAddingNote(true);
+		try {
+			let res;
+			if (isEditingNote && editingNoteId) {
+				res = await notesAPI.update(editingNoteId, {
+					content: newNoteText.trim(),
+				});
+			} else {
+				res = await notesAPI.create({
+					entityType: 'company',
+					entityId: companyId,
+					content: newNoteText.trim(),
+				});
+			}
+
+			if (res.success) {
+				setNewNoteText('');
+				setIsEditingNote(false);
+				setEditingNoteId(null);
+				fetchNotes();
+			} else {
+				Alert.alert('Error', res.error || `Failed to ${isEditingNote ? 'update' : 'add'} note`);
+			}
+		} catch (error) {
+			Alert.alert('Error', `Failed to ${isEditingNote ? 'update' : 'add'} note`);
+		} finally {
+			setAddingNote(false);
+		}
+	};
+
+	const handleEditNote = (note) => {
+		setNewNoteText(note.content);
+		setIsEditingNote(true);
+		setEditingNoteId(note._id || note.id);
+	};
+
+	const cancelEditingNote = () => {
+		setNewNoteText('');
+		setIsEditingNote(false);
+		setEditingNoteId(null);
+	};
+
+	const confirmDeleteNote = async () => {
+		if (!deletingNoteId) return;
+		setDeletingNote(true);
+		try {
+			const res = await notesAPI.delete(deletingNoteId);
+			if (res.success) {
+				setCompanyNotes(prev => prev.filter(n => (n._id || n.id) !== deletingNoteId));
+				setIsDeleteNoteModalVisible(false);
+				setDeletingNoteId(null);
+			} else {
+				Alert.alert('Error', res.error || 'Failed to delete note');
+			}
+		} catch (error) {
+			Alert.alert('Error', 'Failed to delete note');
+		} finally {
+			setDeletingNote(false);
+		}
 	};
 
 	// ── Renders ───────────────────────────────────────────────────────────────
@@ -428,32 +626,34 @@ const CompanyDetailsScreen = ({ navigation, route }) => {
 	};
 
 	const renderTabs = () => {
-		const tabWidth = 100 / TABS.length;
-		const indicatorLeft = tabAnim.interpolate({
-			inputRange: TABS.map((_, i) => i),
-			outputRange: TABS.map((_, i) => `${i * tabWidth}%`),
-		});
 		return (
-			<View style={styles.tabBar}>
-				<Animated.View
-					style={[styles.tabIndicator, { left: indicatorLeft, width: `${tabWidth}%` }]}
-				/>
-				{TABS.map((tab, idx) => (
-					<TouchableOpacity
-						key={tab}
-						style={styles.tabItem}
-						onPress={() => handleTabChange(idx)}
-						activeOpacity={0.8}
-					>
-						<AppText
-							size={12}
-							weight={activeTab === idx ? 'bold' : 'regular'}
-							color={activeTab === idx ? Colors.primary : Colors.textTertiary}
-						>
-							{tab}
-						</AppText>
-					</TouchableOpacity>
-				))}
+			<View style={styles.tabContainer}>
+				<ScrollView
+					horizontal
+					showsHorizontalScrollIndicator={false}
+					contentContainerStyle={styles.tabBarScrollContent}
+				>
+					{TABS.map((tab, idx) => {
+						const isActive = activeTab === idx;
+						return (
+							<TouchableOpacity
+								key={tab}
+								style={[styles.tabItem, isActive && styles.tabItemActive]}
+								onPress={() => handleTabChange(idx)}
+								activeOpacity={0.7}
+							>
+								<AppText
+									size={13}
+									weight={isActive ? 'bold' : 'semiBold'}
+									color={isActive ? Colors.primary : Colors.textTertiary}
+								>
+									{tab}
+								</AppText>
+								{isActive && <View style={styles.tabActiveLine} />}
+							</TouchableOpacity>
+						);
+					})}
+				</ScrollView>
 			</View>
 		);
 	};
@@ -730,31 +930,259 @@ const CompanyDetailsScreen = ({ navigation, route }) => {
 		);
 	};
 
-	// ── Notes Tab ─────────────────────────────────────────────────────────────
-	const renderNotes = () => (
-		<SectionCard icon="document-text-outline" title={`Notes (${notes.length})`}>
-			{notes.length > 0 ? notes.map((note, i) => (
-				<View key={note._id || note.id || i} style={styles.noteItem}>
-					<View style={styles.noteDot} />
-					<View style={{ flex: 1 }}>
-						{note.title ? (
-							<AppText size={13} weight="semiBold" color={Colors.textPrimary}>
-								{note.title}
-							</AppText>
-						) : null}
-						<AppText size={12} color={Colors.textSecondary} style={{ marginTop: 3 }}>
-							{note.content || note.body || note.text || ''}
+	const renderNotes = () => {
+		const filteredNotes = (companyNotes || []).filter(note => {
+			const noteContent = (note.content || '').toLowerCase();
+
+			// Robust creator name resolution
+			let creatorName = 'Unknown User';
+			if (typeof note.createdBy === 'object' && note.createdBy?.name) {
+				creatorName = note.createdBy.name;
+			} else {
+				const creatorId = typeof note.createdBy === 'object' ? (note.createdBy?._id || note.createdBy?.id) : note.createdBy;
+				const currentUserId = currentUser?._id || currentUser?.id;
+				if (creatorId && currentUserId && creatorId === currentUserId) {
+					creatorName = currentUser?.name || 'You';
+				}
+			}
+
+			const query = noteSearchQuery.toLowerCase();
+			return noteContent.includes(query) || creatorName.toLowerCase().includes(query);
+		});
+
+		return (
+			<View style={styles.notesContainer}>
+				{/* Notes Header with Search */}
+				<View style={styles.notesHeader}>
+					<View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
+						<AppText size={18} weight="semiBold" color={Colors.textPrimary} style={{ marginLeft: ms(4) }}>
+							Internal Notes
 						</AppText>
-						<AppText size={10} color={Colors.textTertiary} style={{ marginTop: 4 }}>
-							{formatDate(note.createdAt)} {note.createdBy?.name ? `· ${note.createdBy.name}` : ''}
-						</AppText>
+						<TouchableOpacity style={{ marginLeft: 6 }}>
+							<IonIcon name="information-circle-outline" size={20} color={Colors.textTertiary} />
+						</TouchableOpacity>
 					</View>
 				</View>
-			)) : (
+				<View style={styles.noteSearchContainer}>
+					<IonIcon name="search-outline" size={ms(18)} color={Colors.textTertiary} style={{ marginRight: 6 }} />
+					<TextInput
+						style={styles.noteSearchInput}
+						placeholder="Search notes..."
+						placeholderTextColor={Colors.textTertiary}
+						value={noteSearchQuery}
+						onChangeText={setNoteSearchQuery}
+					/>
+				</View>
+
+				{/* Add Note Input Area */}
+				<View style={styles.addNoteCard}>
+					<View style={{ flexDirection: 'row' }}>
+						<View style={[styles.noteAvatarCircle, { backgroundColor: Colors.primaryBackground }]}>
+							<AppText size={14} weight="medium" color={Colors.primary}>
+								{getInitials(currentUser?.name)}
+							</AppText>
+						</View>
+						<View style={styles.noteInputWrapper}>
+							<TextInput
+								style={styles.noteTextInput}
+								placeholder="Write a note..."
+								placeholderTextColor={Colors.textTertiary}
+								multiline
+								value={newNoteText}
+								onChangeText={setNewNoteText}
+							/>
+						</View>
+					</View>
+					<View style={{ flexDirection: 'row', justifyContent: 'flex-end', marginTop: 12 }}>
+						{isEditingNote && (
+							<TouchableOpacity
+								style={[styles.cancelNoteBtn, { marginRight: 8 }]}
+								onPress={cancelEditingNote}
+							>
+								<AppText color={Colors.textSecondary} weight="semiBold">Cancel</AppText>
+							</TouchableOpacity>
+						)}
+						<TouchableOpacity
+							style={[styles.addNoteBtn, (!newNoteText.trim() || addingNote) && { opacity: 0.6 }]}
+							onPress={handleAddNote}
+							disabled={!newNoteText.trim() || addingNote}
+						>
+							{addingNote ? (
+								<ActivityIndicator size="small" color={Colors.white} />
+							) : (
+								<>
+									<IonIcon name={isEditingNote ? "save-outline" : "send"} size={14} color={Colors.white} style={{ marginRight: 8 }} />
+									<AppText color={Colors.white} weight="semiBold">{isEditingNote ? 'Update' : 'Add'}</AppText>
+								</>
+							)}
+						</TouchableOpacity>
+					</View>
+				</View>
+
+				{/* Notes List */}
+				{filteredNotes.length > 0 ? (
+					filteredNotes.map((note) => (
+						<View key={note._id || note.id} style={styles.noteItemCard}>
+							<View style={{ flexDirection: 'row' }}>
+								<View style={[styles.noteAvatarCircle, { backgroundColor: Colors.primaryBackground }]}>
+									<AppText size={14} weight="medium" color={Colors.primary}>
+										{(() => {
+											let name = '';
+											if (typeof note.createdBy === 'object' && note.createdBy?.name) {
+												name = note.createdBy.name;
+											} else {
+												const creatorId = typeof note.createdBy === 'object' ? (note.createdBy?._id || note.createdBy?.id) : note.createdBy;
+												const currentUserId = currentUser?._id || currentUser?.id;
+												if (creatorId && currentUserId && creatorId === currentUserId) {
+													name = currentUser?.name || '';
+												}
+											}
+											return getInitials(name);
+										})()}
+									</AppText>
+								</View>
+								<View style={{ flex: 1, marginLeft: 12 }}>
+									<View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+										<View>
+											<AppText weight="semiBold" color={Colors.textPrimary}>
+												{(() => {
+													if (typeof note.createdBy === 'object' && note.createdBy?.name) {
+														return note.createdBy.name;
+													} else {
+														const creatorId = typeof note.createdBy === 'object' ? (note.createdBy?._id || note.createdBy?.id) : note.createdBy;
+														const currentUserId = currentUser?._id || currentUser?.id;
+														if (creatorId && currentUserId && creatorId === currentUserId) {
+															return currentUser?.name || 'You';
+														}
+													}
+													return 'Unknown User';
+												})()}
+											</AppText>
+											<AppText size={12} color={Colors.textTertiary}>
+												{formatDateTime(note.createdAt)}
+											</AppText>
+										</View>
+										<View style={{ flexDirection: 'row' }}>
+											<TouchableOpacity
+												style={{ padding: 4 }}
+												onPress={() => handleEditNote(note)}
+											>
+												<IonIcon name="pencil-outline" size={18} color={Colors.textPrimary} />
+											</TouchableOpacity>
+											<TouchableOpacity
+												style={{ padding: 4, marginLeft: 12 }}
+												onPress={() => {
+													setDeletingNoteId(note._id || note.id);
+													setIsDeleteNoteModalVisible(true);
+												}}
+											>
+												<IonIcon name="trash-outline" size={18} color={Colors.error} />
+											</TouchableOpacity>
+										</View>
+									</View>
+									<AppText size={14} color={Colors.textPrimary} style={{ marginTop: 12, lineHeight: 20 }}>
+										{note.content}
+									</AppText>
+								</View>
+							</View>
+						</View>
+					))
+				) : (
+					<EmptyState
+						icon="chatbubble-outline"
+						title={noteSearchQuery ? "No matching notes" : "No notes yet"}
+						subtitle={noteSearchQuery ? "Try a different search term" : "Internal notes will appear here"}
+					/>
+				)}
+
+				<DeleteConfirmationModal
+					visible={isDeleteNoteModalVisible}
+					onCancel={() => {
+						setIsDeleteNoteModalVisible(false);
+						setDeletingNoteId(null);
+					}}
+					onDelete={confirmDeleteNote}
+					loading={deletingNote}
+					title="Delete Note"
+					message="Are you sure you want to delete this note? This action cannot be undone."
+				/>
+			</View>
+		);
+	};
+
+	// ── Documents Tab ─────────────────────────────────────────────────
+	const DOC_ICONS = {
+		pdf: { icon: 'document-text', color: '#EF4444', bg: '#FEF2F2' },
+		doc: { icon: 'document', color: '#3B82F6', bg: '#EFF6FF' },
+		docx: { icon: 'document', color: '#3B82F6', bg: '#EFF6FF' },
+		xls: { icon: 'grid', color: '#10B981', bg: '#ECFDF5' },
+		xlsx: { icon: 'grid', color: '#10B981', bg: '#ECFDF5' },
+		png: { icon: 'image', color: '#8B5CF6', bg: '#F5F3FF' },
+		jpg: { icon: 'image', color: '#8B5CF6', bg: '#F5F3FF' },
+		jpeg: { icon: 'image', color: '#8B5CF6', bg: '#F5F3FF' },
+	};
+
+	const renderDocuments = () => (
+		<SectionCard icon="folder-outline" title={`Documents (${documents.length})`}>
+			{/* Upload button */}
+			<TouchableOpacity
+				style={styles.uploadBtn}
+				onPress={handleUploadDocument}
+				activeOpacity={0.8}
+				disabled={uploading}
+			>
+				{uploading ? (
+					<ActivityIndicator size="small" color="#fff" />
+				) : (
+					<IonIcon name="cloud-upload-outline" size={ms(16)} color="#fff" />
+				)}
+				<AppText size={13} weight="semiBold" color="#fff" style={{ marginLeft: ms(6) }}>
+					{uploading ? 'Uploading…' : 'Upload Document'}
+				</AppText>
+			</TouchableOpacity>
+
+			{/* Document list */}
+			{documents.length > 0 ? documents.map((doc, i) => {
+				const ext = (doc.name || doc.fileName || doc.originalName || '').split('.').pop()?.toLowerCase();
+				const ds = DOC_ICONS[ext] || { icon: 'document-attach', color: '#6B7280', bg: '#F3F4F6' };
+				const name = doc.name || doc.fileName || doc.originalName || 'Document';
+				const url = doc.url || doc.fileUrl || doc.path;
+				return (
+					<View key={doc._id || doc.id || i} style={styles.docItem}>
+						<TouchableOpacity
+							style={styles.docItemInner}
+							onPress={() => url && Linking.openURL(url)}
+							activeOpacity={url ? 0.75 : 1}
+							disabled={!url}
+						>
+							<View style={[styles.docIconBox, { backgroundColor: ds.bg }]}>
+								<IonIcon name={ds.icon} size={ms(18)} color={ds.color} />
+							</View>
+							<View style={{ flex: 1, marginLeft: ms(10) }}>
+								<AppText size={13} weight="semiBold" color={Colors.textPrimary} numberOfLines={1}>
+									{name}
+								</AppText>
+								<AppText size={11} color={Colors.textTertiary} style={{ marginTop: 2 }}>
+									{ext?.toUpperCase() || 'File'} · {formatDate(doc.createdAt || doc.uploadedAt)}
+								</AppText>
+							</View>
+							{url ? <IonIcon name="open-outline" size={ms(15)} color={Colors.info} style={{ marginLeft: ms(6) }} /> : null}
+						</TouchableOpacity>
+						{/* Delete button */}
+						<TouchableOpacity
+							style={styles.docDeleteBtn}
+							onPress={() => handleDeleteDocument(doc)}
+							activeOpacity={0.7}
+						>
+							<IonIcon name="trash-outline" size={ms(16)} color={Colors.danger} />
+						</TouchableOpacity>
+					</View>
+				);
+			}) : (
 				<EmptyState
-					icon="document-text-outline"
-					title="No notes yet"
-					subtitle="Internal notes for this company will appear here"
+					icon="folder-open-outline"
+					title="No documents yet"
+					subtitle="Tap 'Upload Document' above to add one"
 				/>
 			)}
 		</SectionCard>
@@ -767,6 +1195,7 @@ const CompanyDetailsScreen = ({ navigation, route }) => {
 			case 2: return renderLeads();
 			case 3: return renderActivities();
 			case 4: return renderNotes();
+			case 5: return renderDocuments();
 			default: return null;
 		}
 	};
@@ -815,6 +1244,15 @@ const CompanyDetailsScreen = ({ navigation, route }) => {
 
 				<View style={{ height: vs(40) }} />
 			</ScrollView>
+
+			<DeleteConfirmationModal
+				visible={isDeleteCompanyModalVisible}
+				onCancel={() => setIsDeleteCompanyModalVisible(false)}
+				onDelete={handleConfirmDelete}
+				title="Delete Company"
+				message={`Are you sure you want to remove "${company?.name}"? This action cannot be undone.`}
+				loading={isDeletingCompany}
+			/>
 		</SafeAreaView>
 	);
 };
@@ -938,6 +1376,7 @@ const styles = StyleSheet.create({
 		backgroundColor: Colors.surface,
 		borderRadius: BorderRadius.xl,
 		padding: ms(16),
+		marginTop: ms(16),
 		...Shadow.sm,
 	},
 	sectionHeader: {
@@ -1011,18 +1450,90 @@ const styles = StyleSheet.create({
 		justifyContent: 'center', alignItems: 'center',
 	},
 
-	// ─ Note items ─
-	noteItem: {
-		flexDirection: 'row',
-		alignItems: 'flex-start',
-		paddingVertical: ms(10),
-		borderBottomWidth: StyleSheet.hairlineWidth,
-		borderBottomColor: Colors.divider,
-		gap: ms(10),
+	// ─ Notes ─
+	notesContainer: {
+		paddingBottom: 20,
 	},
-	noteDot: {
-		width: ms(8), height: ms(8), borderRadius: ms(4),
-		backgroundColor: Colors.primary, marginTop: ms(5),
+	notesHeader: {
+		flexDirection: 'row',
+		alignItems: 'center',
+		marginBottom: 16,
+		marginTop: 8,
+	},
+	noteSearchContainer: {
+		flexDirection: 'row',
+		alignItems: 'center',
+		width: '100%',
+		backgroundColor: '#F3F4F6',
+		borderRadius: 8,
+		paddingHorizontal: 10,
+		marginBottom: 10,
+		height: 40,
+	},
+	noteSearchInput: {
+		flex: 1,
+		fontSize: 13,
+		color: Colors.textPrimary,
+		padding: 0,
+	},
+	addNoteCard: {
+		backgroundColor: Colors.white,
+		borderRadius: 12,
+		padding: 16,
+		borderWidth: 1,
+		borderColor: Colors.border,
+		marginBottom: 16,
+		...Shadow.small,
+	},
+	noteAvatarCircle: {
+		width: 40,
+		height: 40,
+		borderRadius: 20,
+		backgroundColor: '#E8F5E9',
+		alignItems: 'center',
+		justifyContent: 'center',
+	},
+	noteInputWrapper: {
+		flex: 1,
+		marginLeft: 12,
+		backgroundColor: '#F9FAFB',
+		borderRadius: 8,
+		borderWidth: 1,
+		borderColor: Colors.border,
+		minHeight: 80,
+	},
+	noteTextInput: {
+		padding: 12,
+		fontSize: 14,
+		color: Colors.textPrimary,
+		textAlignVertical: 'top',
+	},
+	addNoteBtn: {
+		flexDirection: 'row',
+		alignItems: 'center',
+		backgroundColor: Colors.primary,
+		paddingHorizontal: 12,
+		paddingVertical: 10,
+		borderRadius: 8,
+	},
+	cancelNoteBtn: {
+		flexDirection: 'row',
+		alignItems: 'center',
+		backgroundColor: '#F3F4F6',
+		paddingHorizontal: 16,
+		paddingVertical: 10,
+		borderRadius: 8,
+		borderWidth: 1,
+		borderColor: Colors.border,
+	},
+	noteItemCard: {
+		backgroundColor: Colors.white,
+		borderRadius: 12,
+		padding: 16,
+		borderWidth: 1,
+		borderColor: Colors.border,
+		marginBottom: 12,
+		...Shadow.small,
 	},
 
 	// ─ Task items ─
@@ -1057,23 +1568,36 @@ const styles = StyleSheet.create({
 		borderRadius: BorderRadius.xl,
 		overflow: 'hidden',
 		...Shadow.sm,
+		marginTop: ms(4),
 	},
-	tabBar: {
-		flexDirection: 'row',
-		height: ms(44),
-		backgroundColor: Colors.background,
+	tabContainer: {
+		backgroundColor: Colors.surface,
 		borderBottomWidth: 1,
 		borderBottomColor: Colors.divider,
+	},
+	tabBarScrollContent: {
+		paddingHorizontal: ms(12),
+	},
+	tabItem: {
+		paddingHorizontal: ms(16),
+		paddingVertical: ms(14),
+		justifyContent: 'center',
+		alignItems: 'center',
 		position: 'relative',
 	},
-	tabIndicator: {
+	tabItemActive: {
+		// optional: background subtle color or just the line
+	},
+	tabActiveLine: {
 		position: 'absolute',
 		bottom: 0,
+		left: ms(16),
+		right: ms(16),
 		height: ms(3),
 		backgroundColor: Colors.primary,
-		borderRadius: ms(2),
+		borderTopLeftRadius: ms(3),
+		borderTopRightRadius: ms(3),
 	},
-	tabItem: { flex: 1, justifyContent: 'center', alignItems: 'center' },
 	tabContent: { padding: ms(16) },
 
 	// ─ Empty State ─
@@ -1082,6 +1606,45 @@ const styles = StyleSheet.create({
 		width: ms(64), height: ms(64), borderRadius: ms(32),
 		backgroundColor: Colors.primaryBackground,
 		justifyContent: 'center', alignItems: 'center',
+	},
+
+	// ─ Documents ─
+	uploadBtn: {
+		flexDirection: 'row',
+		alignItems: 'center',
+		justifyContent: 'center',
+		backgroundColor: Colors.primary,
+		borderRadius: ms(8),
+		paddingVertical: ms(10),
+		paddingHorizontal: ms(16),
+		marginBottom: ms(16),
+	},
+	docItem: {
+		flexDirection: 'row',
+		alignItems: 'center',
+		backgroundColor: Colors.surface || '#F8F8F8',
+		borderRadius: ms(10),
+		paddingVertical: ms(8),
+		paddingHorizontal: ms(10),
+		marginBottom: ms(10),
+		borderWidth: 1,
+		borderColor: Colors.border || '#E5E7EB',
+	},
+	docItemInner: {
+		flex: 1,
+		flexDirection: 'row',
+		alignItems: 'center',
+	},
+	docIconBox: {
+		width: ms(40),
+		height: ms(40),
+		borderRadius: ms(8),
+		alignItems: 'center',
+		justifyContent: 'center',
+	},
+	docDeleteBtn: {
+		padding: ms(8),
+		marginLeft: ms(4),
 	},
 });
 

@@ -5,6 +5,7 @@
 
 import React, { useEffect, useRef } from 'react';
 import { View, StyleSheet, Animated } from 'react-native';
+import IonIcon from 'react-native-vector-icons/Ionicons';
 import { Colors } from '../../constants/Colors';
 import { ms, vs } from '../../utils/Responsive';
 import { useAuth } from '../../context';
@@ -21,13 +22,13 @@ const SplashScreen = ({ navigation }) => {
         Animated.parallel([
             Animated.timing(fadeAnim, {
                 toValue: 1,
-                duration: 800,
+                duration: 1000,
                 useNativeDriver: true,
             }),
             Animated.spring(scaleAnim, {
                 toValue: 1,
-                tension: 50,
-                friction: 7,
+                tension: 40,
+                friction: 6,
                 useNativeDriver: true,
             }),
         ]).start();
@@ -39,23 +40,13 @@ const SplashScreen = ({ navigation }) => {
             const timer = setTimeout(async () => {
                 const onboarded = await isOnboardingCompleted();
                 if (!onboarded) {
-                    // First launch — show onboarding
-                    navigation.reset({
-                        index: 0,
-                        routes: [{ name: 'Onboarding' }],
-                    });
+                    navigation.reset({ index: 0, routes: [{ name: 'Onboarding' }] });
                 } else if (isAuthenticated) {
-                    navigation.reset({
-                        index: 0,
-                        routes: [{ name: 'MainTabs' }],
-                    });
+                    navigation.reset({ index: 0, routes: [{ name: 'MainTabs' }] });
                 } else {
-                    navigation.reset({
-                        index: 0,
-                        routes: [{ name: 'Login' }],
-                    });
+                    navigation.reset({ index: 0, routes: [{ name: 'Login' }] });
                 }
-            }, 1500);
+            }, 2000); // slightly longer to appreciate the splash
 
             return () => clearTimeout(timer);
         }
@@ -65,39 +56,44 @@ const SplashScreen = ({ navigation }) => {
         <View style={styles.container}>
             <Animated.View
                 style={[
-                    styles.logoContainer,
+                    styles.logoWrapper,
                     {
                         opacity: fadeAnim,
                         transform: [{ scale: scaleAnim }],
                     },
                 ]}
             >
-                {/* Logo placeholder - replace with actual logo */}
-                <View style={styles.logoPlaceholder}>
-                    <AppText size="xxxl" weight="bold" color={Colors.white}>
-                        CRM
-                    </AppText>
+                <View style={styles.iconContainer}>
+                    <IonIcon name="briefcase" size={ms(50)} color={Colors.white} />
                 </View>
-                <AppText
-                    size="xxl"
-                    weight="bold"
-                    color={Colors.textPrimary}
-                    style={styles.appName}
-                >
-                    CRM Pro
-                </AppText>
-                <AppText
-                    size="sm"
-                    color={Colors.textSecondary}
-                    style={styles.tagline}
-                >
-                    Manage your leads efficiently
-                </AppText>
+
+                <Animated.View style={{ opacity: fadeAnim, alignItems: 'center' }}>
+                    <AppText
+                        size={28}
+                        weight="extraBold"
+                        color={Colors.primary}
+                        style={styles.companyName}
+                    >
+                        CBXCRM
+                    </AppText>
+                    {/* <View style={styles.taglineContainer}>
+                        <View style={styles.line} />
+                        <AppText
+                            size={12}
+                            weight="semiBold"
+                            color={Colors.textTertiary}
+                            style={styles.tagline}
+                        >
+                            INTELLIGENT CRM
+                        </AppText>
+                        <View style={styles.line} />
+                    </View> */}
+                </Animated.View>
             </Animated.View>
 
             <Animated.View style={[styles.footer, { opacity: fadeAnim }]}>
                 <AppText size="xs" color={Colors.textMuted}>
-                    Powered by Your Company
+                    © {new Date().getFullYear()} CEOITBOX. All rights reserved.
                 </AppText>
             </Animated.View>
         </View>
@@ -111,27 +107,46 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center',
     },
-    logoContainer: {
+    logoWrapper: {
         alignItems: 'center',
+        justifyContent: 'center',
     },
-    logoPlaceholder: {
-        width: ms(100),
-        height: ms(100),
-        borderRadius: ms(24),
+    iconContainer: {
+        width: ms(90),
+        height: ms(90),
+        borderRadius: ms(28),
         backgroundColor: Colors.primary,
         justifyContent: 'center',
         alignItems: 'center',
-        marginBottom: vs(20),
+        marginBottom: vs(24),
+        shadowColor: Colors.primary,
+        shadowOffset: { width: 0, height: 8 },
+        shadowOpacity: 0.3,
+        shadowRadius: 12,
+        elevation: 10,
     },
-    appName: {
-        letterSpacing: 1,
+    companyName: {
+        letterSpacing: 2,
+        marginBottom: vs(8),
+    },
+    taglineContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        width: '60%',
+        justifyContent: 'center',
+    },
+    line: {
+        flex: 1,
+        height: 1,
+        backgroundColor: Colors.divider,
+        marginHorizontal: 8,
     },
     tagline: {
-        marginTop: vs(8),
+        letterSpacing: 1.5,
     },
     footer: {
         position: 'absolute',
-        bottom: vs(40),
+        bottom: vs(32),
     },
 });
 

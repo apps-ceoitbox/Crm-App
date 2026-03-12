@@ -24,7 +24,7 @@ import {
 import { authAPI, getErrorMessage, isNetworkError } from '../api';
 import { showSuccess } from '../utils';
 import { signInWithGoogle, signOutFromGoogle } from '../services';
-import { SystemConfigAPI, userAPI } from '../api/services';
+import { SystemConfigAPI, userAPI, usersAPI } from '../api/services';
 import { set } from '@react-native-firebase/app/dist/module/internal/web/firebaseDatabase';
 import appleAuth from '@invertase/react-native-apple-authentication';
 
@@ -97,10 +97,10 @@ export const AuthProvider = ({ children }) => {
           const newToken = data.token || data.access_token;
           const userData = data.user ||
             data.data || {
-              id: data._id,
-              name: data.name,
-              email: data.email,
-            };
+            id: data._id,
+            name: data.name,
+            email: data.email,
+          };
 
           await saveToken(newToken);
           await saveUserData(userData);
@@ -220,12 +220,12 @@ export const AuthProvider = ({ children }) => {
         const newToken = data.token || data.access_token;
         const userData = data.user ||
           data.data || {
-            id: data._id,
-            name: data.name,
-            email: data.email || email,
-            role: data.role,
-            organization: data.organization,
-          };
+          id: data._id,
+          name: data.name,
+          email: data.email || email,
+          role: data.role,
+          organization: data.organization,
+        };
 
         // Save to storage
         await saveToken(newToken);
@@ -333,13 +333,13 @@ export const AuthProvider = ({ children }) => {
         const newToken = data.token || data.access_token;
         const newUser = data.user ||
           data.data || {
-            id: data.id || Date.now().toString(),
-            name: userData.name,
-            email: userData.email,
-            phone: userData.phone,
-            role: 'User',
-            avatar: null,
-          };
+          id: data.id || Date.now().toString(),
+          name: userData.name,
+          email: userData.email,
+          phone: userData.phone,
+          role: 'User',
+          avatar: null,
+        };
 
         // Save to storage
         await saveToken(newToken);
@@ -400,12 +400,12 @@ export const AuthProvider = ({ children }) => {
           const newToken = data.token || data.access_token;
           const userData = data.user ||
             data.data || {
-              id: data._id || googleUser.id,
-              name: data.name || googleUser.name,
-              email: data.email || googleUser.email,
-              avatar: data.avatar || googleUser.photo,
-              role: data.role || 'User',
-            };
+            id: data._id || googleUser.id,
+            name: data.name || googleUser.name,
+            email: data.email || googleUser.email,
+            avatar: data.avatar || googleUser.photo,
+            role: data.role || 'User',
+          };
 
           // Save to storage
           await saveToken(newToken);
@@ -574,12 +574,12 @@ export const AuthProvider = ({ children }) => {
    */
   const fetchAllUsers = useCallback(async () => {
     try {
-      const response = await userAPI.getAllUsers();
+      const response = await usersAPI.getAllUsers();
       if (response.success && response.data) {
         // Handle various potential API response structures
-        const dataArr = Array.isArray(response.data.data) ? response.data.data : 
-                        Array.isArray(response.data) ? response.data : 
-                        response.data.users || [];
+        const dataArr = Array.isArray(response.data.data) ? response.data.data :
+          Array.isArray(response.data) ? response.data :
+            response.data.users || [];
         setAllUsers(dataArr);
         return { success: true, users: dataArr };
       }

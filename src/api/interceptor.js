@@ -58,15 +58,15 @@ apiClient.interceptors.request.use(
             }
 
             // Log request in development
-            if (__DEV__) {
-                console.log('🚀 API Request:', {
-                    method: config.method?.toUpperCase(),
-                    url: config.baseURL + config.url,
-                    headers: config.headers,
-                    data: config.data,
-                    params: config.params,
-                });
-            }
+            // if (__DEV__) {
+            //     console.log('🚀 API Request:', {
+            //         method: config.method?.toUpperCase(),
+            //         url: config.baseURL + config.url,
+            //         headers: config.headers,
+            //         data: config.data,
+            //         params: config.params,
+            //     });
+            // }
 
             return config;
         } catch (error) {
@@ -87,13 +87,13 @@ apiClient.interceptors.request.use(
 apiClient.interceptors.response.use(
     (response) => {
         // Log response in development
-        if (__DEV__) {
-            console.log('✅ API Response:', {
-                status: response.status,
-                url: response.config.url,
-                data: response.data,
-            });
-        }
+        // if (__DEV__) {
+        //     console.log('✅ API Response:', {
+        //         status: response.status,
+        //         url: response.config.url,
+        //         data: response.data,
+        //     });
+        // }
 
         return response;
     },
