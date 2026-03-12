@@ -44,6 +44,10 @@
 		<key>NSAllowsLocalNetworking</key>
 		<true/>
 	</dict>
+	<key>NSCameraUsageDescription</key>
+	<string>The camera will be used to allow the user to capture or update their profile picture</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Change user's profile image</string>
 	<key>RCTNewArchEnabled</key>
 	<true/>
 	<key>UIAppFonts</key>

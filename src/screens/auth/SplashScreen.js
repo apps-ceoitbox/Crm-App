@@ -74,7 +74,7 @@ const SplashScreen = ({ navigation }) => {
                         color={Colors.primary}
                         style={styles.companyName}
                     >
-                        CBXCRM
+                        CBX CRM
                     </AppText>
                     {/* <View style={styles.taglineContainer}>
                         <View style={styles.line} />
