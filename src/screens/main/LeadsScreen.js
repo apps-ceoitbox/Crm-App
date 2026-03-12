@@ -55,9 +55,11 @@ const LIMIT = 50;
 const STATUS_CONFIG = {
   New: { color: '#3B82F6', bg: '#EFF6FF', icon: 'sparkles' },
   Contacted: { color: '#F59E0B', bg: '#FFFBEB', icon: 'chatbubble' },
-  Qualified: { color: '#4D8733', bg: '#EEF5E6', icon: 'checkmark-circle' },
-  Converted: { color: '#10B981', bg: '#ECFDF5', icon: 'trophy' },
-  Lost: { color: '#EF4444', bg: '#FEF2F2', icon: 'close-circle' },
+  'Proposal Sent': { color: '#8B5CF6', bg: '#F5F3FF', icon: 'document-text' },
+  'Final Review': { color: '#6366F1', bg: '#EEF2FF', icon: 'eye' },
+  'Closed Won': { color: '#10B981', bg: '#ECFDF5', icon: 'trophy' },
+  'Closed Lost': { color: '#EF4444', bg: '#FEF2F2', icon: 'close-circle' },
+  Negotiation: { color: '#F97316', bg: '#FFF7ED', icon: 'handshake' },
 };
 
 const SOURCE_ICONS = {
@@ -69,7 +71,15 @@ const SOURCE_ICONS = {
   'Cold Call': 'call-outline',
 };
 
-const FILTER_STATUSES = ['New', 'Contacted', 'Qualified', 'Converted', 'Lost'];
+const FILTER_STATUSES = [
+  'New',
+  'Contacted',
+  'Proposal Sent',
+  'Final Review',
+  'Closed Won',
+  'Closed Lost',
+  'Negotiation'
+];
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 function formatValue(val) {
@@ -505,7 +515,7 @@ const LeadsScreen = ({ navigation }) => {
   const renderListHeader = () => (
     <>
       {leads.length > 0 ? <StatsCard leads={leads} /> : null}
-
+      {console.log(leads)}
       {leads.length > 0 ? (
         <View style={styles.filterWrap}>
           <FlatList

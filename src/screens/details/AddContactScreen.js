@@ -235,8 +235,8 @@ const AddContactScreen = ({ navigation, route }) => {
 					return Array.isArray(data) ? data : [];
 				};
 
-				setCompanies(extractArray(results[0], 'companies', 'data'));
-				setLeadTags(extractArray(results[1], 'tags', 'data').filter(t => t.active !== false));
+				setCompanies(extractArray(results[0], 'companies', 'data').sort((a, b) => (a.name || '').localeCompare(b.name || '')));
+				setLeadTags(extractArray(results[1], 'tags', 'data').filter(t => t.active !== false).sort((a, b) => (a.name || '').localeCompare(b.name || '')));
 
 				if (canEditSalesperson && results[2]) {
 					setAllUsers(extractArray(results[2], 'users', 'data'));
@@ -265,13 +265,17 @@ const AddContactScreen = ({ navigation, route }) => {
 	const availableSalespersons = useMemo(() => {
 		if (!canEditSalesperson) return [];
 		if (isAdminOrBoss) {
-			return allUsers.filter(u => u.status === 'active' && (u.role === 'sales' || u.role === 'manager'));
+			return allUsers
+				.filter(u => u.status === 'active' && (u.role === 'sales' || u.role === 'manager'))
+				.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
 		} else if (isManager) {
 			const managerId = user?._id || user?.id;
-			return allUsers.filter(u =>
-				u.status === 'active' && u.role === 'sales' &&
-				(typeof u.superior === 'string' ? u.superior === managerId : u.superior?._id === managerId)
-			);
+			return allUsers
+				.filter(u =>
+					u.status === 'active' && u.role === 'sales' &&
+					(typeof u.superior === 'string' ? u.superior === managerId : u.superior?._id === managerId)
+				)
+				.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
 		}
 		return [];
 	}, [allUsers, canEditSalesperson, isAdminOrBoss, isManager, user]);
@@ -279,14 +283,18 @@ const AddContactScreen = ({ navigation, route }) => {
 	const availableTelesales = useMemo(() => {
 		if (!canEditSalesperson) return [];
 		if (isAdminOrBoss) {
-			return allUsers.filter(u => u.status === 'active' && u.role === 'telesales');
+			return allUsers
+				.filter(u => u.status === 'active' && u.role === 'telesales')
+				.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
 		} else if (isManager) {
 			const managerId = user?._id || user?.id;
-			return allUsers.filter(u =>
-				u.status === 'active' && u.role === 'telesales' &&
-				Array.isArray(u.managers) &&
-				u.managers.some(m => (typeof m === 'object' ? m?._id : m) === managerId)
-			);
+			return allUsers
+				.filter(u =>
+					u.status === 'active' && u.role === 'telesales' &&
+					Array.isArray(u.managers) &&
+					u.managers.some(m => (typeof m === 'object' ? m?._id : m) === managerId)
+				)
+				.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
 		}
 		return [];
 	}, [allUsers, canEditSalesperson, isAdminOrBoss, isManager, user]);

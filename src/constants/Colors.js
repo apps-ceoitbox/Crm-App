@@ -29,6 +29,7 @@ export const Colors = {
     surfaceBorder: '#E8ECF0',
     card: '#FFFFFF',
 
+
     // Text Colors (matched to Expo)
     textPrimary: '#1A1D21',
     textSecondary: '#6B7280',

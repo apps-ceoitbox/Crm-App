@@ -16,6 +16,7 @@ import {
   ScrollView,
   StatusBar,
   TextInput,
+  Image,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/Ionicons';
@@ -433,12 +434,17 @@ const LoginScreen = ({ navigation }) => {
                   {/* Social Login */}
                   <View style={styles.socialContainer}>
                     <TouchableOpacity
-                      style={styles.socialButton}
+                      style={styles.googleButton}
                       onPress={handleGoogleLogin}
                       disabled={loading}
+                      activeOpacity={0.7}
                     >
-                      <Icon name="logo-google" size={ms(24)} color="#DB4437" />
+                      <Image source={require('../../assets/google.png')} style={styles.googleIcon} />
+                      <AppText weight="medium" style={styles.googleButtonText}>
+                        Sign in with Google
+                      </AppText>
                     </TouchableOpacity>
+
                     {Platform.OS === 'ios' && (
                       <TouchableOpacity
                         style={styles.socialButton}
@@ -678,17 +684,42 @@ const styles = StyleSheet.create({
   socialContainer: {
     flexDirection: 'row',
     justifyContent: 'center',
+    alignItems: 'center',
     gap: Spacing.md,
+    marginTop: Spacing.xs,
   },
   socialButton: {
-    width: ms(50),
-    height: ms(50),
-    borderRadius: BorderRadius.round,
-    backgroundColor: Colors.background,
+    width: ms(48),
+    height: ms(48),
+    borderRadius: BorderRadius.sm,
+    backgroundColor: Colors.white,
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: Colors.border,
+    borderColor: '#E0E0E0',
+    ...Shadow.sm,
+  },
+  googleButton: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    height: ms(48),
+    backgroundColor: Colors.white,
+    borderRadius: ms(24),
+    borderWidth: 1,
+    borderColor: '#DADCE0',
+    ...Shadow.sm,
+  },
+  googleIcon: {
+    width: ms(20),
+    height: ms(20),
+    resizeMode: 'contain',
+  },
+  googleButtonText: {
+    marginLeft: Spacing.sm,
+    color: '#3C4043',
+    fontSize: ms(16),
   },
   otpHeaderRow: {
     flexDirection: 'row',

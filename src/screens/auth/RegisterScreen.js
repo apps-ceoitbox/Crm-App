@@ -14,6 +14,7 @@ import {
     Platform,
     ScrollView,
     StatusBar,
+    Image,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Icon from 'react-native-vector-icons/Ionicons';
@@ -275,28 +276,30 @@ const RegisterScreen = ({ navigation }) => {
                                     }
                                 }}
                             >
-                                <Icon
-                                    name={agreeTerms ? 'checkbox' : 'square-outline'}
-                                    size={ms(22)}
-                                    color={errors.terms ? Colors.error : (agreeTerms ? Colors.primary : Colors.textMuted)}
-                                />
-                                <View style={styles.termsTextContainer}>
-                                    <AppText size="sm" color={Colors.textSecondary}>
-                                        I agree to the{' '}
-                                    </AppText>
-                                    <TouchableOpacity>
-                                        <AppText size="sm" weight="medium" color={Colors.primary}>
-                                            Terms of Service
+                                <View style={styles.termsRow}>
+                                    <Icon
+                                        name={agreeTerms ? 'checkbox' : 'square-outline'}
+                                        size={ms(22)}
+                                        color={errors.terms ? Colors.error : (agreeTerms ? Colors.primary : Colors.textMuted)}
+                                    />
+                                    <View style={styles.termsTextContainer}>
+                                        <AppText size="sm" color={Colors.textSecondary}>
+                                            I agree to the{' '}
                                         </AppText>
-                                    </TouchableOpacity>
-                                    <AppText size="sm" color={Colors.textSecondary}>
-                                        {' '}and{' '}
-                                    </AppText>
-                                    <TouchableOpacity>
-                                        <AppText size="sm" weight="medium" color={Colors.primary}>
-                                            Privacy Policy
+                                        <TouchableOpacity onPress={() => { }}>
+                                            <AppText size="sm" weight="medium" color={Colors.primary}>
+                                                Terms of Service
+                                            </AppText>
+                                        </TouchableOpacity>
+                                        <AppText size="sm" color={Colors.textSecondary}>
+                                            {' '}and{' '}
                                         </AppText>
-                                    </TouchableOpacity>
+                                        <TouchableOpacity onPress={() => { }}>
+                                            <AppText size="sm" weight="medium" color={Colors.primary}>
+                                                Privacy Policy
+                                            </AppText>
+                                        </TouchableOpacity>
+                                    </View>
                                 </View>
                             </TouchableOpacity>
                             {errors.terms && (
@@ -326,18 +329,16 @@ const RegisterScreen = ({ navigation }) => {
                             {/* Social Login */}
                             <View style={styles.socialContainer}>
                                 <TouchableOpacity
-                                    style={styles.socialButton}
+                                    style={styles.googleButton}
                                     onPress={handleGoogleLogin}
                                     disabled={loading}
+                                    activeOpacity={0.7}
                                 >
-                                    <Icon name="logo-google" size={ms(24)} color="#DB4437" />
+                                    <Image source={require('../../assets/google.png')} style={styles.googleIcon} />
+                                    <AppText weight="medium" style={styles.googleButtonText}>
+                                        Sign up with Google
+                                    </AppText>
                                 </TouchableOpacity>
-                                {/* <TouchableOpacity style={styles.socialButton}>
-                                    <Icon name="apple" size={ms(24)} color={Colors.black} />
-                                </TouchableOpacity>
-                                <TouchableOpacity style={styles.socialButton}>
-                                    <Icon name="microsoft" size={ms(24)} color="#00A4EF" />
-                                </TouchableOpacity> */}
                             </View>
                         </Animated.View>
 
@@ -434,6 +435,11 @@ const styles = StyleSheet.create({
         alignItems: 'flex-start',
         marginBottom: Spacing.sm,
     },
+    termsRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+
+    },
     termsTextContainer: {
         flex: 1,
         flexDirection: 'row',
@@ -463,17 +469,42 @@ const styles = StyleSheet.create({
     socialContainer: {
         flexDirection: 'row',
         justifyContent: 'center',
+        alignItems: 'center',
         gap: Spacing.md,
+        marginTop: Spacing.xs,
     },
     socialButton: {
-        width: ms(50),
-        height: ms(50),
-        borderRadius: BorderRadius.round,
-        backgroundColor: Colors.background,
+        width: ms(48),
+        height: ms(48),
+        borderRadius: BorderRadius.sm,
+        backgroundColor: Colors.white,
         justifyContent: 'center',
         alignItems: 'center',
         borderWidth: 1,
-        borderColor: Colors.border,
+        borderColor: '#E0E0E0',
+        ...Shadow.sm,
+    },
+    googleButton: {
+        flex: 1,
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        height: ms(48),
+        backgroundColor: Colors.white,
+        borderRadius: ms(24),
+        borderWidth: 1,
+        borderColor: '#DADCE0',
+        ...Shadow.sm,
+    },
+    googleIcon: {
+        width: ms(20),
+        height: ms(20),
+        resizeMode: 'contain',
+    },
+    googleButtonText: {
+        marginLeft: Spacing.sm,
+        color: '#3C4043',
+        fontSize: ms(16),
     },
     footer: {
         flexDirection: 'row',
