@@ -47,12 +47,48 @@ const PAGE_LIMIT = 20;
 
 const PIPELINE_STAGES = [
   { id: 'New', name: 'New', color: '#3B82F6', bg: '#EFF6FF', icon: 'sparkles' },
-  { id: 'Contacted', name: 'Contacted', color: '#F59E0B', bg: '#FFFBEB', icon: 'chatbubble' },
-  { id: 'Proposal Sent', name: 'Proposal', color: '#8B5CF6', bg: '#F3F0FF', icon: 'document-text' },
-  { id: 'Negotiation', name: 'Negotiation', color: '#4D8733', bg: '#EEF5E6', icon: 'pie-chart' },
-  { id: 'Final Review', name: 'Review', color: '#EC4899', bg: '#FDF2F8', icon: 'eye' },
-  { id: 'Closed Won', name: 'Won', color: '#10B981', bg: '#ECFDF5', icon: 'trophy' },
-  { id: 'Closed Lost', name: 'Lost', color: '#EF4444', bg: '#FEF2F2', icon: 'close-circle' },
+  {
+    id: 'Contacted',
+    name: 'Contacted',
+    color: '#F59E0B',
+    bg: '#FFFBEB',
+    icon: 'chatbubble',
+  },
+  {
+    id: 'Proposal Sent',
+    name: 'Proposal',
+    color: '#8B5CF6',
+    bg: '#F3F0FF',
+    icon: 'document-text',
+  },
+  {
+    id: 'Negotiation',
+    name: 'Negotiation',
+    color: '#4D8733',
+    bg: '#EEF5E6',
+    icon: 'pie-chart',
+  },
+  {
+    id: 'Final Review',
+    name: 'Review',
+    color: '#EC4899',
+    bg: '#FDF2F8',
+    icon: 'eye',
+  },
+  {
+    id: 'Closed Won',
+    name: 'Won',
+    color: '#10B981',
+    bg: '#ECFDF5',
+    icon: 'trophy',
+  },
+  {
+    id: 'Closed Lost',
+    name: 'Lost',
+    color: '#EF4444',
+    bg: '#FEF2F2',
+    icon: 'close-circle',
+  },
 ];
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
@@ -73,7 +109,14 @@ function getInitials(name) {
 }
 
 function getAvatarColor(name) {
-  const palette = ['#4D8733', '#3B82F6', '#8B5CF6', '#EC4899', '#F59E0B', '#10B981'];
+  const palette = [
+    '#4D8733',
+    '#3B82F6',
+    '#8B5CF6',
+    '#EC4899',
+    '#F59E0B',
+    '#10B981',
+  ];
   let hash = 0;
   for (let i = 0; i < name.length; i++)
     hash = name.charCodeAt(i) + ((hash << 5) - hash);
@@ -97,7 +140,12 @@ const PipelineTab = memo(({ item, isSelected, onPress }) => (
         style={{ marginRight: 4 }}
       />
     )}
-    <Text style={[styles.pipelineTabText, isSelected && styles.pipelineTabTextSelected]}>
+    <Text
+      style={[
+        styles.pipelineTabText,
+        isSelected && styles.pipelineTabTextSelected,
+      ]}
+    >
       {item.name}
     </Text>
   </TouchableOpacity>
@@ -113,14 +161,18 @@ const LeadCard = memo(({ lead, onPress }) => {
       activeOpacity={0.85}
       onPress={() => onPress(lead)}
     >
-      <View style={[styles.leadAvatar, { backgroundColor: avatarColor + '18' }]}>
+      <View
+        style={[styles.leadAvatar, { backgroundColor: avatarColor + '18' }]}
+      >
         <Text style={[styles.leadAvatarText, { color: avatarColor }]}>
           {getInitials(name)}
         </Text>
       </View>
       <View style={styles.leadInfo}>
-        <Text style={styles.leadName} numberOfLines={1}>{name}</Text>
-        {(lead.company?.name || lead.company) ? (
+        <Text style={styles.leadName} numberOfLines={1}>
+          {name}
+        </Text>
+        {lead.company?.name || lead.company ? (
           <Text style={styles.leadCompany} numberOfLines={1}>
             {lead.company?.name || lead.company}
           </Text>
@@ -135,62 +187,75 @@ const LeadCard = memo(({ lead, onPress }) => {
 });
 
 /** Stage card row */
-const StageCard = memo(({ stage, totalLeads, isExpanded, onToggle, onLeadPress }) => {
-  const percentage = totalLeads > 0 ? Math.round((stage.leads.length / totalLeads) * 100) : 0;
-  return (
-    <View>
-      <TouchableOpacity
-        style={styles.stageCard}
-        activeOpacity={0.85}
-        onPress={() => onToggle(stage.id)}
-      >
-        <View style={styles.stageHeader}>
-          <View style={[styles.stageIcon, { backgroundColor: stage.bg }]}>
-            <IonIcon name={stage.icon} size={ms(18)} color={stage.color} />
+const StageCard = memo(
+  ({ stage, totalLeads, isExpanded, onToggle, onLeadPress }) => {
+    const percentage =
+      totalLeads > 0 ? Math.round((stage.leads.length / totalLeads) * 100) : 0;
+    return (
+      <View>
+        <TouchableOpacity
+          style={styles.stageCard}
+          activeOpacity={0.85}
+          onPress={() => onToggle(stage.id)}
+        >
+          <View style={styles.stageHeader}>
+            <View style={[styles.stageIcon, { backgroundColor: stage.bg }]}>
+              <IonIcon name={stage.icon} size={ms(18)} color={stage.color} />
+            </View>
+            <View style={styles.stageInfo}>
+              <Text style={styles.stageName}>{stage.name}</Text>
+              <Text style={styles.stageCount}>{stage.leads.length} deals</Text>
+            </View>
+            <View style={styles.stageRight}>
+              <Text style={[styles.stageValue, { color: stage.color }]}>
+                ₹
+                {formatValue(
+                  stage.leads.reduce((s, l) => s + (l.value || 0), 0),
+                )}
+              </Text>
+              <Text style={styles.stagePercentage}>{percentage}%</Text>
+            </View>
+            <IonIcon
+              name={isExpanded ? 'chevron-up' : 'chevron-down'}
+              size={18}
+              color={Colors.textTertiary}
+              style={{ marginLeft: 8 }}
+            />
           </View>
-          <View style={styles.stageInfo}>
-            <Text style={styles.stageName}>{stage.name}</Text>
-            <Text style={styles.stageCount}>{stage.leads.length} deals</Text>
+          <View style={styles.progressBarBg}>
+            <View
+              style={[
+                styles.progressBarFill,
+                {
+                  width: `${Math.max(percentage, 2)}%`,
+                  backgroundColor: stage.color,
+                },
+              ]}
+            />
           </View>
-          <View style={styles.stageRight}>
-            <Text style={[styles.stageValue, { color: stage.color }]}>
-              ₹{formatValue(stage.leads.reduce((s, l) => s + (l.value || 0), 0))}
-            </Text>
-            <Text style={styles.stagePercentage}>{percentage}%</Text>
-          </View>
-          <IonIcon
-            name={isExpanded ? 'chevron-up' : 'chevron-down'}
-            size={18}
-            color={Colors.textTertiary}
-            style={{ marginLeft: 8 }}
-          />
-        </View>
-        <View style={styles.progressBarBg}>
-          <View
-            style={[
-              styles.progressBarFill,
-              { width: `${Math.max(percentage, 2)}%`, backgroundColor: stage.color },
-            ]}
-          />
-        </View>
-      </TouchableOpacity>
+        </TouchableOpacity>
 
-      {isExpanded && stage.leads.length > 0 && (
-        <View style={styles.expandedLeads}>
-          {stage.leads.map(lead => (
-            <LeadCard key={lead._id || lead.id} lead={lead} onPress={onLeadPress} />
-          ))}
-        </View>
-      )}
+        {isExpanded && stage.leads.length > 0 && (
+          <View style={styles.expandedLeads}>
+            {stage.leads.map(lead => (
+              <LeadCard
+                key={lead._id || lead.id}
+                lead={lead}
+                onPress={onLeadPress}
+              />
+            ))}
+          </View>
+        )}
 
-      {isExpanded && stage.leads.length === 0 && (
-        <View style={styles.emptyStage}>
-          <Text style={styles.emptyStageText}>No deals in this stage</Text>
-        </View>
-      )}
-    </View>
-  );
-});
+        {isExpanded && stage.leads.length === 0 && (
+          <View style={styles.emptyStage}>
+            <Text style={styles.emptyStageText}>No deals in this stage</Text>
+          </View>
+        )}
+      </View>
+    );
+  },
+);
 
 // ─── Main Screen ─────────────────────────────────────────────────────────────
 
@@ -214,8 +279,8 @@ const PipelineScreen = ({ navigation }) => {
   const [expandedStage, setExpandedStage] = useState(null);
 
   const searchTimeoutRef = useRef(null);
-  const isFetchingRef = useRef(false);   // true while any fetch is in-flight
-  const isInitialLoad = useRef(true);     // true only on the very first fetch
+  const isFetchingRef = useRef(false); // true while any fetch is in-flight
+  const isInitialLoad = useRef(true); // true only on the very first fetch
 
   // ── Step 1: Fetch all pipelines on mount ─────────────────────────────────
   useEffect(() => {
@@ -227,9 +292,11 @@ const PipelineScreen = ({ navigation }) => {
     try {
       const res = await pipelineAPI.getAll();
       if (res.success) {
-        const list = Array.isArray(res.data?.data) ? res.data.data
-          : Array.isArray(res.data) ? res.data
-            : [];
+        const list = Array.isArray(res.data?.data)
+          ? res.data.data
+          : Array.isArray(res.data)
+          ? res.data
+          : [];
         setPipelineList(list);
         // Select the default pipeline automatically
         const defaultPipeline = list.find(p => p.isDefault) || list[0];
@@ -264,10 +331,17 @@ const PipelineScreen = ({ navigation }) => {
       setHasMore(true);
       fetchLeads(selectedPipelineId, 1, searchQuery.trim(), false);
     }, 300);
-    return () => { if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current); };
+    return () => {
+      if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current);
+    };
   }, [searchQuery]);
 
-  const fetchLeads = async (pipelineId, pageNum, search = '', isMore = false) => {
+  const fetchLeads = async (
+    pipelineId,
+    pageNum,
+    search = '',
+    isMore = false,
+  ) => {
     // Hard guard: don't fire if already in-flight
     if (isFetchingRef.current) return;
     // If loading-more, also check hasMore
@@ -314,12 +388,15 @@ const PipelineScreen = ({ navigation }) => {
 
   // ── Handlers ──────────────────────────────────────────────────────────────
 
-  const handlePipelineSelect = useCallback((pipeline) => {
-    if (pipeline._id === selectedPipelineId) return;
-    setSelectedPipelineId(pipeline._id);
-    setSearchQuery('');
-    setExpandedStage(null);
-  }, [selectedPipelineId]);
+  const handlePipelineSelect = useCallback(
+    pipeline => {
+      if (pipeline._id === selectedPipelineId) return;
+      setSelectedPipelineId(pipeline._id);
+      setSearchQuery('');
+      setExpandedStage(null);
+    },
+    [selectedPipelineId],
+  );
 
   const handleRefresh = useCallback(() => {
     setRefreshing(true);
@@ -331,7 +408,14 @@ const PipelineScreen = ({ navigation }) => {
 
   const handleLoadMore = useCallback(() => {
     // Block if: already fetching, no more pages, currently loading initial data, or pulling to refresh
-    if (!hasMore || loadingMore || loading || refreshing || isFetchingRef.current) return;
+    if (
+      !hasMore ||
+      loadingMore ||
+      loading ||
+      refreshing ||
+      isFetchingRef.current
+    )
+      return;
     const nextPage = page + 1;
     fetchLeads(selectedPipelineId, nextPage, searchQuery.trim(), true);
   }, [hasMore, loadingMore, loading, refreshing, page, selectedPipelineId, searchQuery]);
@@ -343,36 +427,45 @@ const PipelineScreen = ({ navigation }) => {
     });
   }, [navigation, selectedPipelineId, searchQuery]);
 
-  const handleStageToggle = useCallback((stageId) => {
+  const handleStageToggle = useCallback(stageId => {
     setExpandedStage(prev => (prev === stageId ? null : stageId));
   }, []);
 
   // ── Computed stats ────────────────────────────────────────────────────────
 
-  const { stageData, totalValue, activeValue, convRate, totalLeads } = useMemo(() => {
-    const filtered = searchQuery.trim()
-      ? leads.filter(l =>
-        (l.title || l.name || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
-        (l.company?.name || l.company || '').toLowerCase().includes(searchQuery.toLowerCase())
-      )
-      : leads;
+  const { stageData, totalValue, activeValue, convRate, totalLeads } =
+    useMemo(() => {
+      const filtered = searchQuery.trim()
+        ? leads.filter(
+            l =>
+              (l.title || l.name || '')
+                .toLowerCase()
+                .includes(searchQuery.toLowerCase()) ||
+              (l.company?.name || l.company || '')
+                .toLowerCase()
+                .includes(searchQuery.toLowerCase()),
+          )
+        : leads;
 
-    const totalValue = filtered.reduce((s, l) => s + (l.value || 0), 0);
-    const activeValue = filtered.filter(l => l.status !== 'Closed Lost').reduce((s, l) => s + (l.value || 0), 0);
-    const convWon = filtered.filter(l => l.status === 'Closed Won').length;
-    const convRate = filtered.length > 0 ? Math.round((convWon / filtered.length) * 100) : 0;
-    const totalLeads = filtered.length;
+      const totalValue = filtered.reduce((s, l) => s + (l.value || 0), 0);
+      const activeValue = filtered
+        .filter(l => l.status !== 'Closed Lost')
+        .reduce((s, l) => s + (l.value || 0), 0);
+      const convWon = filtered.filter(l => l.status === 'Closed Won').length;
+      const convRate =
+        filtered.length > 0 ? Math.round((convWon / filtered.length) * 100) : 0;
+      const totalLeads = filtered.length;
 
-    const stageData = PIPELINE_STAGES.map(stage => {
-      const stageLeads = filtered.filter(l => {
-        const s = l.status || l.stage?.name || l.stage;
-        return s === stage.id || s === stage.name;
+      const stageData = PIPELINE_STAGES.map(stage => {
+        const stageLeads = filtered.filter(l => {
+          const s = l.status || l.stage?.name || l.stage;
+          return s === stage.id || s === stage.name;
+        });
+        return { ...stage, leads: stageLeads };
       });
-      return { ...stage, leads: stageLeads };
-    });
 
-    return { stageData, totalValue, activeValue, convRate, totalLeads };
-  }, [leads, searchQuery]);
+      return { stageData, totalValue, activeValue, convRate, totalLeads };
+    }, [leads, searchQuery]);
 
   // ── List footer ───────────────────────────────────────────────────────────
 
@@ -389,87 +482,112 @@ const PipelineScreen = ({ navigation }) => {
   // ── Prepare FlatList data ────────────────────────────────────────────────
   // We render everything as a single FlatList with a header; each item = a stage card
 
-  const headerComponent = useMemo(() => (
-    <View>
-      {/* Summary card */}
-      <LinearGradient
-        colors={['#4D8733', '#6BA344']}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-        style={styles.summaryCard}
-      >
-        <View style={styles.summaryGrid}>
-          {[
-            { label: 'Total Deals', value: totalLeads },
-            { label: 'Total Value', value: `₹${formatValue(totalValue)}` },
-            { label: 'Active Value', value: `₹${formatValue(activeValue)}` },
-            { label: 'Conversion', value: `${convRate}%` },
-          ].map(item => (
-            <View key={item.label} style={styles.summaryItem}>
-              <Text style={styles.summaryValue}>{item.value}</Text>
-              <Text style={styles.summaryLabel}>{item.label}</Text>
-            </View>
-          ))}
-        </View>
-      </LinearGradient>
-
-      {/* Funnel bars */}
-      <Text style={styles.sectionLabel}>PIPELINE FUNNEL</Text>
-      <View style={styles.funnelCard}>
-        {stageData.map((stage, index) => {
-          const funnelRatio = 1 - index * 0.1;
-          const barWidth = Math.max(
-            totalLeads > 0 ? Math.round((stage.leads.length / totalLeads) * 100) : 0,
-            5
-          ) * funnelRatio;
-          return (
-            <TouchableOpacity
-              key={stage.id}
-              style={styles.funnelRow}
-              activeOpacity={0.7}
-              onPress={() => handleStageToggle(stage.id)}
-            >
-              <View style={styles.funnelLeft}>
-                <View style={[styles.funnelDot, { backgroundColor: stage.color }]} />
-                <Text style={styles.funnelLabel}>{stage.name}</Text>
+  const headerComponent = useMemo(
+    () => (
+      <View>
+        {/* Summary card */}
+        <LinearGradient
+          colors={['#4D8733', '#6BA344']}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={styles.summaryCard}
+        >
+          <View style={styles.summaryGrid}>
+            {[
+              { label: 'Total Deals', value: totalLeads },
+              { label: 'Total Value', value: `₹${formatValue(totalValue)}` },
+              { label: 'Active Value', value: `₹${formatValue(activeValue)}` },
+              { label: 'Conversion', value: `${convRate}%` },
+            ].map(item => (
+              <View key={item.label} style={styles.summaryItem}>
+                <Text style={styles.summaryValue}>{item.value}</Text>
+                <Text style={styles.summaryLabel}>{item.label}</Text>
               </View>
-              <View style={styles.funnelBarWrap}>
-                <View
-                  style={[
-                    styles.funnelBar,
-                    { width: `${Math.max(barWidth, 8)}%`, backgroundColor: stage.color + '30' },
-                  ]}
-                >
+            ))}
+          </View>
+        </LinearGradient>
+
+        {/* Funnel bars */}
+        <Text style={styles.sectionLabel}>PIPELINE FUNNEL</Text>
+        <View style={styles.funnelCard}>
+          {stageData.map((stage, index) => {
+            const funnelRatio = 1 - index * 0.1;
+            const barWidth =
+              Math.max(
+                totalLeads > 0
+                  ? Math.round((stage.leads.length / totalLeads) * 100)
+                  : 0,
+                5,
+              ) * funnelRatio;
+            return (
+              <TouchableOpacity
+                key={stage.id}
+                style={styles.funnelRow}
+                activeOpacity={0.7}
+                onPress={() => handleStageToggle(stage.id)}
+              >
+                <View style={styles.funnelLeft}>
+                  <View
+                    style={[styles.funnelDot, { backgroundColor: stage.color }]}
+                  />
+                  <Text style={styles.funnelLabel}>{stage.name}</Text>
+                </View>
+                <View style={styles.funnelBarWrap}>
                   <View
                     style={[
-                      styles.funnelBarInner,
+                      styles.funnelBar,
                       {
-                        width: `${Math.min(
-                          totalLeads > 0 ? (stage.leads.length / totalLeads) * 100 : 0,
-                          100
-                        )}%`,
-                        backgroundColor: stage.color,
+                        width: `${Math.max(barWidth, 8)}%`,
+                        backgroundColor: stage.color + '30',
                       },
                     ]}
+                  >
+                    <View
+                      style={[
+                        styles.funnelBarInner,
+                        {
+                          width: `${Math.min(
+                            totalLeads > 0
+                              ? (stage.leads.length / totalLeads) * 100
+                              : 0,
+                            100,
+                          )}%`,
+                          backgroundColor: stage.color,
+                        },
+                      ]}
+                    />
+                  </View>
+                </View>
+                <View style={styles.funnelRight}>
+                  <Text style={[styles.funnelCount, { color: stage.color }]}>
+                    {stage.leads.length}
+                  </Text>
+                  <IonIcon
+                    name={
+                      expandedStage === stage.id ? 'chevron-up' : 'chevron-down'
+                    }
+                    size={14}
+                    color={Colors.textTertiary}
                   />
                 </View>
-              </View>
-              <View style={styles.funnelRight}>
-                <Text style={[styles.funnelCount, { color: stage.color }]}>{stage.leads.length}</Text>
-                <IonIcon
-                  name={expandedStage === stage.id ? 'chevron-up' : 'chevron-down'}
-                  size={14}
-                  color={Colors.textTertiary}
-                />
-              </View>
-            </TouchableOpacity>
-          );
-        })}
-      </View>
+              </TouchableOpacity>
+            );
+          })}
+        </View>
 
-      <Text style={styles.sectionLabel}>STAGE BREAKDOWN</Text>
-    </View>
-  ), [stageData, totalLeads, totalValue, activeValue, convRate, expandedStage, handleStageToggle]);
+        <Text style={styles.sectionLabel}>STAGE BREAKDOWN</Text>
+      </View>
+    ),
+    [
+      stageData,
+      totalLeads,
+      totalValue,
+      activeValue,
+      convRate,
+      expandedStage,
+      handleStageToggle,
+    ],
+  );
 
   // ─── Loading state (initial pipelines fetch) ─────────────────────────────
 
@@ -491,7 +609,6 @@ const PipelineScreen = ({ navigation }) => {
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
-
       {/* ── Header ── */}
       <View style={styles.navBar}>
         <Text style={styles.title}>Pipeline</Text>
@@ -527,7 +644,11 @@ const PipelineScreen = ({ navigation }) => {
             />
             {searchQuery ? (
               <TouchableOpacity onPress={() => setSearchQuery('')}>
-                <IonIcon name="close-circle" size={17} color={Colors.textTertiary} />
+                <IonIcon
+                  name="close-circle"
+                  size={17}
+                  color={Colors.textTertiary}
+                />
               </TouchableOpacity>
             ) : null}
           </View>
@@ -617,8 +738,17 @@ const PipelineScreen = ({ navigation }) => {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.background },
-  centered: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingTop: vs(40) },
-  loadingText: { marginTop: ms(12), color: Colors.textTertiary, fontSize: ms(13) },
+  centered: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingTop: vs(40),
+  },
+  loadingText: {
+    marginTop: ms(12),
+    color: Colors.textTertiary,
+    fontSize: ms(13),
+  },
 
   // Header
   navBar: {
@@ -710,7 +840,7 @@ const styles = StyleSheet.create({
   // Summary card
   summaryCard: {
     borderRadius: BorderRadius.xl,
-    padding: Spacing.lg,
+    // padding: Spacing.lg,
     marginBottom: Spacing.lg,
     marginTop: Spacing.sm,
     ...Shadow.md,
@@ -744,10 +874,23 @@ const styles = StyleSheet.create({
     marginBottom: Spacing.md,
     ...Shadow.sm,
   },
-  funnelRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: ms(8) },
-  funnelLeft: { width: ms(100), flexDirection: 'row', alignItems: 'center', gap: 6 },
+  funnelRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: ms(8),
+  },
+  funnelLeft: {
+    width: ms(100),
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
   funnelDot: { width: 9, height: 9, borderRadius: 5 },
-  funnelLabel: { fontSize: ms(14), fontWeight: '600', color: Colors.textSecondary },
+  funnelLabel: {
+    fontSize: ms(14),
+    fontWeight: '600',
+    color: Colors.textSecondary,
+  },
   funnelBarWrap: { flex: 1, height: ms(20), justifyContent: 'center' },
   funnelBar: { height: '100%', borderRadius: ms(6), overflow: 'hidden' },
   funnelBarInner: { height: '100%', borderRadius: ms(6) },
@@ -781,7 +924,11 @@ const styles = StyleSheet.create({
   stageCount: { fontSize: ms(13), color: Colors.textTertiary, marginTop: 2 },
   stageRight: { alignItems: 'flex-end' },
   stageValue: { fontSize: ms(16), fontWeight: '800' },
-  stagePercentage: { fontSize: ms(10), color: Colors.textTertiary, marginTop: 1 },
+  stagePercentage: {
+    fontSize: ms(10),
+    color: Colors.textTertiary,
+    marginTop: 1,
+  },
   progressBarBg: {
     height: ms(4),
     backgroundColor: Colors.divider,
@@ -821,7 +968,12 @@ const styles = StyleSheet.create({
   leadInfo: { flex: 1, marginLeft: Spacing.sm },
   leadName: { fontSize: ms(16), fontWeight: '600', color: Colors.textPrimary },
   leadCompany: { fontSize: ms(13), color: Colors.textTertiary, marginTop: 2 },
-  leadValue: { fontSize: ms(14), fontWeight: '700', color: Colors.success, marginRight: 8 },
+  leadValue: {
+    fontSize: ms(14),
+    fontWeight: '700',
+    color: Colors.success,
+    marginRight: 8,
+  },
 
   emptyStage: {
     backgroundColor: Colors.surface,
@@ -842,7 +994,11 @@ const styles = StyleSheet.create({
     gap: ms(10),
     backgroundColor: Colors.background,
   },
-  footerLoaderText: { fontSize: ms(14), color: Colors.textTertiary, fontWeight: '500' },
+  footerLoaderText: {
+    fontSize: ms(14),
+    color: Colors.textTertiary,
+    fontWeight: '500',
+  },
 
   // FAB
   floatingAction: {

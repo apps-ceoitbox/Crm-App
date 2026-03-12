@@ -74,7 +74,8 @@ const FILTER_STATUSES = ['New', 'Contacted', 'Qualified', 'Converted', 'Lost'];
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 function formatValue(val) {
   if (!val) return null;
-  if (val >= 100000) return `₹${(val / 100000).toFixed(val % 100000 === 0 ? 0 : 1)}L`;
+  if (val >= 100000)
+    return `₹${(val / 100000).toFixed(val % 100000 === 0 ? 0 : 1)}L`;
   if (val >= 1000) return `₹${(val / 1000).toFixed(val % 1000 === 0 ? 0 : 1)}K`;
   return `₹${val.toLocaleString('en-IN')}`;
 }
@@ -88,7 +89,15 @@ function getInitials(name) {
 
 function getAvatarColor(name) {
   if (!name) return '#4D8733';
-  const palette = ['#4D8733', '#3B82F6', '#8B5CF6', '#EC4899', '#F59E0B', '#10B981', '#EF4444'];
+  const palette = [
+    '#4D8733',
+    '#3B82F6',
+    '#8B5CF6',
+    '#EC4899',
+    '#F59E0B',
+    '#10B981',
+    '#EF4444',
+  ];
   let hash = 0;
   for (let i = 0; i < name.length; i++)
     hash = name.charCodeAt(i) + ((hash << 5) - hash);
@@ -97,10 +106,10 @@ function getAvatarColor(name) {
 
 // ─── LeadCard ─────────────────────────────────────────────────────────────────
 const LeadCard = ({ lead, onPress, onDelete }) => {
-  const leadName =
-    lead.contact
-      ? `${lead.contact.firstName || ''} ${lead.contact.lastName || ''}`.trim() || lead.title
-      : lead.title || 'Untitled Lead';
+  const leadName = lead.contact
+    ? `${lead.contact.firstName || ''} ${lead.contact.lastName || ''}`.trim() ||
+      lead.title
+    : lead.title || 'Untitled Lead';
   const companyName = lead.company?.name || '';
   const statusKey = lead.stage?.name || 'New';
   const sc = STATUS_CONFIG[statusKey] || STATUS_CONFIG.New;
@@ -122,10 +131,11 @@ const LeadCard = ({ lead, onPress, onDelete }) => {
       <View style={[styles.cardAccent, { backgroundColor: sc.color }]} />
 
       <View style={styles.cardContent}>
-
         {/* Row 1: Avatar + Name + Value */}
         <View style={styles.cardTop}>
-          <View style={[styles.avatar, { backgroundColor: avatarColor + '18' }]}>
+          <View
+            style={[styles.avatar, { backgroundColor: avatarColor + '18' }]}
+          >
             <AppText
               style={[styles.avatarText, { color: avatarColor }]}
               size="md"
@@ -147,7 +157,11 @@ const LeadCard = ({ lead, onPress, onDelete }) => {
             </AppText>
             {companyName ? (
               <View style={styles.companyRow}>
-                <IonIcon name="business-outline" size={13} color={Colors.textTertiary} />
+                <IonIcon
+                  name="business-outline"
+                  size={13}
+                  color={Colors.textTertiary}
+                />
                 <AppText
                   size="sm"
                   weight="regular"
@@ -162,7 +176,12 @@ const LeadCard = ({ lead, onPress, onDelete }) => {
 
           {leadValue ? (
             <View style={styles.valueContainer}>
-              <AppText size="base" weight="extraBold" color="#059669" style={{ letterSpacing: -0.3 }}>
+              <AppText
+                size="base"
+                weight="extraBold"
+                color="#059669"
+                style={{ letterSpacing: -0.3 }}
+              >
                 {formatValue(leadValue)}
               </AppText>
             </View>
@@ -187,7 +206,11 @@ const LeadCard = ({ lead, onPress, onDelete }) => {
                   size={11}
                   color={Colors.textTertiary}
                 />
-                <AppText size="sm" weight="semiBold" color={Colors.textSecondary}>
+                <AppText
+                  size="sm"
+                  weight="semiBold"
+                  color={Colors.textSecondary}
+                >
                   {source}
                 </AppText>
               </View>
@@ -220,7 +243,11 @@ const LeadCard = ({ lead, onPress, onDelete }) => {
         {/* Salesperson row */}
         {salesperson ? (
           <View style={styles.salespersonRow}>
-            <IonIcon name="person-circle" size={16} color={Colors.textTertiary} />
+            <IonIcon
+              name="person-circle"
+              size={16}
+              color={Colors.textTertiary}
+            />
             <AppText size={14} weight="medium" color={Colors.textTertiary}>
               {salesperson}
             </AppText>
@@ -234,10 +261,15 @@ const LeadCard = ({ lead, onPress, onDelete }) => {
 // ─── StatsCard ────────────────────────────────────────────────────────────────
 const StatsCard = ({ leads }) => {
   const total = leads.length;
-  const totalValue = leads.reduce((s, l) => s + (l.value || l.estimatedValue || 0), 0);
+  const totalValue = leads.reduce(
+    (s, l) => s + (l.value || l.estimatedValue || 0),
+    0,
+  );
   const qualified = leads.filter(l => {
     const stage = l.stage?.name || '';
-    return stage === 'Qualified' || stage === 'Converted' || stage === 'Closed Won';
+    return (
+      stage === 'Qualified' || stage === 'Converted' || stage === 'Closed Won'
+    );
   }).length;
   const convRate = total > 0 ? Math.round((qualified / total) * 100) : 0;
 
@@ -250,7 +282,12 @@ const StatsCard = ({ leads }) => {
     >
       <View style={styles.statsRow}>
         <View style={styles.statItem}>
-          <AppText size="lg" weight="extraBold" color="#fff" style={{ letterSpacing: -0.3 }}>
+          <AppText
+            size="lg"
+            weight="extraBold"
+            color="#fff"
+            style={{ letterSpacing: -0.3 }}
+          >
             {total}
           </AppText>
           <AppText
@@ -264,7 +301,12 @@ const StatsCard = ({ leads }) => {
         </View>
         <View style={styles.statDivider} />
         <View style={styles.statItem}>
-          <AppText size="lg" weight="extraBold" color="#fff" style={{ letterSpacing: -0.3 }}>
+          <AppText
+            size="lg"
+            weight="extraBold"
+            color="#fff"
+            style={{ letterSpacing: -0.3 }}
+          >
             {formatValue(totalValue) || '₹0'}
           </AppText>
           <AppText
@@ -278,7 +320,12 @@ const StatsCard = ({ leads }) => {
         </View>
         <View style={styles.statDivider} />
         <View style={styles.statItem}>
-          <AppText size="lg" weight="extraBold" color="#fff" style={{ letterSpacing: -0.3 }}>
+          <AppText
+            size="lg"
+            weight="extraBold"
+            color="#fff"
+            style={{ letterSpacing: -0.3 }}
+          >
             {convRate}%
           </AppText>
           <AppText
@@ -339,7 +386,9 @@ const LeadsScreen = ({ navigation }) => {
       fetchLeads(1, false, searchQuery.trim());
     }, 200);
 
-    return () => { if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current); };
+    return () => {
+      if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current);
+    };
   }, [searchQuery]);
 
   // ── Initial load ──
@@ -367,10 +416,11 @@ const LeadsScreen = ({ navigation }) => {
       if (search !== currentSearchRef.current) return;
 
       if (response.success) {
-        const leadsData = response.data?.data || response.data?.leads || response.data || [];
+        const leadsData =
+          response.data?.data || response.data?.leads || response.data || [];
         const newLeads = Array.isArray(leadsData) ? leadsData : [];
 
-        setLeads(prev => pageNum === 1 ? newLeads : [...prev, ...newLeads]);
+        setLeads(prev => (pageNum === 1 ? newLeads : [...prev, ...newLeads]));
         setHasMore(newLeads.length === LIMIT || newLeads.length >= LIMIT);
         setPage(pageNum);
       } else {
@@ -397,7 +447,13 @@ const LeadsScreen = ({ navigation }) => {
   }, [searchQuery]);
 
   const loadMore = useCallback(() => {
-    if (!loadingMore && hasMore && !loading && !refreshing && !isFetchingRef.current) {
+    if (
+      !loadingMore &&
+      hasMore &&
+      !loading &&
+      !refreshing &&
+      !isFetchingRef.current
+    ) {
       fetchLeads(page + 1, false, searchQuery.trim());
     }
   }, [loadingMore, hasMore, loading, refreshing, page, searchQuery]);
@@ -408,8 +464,12 @@ const LeadsScreen = ({ navigation }) => {
       `Remove "${lead.title || 'this lead'}" from your leads?`,
       [
         { text: 'Cancel', style: 'cancel' },
-        { text: 'Delete', style: 'destructive', onPress: () => console.log('Delete:', lead._id) },
-      ]
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: () => console.log('Delete:', lead._id),
+        },
+      ],
     );
   };
 
@@ -418,7 +478,12 @@ const LeadsScreen = ({ navigation }) => {
     <View style={styles.header}>
       {/* Left: Title + count badge */}
       <View style={styles.headerLeft}>
-        <AppText size={28} weight="extraBold" color={Colors.textPrimary} style={{ letterSpacing: -0.5 }}>
+        <AppText
+          size={28}
+          weight="extraBold"
+          color={Colors.textPrimary}
+          style={{ letterSpacing: -0.5 }}
+        >
           Leads
         </AppText>
         {leads.length > 0 && (
@@ -435,7 +500,9 @@ const LeadsScreen = ({ navigation }) => {
         <TouchableOpacity
           style={styles.headerIconBtn}
           onPress={() => {
-            LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+            LayoutAnimation.configureNext(
+              LayoutAnimation.Presets.easeInEaseOut,
+            );
             setSearchVisible(!searchVisible);
             if (searchVisible) setSearchQuery('');
           }}
@@ -451,7 +518,11 @@ const LeadsScreen = ({ navigation }) => {
           style={styles.headerIconBtn}
           onPress={() => navigation.navigate(ROUTES.NOTIFICATIONS)}
         >
-          <IonIcon name="notifications-outline" size={ms(22)} color={Colors.textPrimary} />
+          <IonIcon
+            name="notifications-outline"
+            size={ms(22)}
+            color={Colors.textPrimary}
+          />
           {unreadCount > 0 && (
             <View style={styles.notificationBadge}>
               <AppText size={10} weight="bold" color="#fff">
@@ -531,19 +602,33 @@ const LeadsScreen = ({ navigation }) => {
                   onPress={() => setActiveFilter(item)}
                 >
                   {item && sc ? (
-                    <View style={[styles.filterDot, { backgroundColor: sc.color }]} />
+                    <View
+                      style={[styles.filterDot, { backgroundColor: sc.color }]}
+                    />
                   ) : null}
                   <AppText
                     size={ms(13)}
                     weight="semiBold"
-                    color={active ? (item ? sc?.color : Colors.primary) : Colors.textTertiary}
+                    color={
+                      active
+                        ? item
+                          ? sc?.color
+                          : Colors.primary
+                        : Colors.textTertiary
+                    }
                   >
                     {item || 'All'}
                   </AppText>
                   <AppText
                     size={11}
                     weight="bold"
-                    color={active ? (item ? sc?.color : Colors.primary) : Colors.textTertiary}
+                    color={
+                      active
+                        ? item
+                          ? sc?.color
+                          : Colors.primary
+                        : Colors.textTertiary
+                    }
                     style={{ opacity: 0.7 }}
                   >
                     {count}
@@ -580,7 +665,12 @@ const LeadsScreen = ({ navigation }) => {
     return (
       <View style={styles.footerLoader}>
         <ActivityIndicator size="small" color={Colors.primary} />
-        <AppText size="sm" weight="medium" color={Colors.textTertiary} style={{ marginLeft: Spacing.sm }}>
+        <AppText
+          size="sm"
+          weight="medium"
+          color={Colors.textTertiary}
+          style={{ marginLeft: Spacing.sm }}
+        >
           Loading more leads...
         </AppText>
       </View>
@@ -595,8 +685,17 @@ const LeadsScreen = ({ navigation }) => {
         <View style={styles.emptyCircle}>
           <IonIcon name="people" size={40} color={Colors.primary} />
         </View>
-        <AppText size={18} weight="bold" color={Colors.textPrimary} align="center">
-          {activeFilter ? `No ${activeFilter} leads` : searchQuery ? `No results for "${searchQuery}"` : 'No leads yet'}
+        <AppText
+          size={18}
+          weight="bold"
+          color={Colors.textPrimary}
+          align="center"
+        >
+          {activeFilter
+            ? `No ${activeFilter} leads`
+            : searchQuery
+            ? `No results for "${searchQuery}"`
+            : 'No leads yet'}
         </AppText>
         <AppText
           size="sm"
@@ -608,8 +707,8 @@ const LeadsScreen = ({ navigation }) => {
           {activeFilter
             ? 'Try a different filter'
             : searchQuery
-              ? 'Try checking spelling or use broader terms'
-              : 'Tap + to add your first lead'}
+            ? 'Try checking spelling or use broader terms'
+            : 'Tap + to add your first lead'}
         </AppText>
       </View>
     );
