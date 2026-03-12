@@ -17,6 +17,7 @@ import {
   TouchableOpacity,
   TextInput,
   ScrollView,
+  Image,
   KeyboardAvoidingView,
   Platform,
   Alert,
@@ -25,12 +26,13 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import LinearGradient from 'react-native-linear-gradient';
 import IonIcon from 'react-native-vector-icons/Ionicons';
+import { launchImageLibrary } from 'react-native-image-picker';
 
 import { Colors } from '../../constants/Colors';
 import { Spacing, BorderRadius, Shadow } from '../../constants/Spacing';
 import { ms, wp } from '../../utils/Responsive';
 import { useAuth } from '../../context';
-import { userAPI } from '../../api';
+import { userAPI, aiAPI } from '../../api';
 
 // ─── Colour aliases to mirror the Expo theme exactly ─────────────────────────
 const C = {
@@ -118,20 +120,78 @@ const ProfileScreen = ({ navigation }) => {
   const [savingPersonal, setSavingPersonal] = useState(false);
   const [savingDeleting, setSavingDeleting] = useState(false);
 
+  // ── Profile photo
+  const [profilePhoto, setProfilePhoto] = useState(null); // URL or local URI
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
+
+  // ── API-fetched profile fields (source of truth for display)
+  const [apiEmail, setApiEmail] = useState('');
+  const [apiRole, setApiRole] = useState('');
+  const [apiStatus, setApiStatus] = useState('');
+  const [apiAdminLevel, setApiAdminLevel] = useState('');
+  const [apiCompany, setApiCompany] = useState('');
+
+  // ── AI Plan status
+  const [planStatus, setPlanStatus] = useState(null);
+
+  // ── Loading state
+  const [loadingProfile, setLoadingProfile] = useState(true);
+
   // ── Security form
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [savingPassword, setSavingPassword] = useState(false);
 
-  // Populate form from context user
+  // Fetch profile and plan status on mount
   useEffect(() => {
-    if (user) {
-      setDisplayName(user.displayName || user.name || '');
-      setMobile(user.mobile || user.phone || '');
-      setPhone(user.phone2 || '');
-    }
-  }, [user]);
+    const loadAll = async () => {
+      setLoadingProfile(true);
+      try {
+        const [profileRes, planRes] = await Promise.all([
+          userAPI.getMyProfile(),
+          aiAPI.getPlanStatus(),
+        ]);
+        if (profileRes.success && profileRes.data) {
+          const p = profileRes.data;
+          setDisplayName(p.name || p.displayName || user?.name || '');
+          setMobile(p.mobile || p.phone || user?.mobile || '');
+          setPhone(p.phone2 || user?.phone2 || '');
+          setProfilePhoto(p.photo || p.profilePhoto || null);
+          setApiEmail(p.email || user?.email || '');
+          setApiRole(p.role || user?.role || 'User');
+          setApiStatus(p.status || user?.status || 'Active');
+          setApiAdminLevel(p.adminLevel || user?.adminLevel || '');
+          setApiCompany(p.organization || p.company || user?.organization || user?.company || '');
+        } else {
+          // Fall back to context user
+          setDisplayName(user?.displayName || user?.name || '');
+          setMobile(user?.mobile || user?.phone || '');
+          setPhone(user?.phone2 || '');
+          setApiEmail(user?.email || '');
+          setApiRole(user?.role || 'User');
+          setApiStatus(user?.status || 'Active');
+          setApiAdminLevel(user?.adminLevel || '');
+          setApiCompany(user?.organization || user?.company || '');
+        }
+        if (planRes.success && planRes.data) {
+          setPlanStatus(planRes.data);
+        }
+      } catch {
+        // Fall back gracefully
+        setDisplayName(user?.displayName || user?.name || '');
+        setMobile(user?.mobile || user?.phone || '');
+        setApiEmail(user?.email || '');
+        setApiRole(user?.role || 'User');
+        setApiStatus(user?.status || 'Active');
+        setApiCompany(user?.organization || user?.company || '');
+      } finally {
+        setLoadingProfile(false);
+      }
+    };
+    loadAll();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // ── Handlers ──────────────────────────────────────────────────────────────
 
@@ -139,13 +199,12 @@ const ProfileScreen = ({ navigation }) => {
     setSavingPersonal(true);
     try {
       const payload = {
-        displayName: displayName.trim() || undefined,
+        name: displayName.trim() || undefined,
         mobile: mobile.trim() || undefined,
         phone: phone.trim() || undefined,
       };
-      const res = await userAPI.updateProfile(payload);
+      const res = await userAPI.updateMyProfile(payload);
       if (res.success) {
-        // Also sync to local auth context
         await updateUser({
           name: displayName.trim() || user?.name,
           displayName: displayName.trim() || undefined,
@@ -207,22 +266,65 @@ const ProfileScreen = ({ navigation }) => {
     ]);
   };
 
-  // ── Derived values ────────────────────────────────────────────────────────
-  const profile = {
-    displayName: user?.displayName || user?.name || 'User',
-    email: user?.email || '',
-    mobile: user?.mobile || user?.phone || '',
-    role: user?.role || 'User',
-    status: user?.status || 'Active',
-    adminLevel: user?.adminLevel || '',
-    company: user?.organization || user?.company || '',
+  // ── Image picker + upload ─────────────────────────────────────────────────
+  const handlePickPhoto = () => {
+    launchImageLibrary(
+      { mediaType: 'photo', quality: 0.8, includeBase64: false },
+      async (response) => {
+        if (response.didCancel || response.errorCode) return;
+        const asset = response.assets?.[0];
+        if (!asset?.uri) return;
+
+        setUploadingPhoto(true);
+        try {
+          const formData = new FormData();
+          formData.append('file', {
+            uri: asset.uri,
+            type: asset.type || 'image/jpeg',
+            name: asset.fileName || 'photo.jpg',
+          });
+          const res = await userAPI.uploadProfilePhoto(formData);
+          if (res.success) {
+            // Re-fetch profile to get the real Cloudinary URL from the server
+            const refreshed = await userAPI.getMyProfile();
+            if (refreshed.success && refreshed.data) {
+              const url = refreshed.data.photo || refreshed.data.profilePhoto || asset.uri;
+              setProfilePhoto(url);
+              await updateUser({ photo: url, profilePhoto: url });
+            } else {
+              // Fallback: show local image preview
+              setProfilePhoto(asset.uri);
+            }
+          } else {
+            // Fallback: show local image preview
+            setProfilePhoto(asset.uri);
+          }
+        } catch (e) {
+          Alert.alert('Error', e.message || 'Failed to upload photo.');
+        } finally {
+          setUploadingPhoto(false);
+        }
+      },
+    );
   };
 
-  if (!user) {
+  // ── Derived values ─ now use API-fetched state as source of truth ─────────────
+  const profile = {
+    displayName: displayName || user?.displayName || user?.name || 'User',
+    email: apiEmail || user?.email || '',
+    mobile: mobile || user?.mobile || user?.phone || '',
+    role: apiRole || user?.role || 'User',
+    status: apiStatus || user?.status || 'Active',
+    adminLevel: apiAdminLevel || user?.adminLevel || '',
+    company: apiCompany || user?.organization || user?.company || '',
+  };
+
+  if (!user || loadingProfile) {
     return (
       <View style={styles.container}>
         <View style={styles.centered}>
           <ActivityIndicator size="large" color={C.primary} />
+          {loadingProfile && <Text style={{ color: C.textTertiary, marginTop: 12, fontSize: ms(13) }}>Loading profile…</Text>}
         </View>
       </View>
     );
@@ -264,95 +366,126 @@ const ProfileScreen = ({ navigation }) => {
             showsVerticalScrollIndicator={false}
             keyboardShouldPersistTaps="handled"
           >
-            {/* ─── Profile Card ─────────────────────────────────── */}
+            {/* ─── Profile Card ─ top section: left (avatar + info + upload) / right (AI credits) */}
             <View style={styles.profileCard}>
-              <View style={styles.profileRow}>
-                {/* Avatar circle with gradient */}
-                <LinearGradient
-                  colors={['#4D8733', '#6BA344']}
-                  style={styles.avatarCircle}
-                >
-                  <Text style={styles.avatarInitials}>
-                    {getInitials(profile.displayName)}
-                  </Text>
-                </LinearGradient>
+              <View style={styles.profileCardInner}>
+                {/* LEFT SIDE: avatar + info + upload button */}
+                <View style={styles.profileLeftCol}>
+                  <View style={styles.profileRow}>
+                    {/* Avatar wrapper */}
+                    <View style={styles.avatarWrapper}>
+                      {profilePhoto ? (
+                        <Image
+                          source={{ uri: profilePhoto }}
+                          style={styles.avatarImage}
+                        />
+                      ) : (
+                        <LinearGradient
+                          colors={['#4D8733', '#6BA344']}
+                          style={styles.avatarCircle}
+                        >
+                          <Text style={styles.avatarInitials}>
+                            {getInitials(profile.displayName)}
+                          </Text>
+                        </LinearGradient>
+                      )}
+                      {uploadingPhoto && (
+                        <View style={styles.avatarOverlay}>
+                          <ActivityIndicator size="small" color="#fff" />
+                        </View>
+                      )}
+                    </View>
 
-                <View style={styles.profileInfo}>
-                  <Text style={styles.profileName}>{profile.displayName}</Text>
-
-                  {isAppleReviewMode && Platform.OS === 'ios' && (
-                    <View style={[styles.contactRow, { height: 6 }]}></View>
-                  )}
-
-                  {!isAppleReviewMode && Platform.OS === 'ios' && (
-                    <>
+                    <View style={styles.profileInfo}>
+                      <Text style={styles.profileName}>{profile.displayName}</Text>
                       <Text style={styles.profileEmail}>{profile.email}</Text>
 
                       {/* Badges */}
                       <View style={styles.badgeRow}>
-                        <View style={styles.roleBadge}>
-                          <IonIcon
-                            name="shield-checkmark"
-                            size={12}
-                            color={C.primary}
-                          />
-                          <Text style={styles.roleBadgeText}>
-                            {profile.role}
-                          </Text>
-                        </View>
-                        <View
-                          style={[
-                            styles.statusBadge,
-                            { backgroundColor: C.successBg },
-                          ]}
-                        >
-                          <Text
-                            style={[
-                              styles.statusBadgeText,
-                              { color: C.success },
-                            ]}
-                          >
-                            {profile.status}
-                          </Text>
-                        </View>
-                        {profile.adminLevel ? (
-                          <View
-                            style={[
-                              styles.statusBadge,
-                              { backgroundColor: C.dangerBg },
-                            ]}
-                          >
-                            <Text
-                              style={[
-                                styles.statusBadgeText,
-                                { color: C.danger },
-                              ]}
-                            >
+                        {!!profile.role && (
+                          <View style={styles.roleBadge}>
+                            <IonIcon name="shield-checkmark" size={11} color={C.primary} />
+                            <Text style={styles.roleBadgeText}>{profile.role}</Text>
+                          </View>
+                        )}
+                        {!!profile.status && (
+                          <View style={[styles.statusBadge, { backgroundColor: C.successBg }]}>
+                            <Text style={[styles.statusBadgeText, { color: C.success }]}>
+                              {profile.status}
+                            </Text>
+                          </View>
+                        )}
+                        {!!profile.adminLevel && (
+                          <View style={[styles.statusBadge, { backgroundColor: '#EDE7FF' }]}>
+                            <Text style={[styles.statusBadgeText, { color: '#7C3AED' }]}>
                               {profile.adminLevel}
                             </Text>
                           </View>
-                        ) : null}
+                        )}
                       </View>
-                    </>
-                  )}
 
-                  {/* Contact info row */}
-                  <View style={styles.contactRow}>
-                    <IonIcon name="call" size={13} color={C.textTertiary} />
-                    <Text style={styles.contactText}>
-                      {profile.mobile || '—'}
-                    </Text>
-                    <IonIcon
-                      name="grid"
-                      size={13}
-                      color={C.textTertiary}
-                      style={{ marginLeft: 10 }}
-                    />
-                    <Text style={styles.contactText}>
-                      {profile.company || '—'}
-                    </Text>
+                      {/* Contact info row */}
+                      <View style={styles.contactRow}>
+                        <IonIcon name="call" size={12} color={C.textTertiary} />
+                        <Text style={styles.contactText}>{profile.mobile || '—'}</Text>
+                        {!!profile.company && (
+                          <>
+                            <IonIcon name="grid" size={12} color={C.textTertiary} style={{ marginLeft: 8 }} />
+                            <Text style={styles.contactText}>{profile.company}</Text>
+                          </>
+                        )}
+                      </View>
+                    </View>
                   </View>
+
+                  {/* Upload Photo button */}
+                  <TouchableOpacity
+                    style={styles.uploadPhotoBtn}
+                    onPress={handlePickPhoto}
+                    disabled={uploadingPhoto}
+                    activeOpacity={0.8}
+                  >
+                    <IonIcon name="arrow-up-circle-outline" size={ms(16)} color={C.textSecondary} />
+                    <Text style={styles.uploadPhotoBtnText}>
+                      {uploadingPhoto ? 'Uploading…' : 'Upload Photo'}
+                    </Text>
+                  </TouchableOpacity>
                 </View>
+
+                {/* RIGHT SIDE: AI Credits panel */}
+                {planStatus?.data?.data && (() => {
+                  const { planName, usedCredits, totalCredits, remainingCredits, resetDate } = planStatus.data.data;
+                  const progress = Math.min(100, ((usedCredits || 0) / (totalCredits || 1)) * 100);
+                  const isLow = (remainingCredits || 0) < 50;
+                  return (
+                    <View style={styles.aiCreditsPanel}>
+                      <View style={styles.aiCreditsPanelTop}>
+                        <IonIcon name="flash" size={ms(14)} color={C.primary} />
+                        <View>
+                          <Text style={styles.aiCreditsPanelTitle}>AI Credits</Text>
+                          <Text style={styles.aiCreditsPanelPlan}>{planName || 'Basic plan'}</Text>
+                        </View>
+                      </View>
+                      <View style={styles.aiCreditsPanelUsedRow}>
+                        <Text style={styles.aiCreditsPanelUsed}>{usedCredits} / {totalCredits} used</Text>
+                        <Text style={[styles.aiCreditsPanelLeft, { color: isLow ? C.danger : C.primary }]}>
+                          {remainingCredits} left
+                        </Text>
+                      </View>
+                      <View style={styles.aiProgressBg}>
+                        <View
+                          style={[
+                            styles.aiProgressFill,
+                            { width: `${progress}%`, backgroundColor: isLow ? C.danger : C.primary },
+                          ]}
+                        />
+                      </View>
+                      <Text style={styles.aiCreditsReset}>
+                        Resets {resetDate ? new Date(resetDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'numeric', year: 'numeric' }) : '—'}
+                      </Text>
+                    </View>
+                  );
+                })()}
               </View>
             </View>
 
@@ -391,18 +524,14 @@ const ProfileScreen = ({ navigation }) => {
                   onChangeText={setDisplayName}
                 />
 
-                {!isAppleReviewMode && Platform.OS === 'ios' && (
-                  <>
-                    <View style={styles.fieldDivider} />
-                    <ProfileField
-                      icon="mail-outline"
-                      label="Email"
-                      value={profile.email}
-                      disabled
-                      note="Email cannot be changed"
-                    />
-                  </>
-                )}
+                <View style={styles.fieldDivider} />
+                <ProfileField
+                  icon="mail-outline"
+                  label="Email"
+                  value={profile.email}
+                  disabled
+                  note="Email cannot be changed"
+                />
                 <View style={styles.fieldDivider} />
                 <ProfileField
                   icon="call-outline"
@@ -734,9 +863,21 @@ const styles = StyleSheet.create({
     padding: ms(16),
     ...Shadow.sm,
   },
+  profileCardInner: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: ms(10),
+  },
+  profileLeftCol: {
+    flex: 1.2,
+  },
   profileRow: {
     flexDirection: 'row',
     alignItems: 'flex-start',
+    gap: ms(10),
+  },
+  avatarWrapper: {
+    position: 'relative',
   },
   avatarCircle: {
     width: ms(72),
@@ -745,10 +886,137 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
+  avatarImage: {
+    width: ms(72),
+    height: ms(72),
+    borderRadius: ms(36),
+    backgroundColor: C.divider,
+  },
+  avatarOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    borderRadius: ms(36),
+    backgroundColor: 'rgba(0,0,0,0.45)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   avatarInitials: {
     fontSize: ms(26),
     fontWeight: '800',
     color: '#fff',
+  },
+  // Upload photo button
+  uploadPhotoBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    alignSelf: 'flex-start',
+    marginTop: ms(10),
+    paddingVertical: ms(7),
+    paddingHorizontal: ms(12),
+    borderRadius: ms(10),
+    borderWidth: 1.2,
+    borderColor: C.surfaceBorder,
+    backgroundColor: C.surface,
+  },
+  uploadPhotoBtnText: {
+    fontSize: ms(13),
+    fontWeight: '500',
+    color: C.textSecondary,
+  },
+  // AI Credits right-column panel (side by side with profile info)
+  aiCreditsPanel: {
+    flex: 1,
+    backgroundColor: C.background,
+    borderRadius: ms(10),
+    padding: ms(10),
+    borderWidth: 1,
+    borderColor: C.primaryBorder,
+    justifyContent: 'space-between',
+  },
+  aiCreditsPanelTop: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 5,
+    marginBottom: ms(6),
+  },
+  aiCreditsPanelTitle: {
+    fontSize: ms(13),
+    fontWeight: '700',
+    color: C.text,
+  },
+  aiCreditsPanelPlan: {
+    fontSize: ms(10),
+    color: C.textTertiary,
+    marginTop: 1,
+  },
+  aiCreditsPanelUsedRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: ms(5),
+  },
+  aiCreditsPanelUsed: {
+    fontSize: ms(11),
+    color: C.textSecondary,
+  },
+  aiCreditsPanelLeft: {
+    fontSize: ms(13),
+    fontWeight: '700',
+  },
+  // AI Credits card
+  aiCreditsCard: {
+    marginTop: ms(12),
+    marginHorizontal: ms(4),
+    padding: ms(12),
+    backgroundColor: C.background,
+    borderRadius: ms(12),
+    borderWidth: 1,
+    borderColor: C.primaryBorder,
+  },
+  aiCreditsTop: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: ms(4),
+  },
+  aiCreditsLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+  },
+  aiCreditsTitle: {
+    fontSize: ms(14),
+    fontWeight: '700',
+    color: C.text,
+  },
+  aiCreditsPlan: {
+    fontSize: ms(11),
+    color: C.textTertiary,
+    marginLeft: ms(2),
+  },
+  aiCreditsLeft2: {
+    fontSize: ms(14),
+    fontWeight: '700',
+  },
+  aiCreditsUsed: {
+    fontSize: ms(12),
+    color: C.textSecondary,
+    marginBottom: ms(6),
+  },
+  aiProgressBg: {
+    height: ms(6),
+    backgroundColor: C.divider,
+    borderRadius: ms(3),
+    overflow: 'hidden',
+    marginBottom: ms(6),
+  },
+  aiProgressFill: {
+    height: '100%',
+    borderRadius: ms(3),
+  },
+  aiCreditsReset: {
+    fontSize: ms(11),
+    color: C.textTertiary,
   },
   profileInfo: {
     flex: 1,

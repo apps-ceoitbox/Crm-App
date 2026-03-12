@@ -13,14 +13,16 @@ import {
     AddLeadScreen,
     AddTaskScreen,
     ProfileScreen,
-    DashboardScreen,
     ContactsScreen,
     AddCompanyScreen,
     ReportsScreen,
     FollowUpEngineScreen,
     NotificationsScreen,
+    AIAssistantScreen,
 } from '../screens';
+import { CompanyScreen } from '../screens/main';
 import EditCompanyScreen from '../screens/main/EditCompanyScreen';
+import { OverdueDetailScreen, CompanyDetailsScreen, ContactDetailsScreen } from '../screens/details';
 
 const Stack = createNativeStackNavigator();
 
@@ -61,6 +63,9 @@ const MainStack = () => {
             <Stack.Screen
                 name={ROUTES.TASK_DETAILS}
                 component={TaskDetailsScreen}
+                options={{
+                    animation: 'slide_from_right',
+                }}
             />
             <Stack.Screen
                 name={ROUTES.ADD_TASK}
@@ -73,8 +78,19 @@ const MainStack = () => {
 
             {/* Company Screens (Accessed via Settings) */}
             <Stack.Screen
-                name={ROUTES.DASHBOARD}
-                component={DashboardScreen}
+                name={ROUTES.COMPANY}
+                component={CompanyScreen}
+                options={{ animation: 'slide_from_right' }}
+            />
+            <Stack.Screen
+                name={ROUTES.COMPANY_DETAILS}
+                component={CompanyDetailsScreen}
+                options={{ animation: 'slide_from_right' }}
+            />
+            <Stack.Screen
+                name={ROUTES.CONTACT_DETAILS}
+                component={ContactDetailsScreen}
+                options={{ animation: 'slide_from_right' }}
             />
             <Stack.Screen
                 name={ROUTES.ADD_COMPANY}
@@ -97,30 +113,45 @@ const MainStack = () => {
             <Stack.Screen
                 name={ROUTES.CONTACTS}
                 component={ContactsScreen}
+                options={{
+                    animation: 'slide_from_right',
+                }}
             />
 
             {/* Reports Screen */}
             <Stack.Screen
                 name={ROUTES.REPORTS}
                 component={ReportsScreen}
+                options={{
+                    animation: 'slide_from_right',
+                }}
             />
 
             {/* Follow Up Engine Screen */}
             <Stack.Screen
                 name={ROUTES.FOLLOW_UP_ENGINE}
                 component={FollowUpEngineScreen}
+                options={{
+                    animation: 'slide_from_right',
+                }}
             />
 
             {/* Profile Screen */}
             <Stack.Screen
                 name={ROUTES.PROFILE}
                 component={ProfileScreen}
+                options={{
+                    animation: 'slide_from_right',
+                }}
             />
 
             {/* Notifications Screen (live list, from API + FCM) */}
             <Stack.Screen
                 name={ROUTES.NOTIFICATIONS}
                 component={NotificationsScreen}
+                options={{
+                    animation: 'slide_from_right',
+                }}
             />
 
             {/* AI Assistant Screen */}
@@ -130,6 +161,13 @@ const MainStack = () => {
                 options={{
                     animation: 'slide_from_bottom',
                     presentation: 'fullScreenModal',
+                }}
+            />
+            <Stack.Screen
+                name={ROUTES.OVERDUE_DETAIL}
+                component={OverdueDetailScreen}
+                options={{
+                    animation: 'slide_from_right',
                 }}
             />
         </Stack.Navigator>

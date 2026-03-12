@@ -23,7 +23,7 @@ export {
 // API Services
 export {
   authAPI,
-  systemConfig,
+  SystemConfigAPI,
   userAPI,
   leadsAPI,
   tasksAPI,
@@ -32,5 +32,15 @@ export {
   companiesAPI,
   contactsAPI,
   deviceTokensAPI,
+  settingsAPI,
+  followUpAPI,
+  pipelineAPI,
+  reportsAPI,
+  aiAPI,
+  productsAPI,
+  dealStagesAPI,
+  leadTagsAPI,
+  leadSourcesAPI,
+  usersAPI,
 } from './services';
 export { default as API } from './services';

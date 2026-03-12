@@ -7,7 +7,7 @@ export { SplashScreen, LoginScreen, RegisterScreen, OnboardingScreen } from './a
 
 // Main Screens
 export {
-    DashboardScreen,
+    CompanyScreen,
     ContactsScreen,
     LeadsScreen,
     PipelineScreen,
@@ -16,12 +16,14 @@ export {
     AddCompanyScreen,
     SettingsScreen,
     ReportsScreen,
+    TeamPerformanceScreen,
+    ForecastScreen,
+    SmartCallDashboardScreen,
     FollowUpEngineScreen,
     NotificationsScreen,
     AIAssistantScreen,
 } from './main';
 
-// Detail Screens
 export {
     LeadDetailsScreen,
     TaskDetailsScreen,
@@ -29,5 +31,7 @@ export {
     AddTaskScreen,
     EditLeadScreen,
     EditContactScreen,
+    AddContactScreen,
+    EditTaskScreen,
 } from './details';
 

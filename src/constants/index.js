@@ -45,9 +45,11 @@ export const ROUTES = {
     // Company Screens
     EDIT_COMPANY: 'EditCompany',
     ADD_COMPANY: 'AddCompany',
+    COMPANY_DETAILS: 'CompanyDetails',
+    CONTACT_DETAILS: 'ContactDetails',
 
     // Tab Screens
-    DASHBOARD: 'Dashboard',
+    COMPANY: 'Company',
     CONTACTS: 'Contacts',
     LEADS: 'Leads',
     PIPELINE: 'Pipeline',
@@ -61,12 +63,19 @@ export const ROUTES = {
     ADD_TASK: 'AddTask',
     EDIT_LEAD: 'EditLead',
     EDIT_CONTACT: 'EditContact',
+    ADD_CONTACT: 'AddContact',
     EDIT_PROFILE: 'EditProfile',
     SETTINGS: 'Settings',
+    EDIT_TASK: 'EditTask',
     REPORTS: 'Reports',
+    COMPANY_DETAILS: 'CompanyDetails',
+    TEAM_PERFORMANCE: 'TeamPerformance',
+    FORECAST: 'Forecast',
+    SMART_CALL_DASHBOARD: 'SmartCallDashboard',
     FOLLOW_UP_ENGINE: 'FollowUpEngine',
     NOTIFICATIONS: 'Notifications',
     AI_ASSISTANT: 'AIAssistant',
+    OVERDUE_DETAIL: 'OverdueDetail',
 };
 
 

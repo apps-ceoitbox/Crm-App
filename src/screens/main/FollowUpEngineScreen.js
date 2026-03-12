@@ -23,6 +23,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import { Colors } from '../../constants/Colors';
 import { Spacing, BorderRadius, Shadow } from '../../constants/Spacing';
 import { ms, vs, wp } from '../../utils/Responsive';
+import { ROUTES } from '../../constants';
 import CommonHeader from '../../components/CommonHeader';
 import API from '../../api/services';
 
@@ -301,7 +302,9 @@ const FollowUpEngineScreen = ({ navigation }) => {
 
     const handlePress = (item) => {
         if (item._id || item.id) {
-            navigation.navigate('LeadDetails', { lead: item, id: item._id || item.id });
+            if (activeTab === TAB_OVERDUE) {
+                navigation.navigate(ROUTES.LEAD_DETAILS, { lead: item, id: item._id || item.id });
+            }
         }
     };
 

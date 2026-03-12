@@ -79,17 +79,21 @@ const CompanyCard = ({ company, onPress, onEdit, onDelete }) => {
           <View style={styles.metricItem}>
             <IonIcon
               name="person-outline"
-              size={13}
+              size={ms(15)}
               color={Colors.textTertiary}
             />
-            <Text style={styles.metricText}>{company.salesperson}</Text>
+            <Text style={styles.metricText}>
+              {typeof company.salesperson === 'object'
+                ? (company.salesperson?.name || company.salesperson?.email || '')
+                : company.salesperson}
+            </Text>
           </View>
         ) : null}
         {location ? (
           <View style={styles.metricItem}>
             <IonIcon
               name="location-outline"
-              size={13}
+              size={ms(15)}
               color={Colors.textTertiary}
             />
             <Text style={styles.metricText}>{location}</Text>
@@ -100,7 +104,7 @@ const CompanyCard = ({ company, onPress, onEdit, onDelete }) => {
             style={styles.metricItem}
             onPress={() => Linking.openURL(`mailto:${company.email}`)}
           >
-            <IonIcon name="mail-outline" size={13} color={Colors.info} />
+            <IonIcon name="mail-outline" size={ms(15)} color={Colors.info} />
             <Text
               style={[styles.metricText, { color: Colors.info }]}
               numberOfLines={1}
@@ -117,7 +121,7 @@ const CompanyCard = ({ company, onPress, onEdit, onDelete }) => {
           style={styles.actionPill}
           onPress={() => onEdit?.(company)}
         >
-          <IonIcon name="create-outline" size={14} color={Colors.info} />
+          <IonIcon name="create-outline" size={ms(15)} color={Colors.info} />
           <Text style={[styles.actionPillText, { color: Colors.info }]}>
             Edit
           </Text>
@@ -127,7 +131,7 @@ const CompanyCard = ({ company, onPress, onEdit, onDelete }) => {
             style={styles.actionPill}
             onPress={() => Linking.openURL(`tel:${company.phone}`)}
           >
-            <IonIcon name="call-outline" size={14} color={Colors.primary} />
+            <IonIcon name="call-outline" size={ms(15)} color={Colors.primary} />
             <Text style={[styles.actionPillText, { color: Colors.primary }]}>
               Call
             </Text>
@@ -137,7 +141,7 @@ const CompanyCard = ({ company, onPress, onEdit, onDelete }) => {
           style={styles.actionPill}
           onPress={() => onDelete?.(company)}
         >
-          <IonIcon name="trash-outline" size={14} color={Colors.danger} />
+          <IonIcon name="trash-outline" size={ms(15)} color={Colors.danger} />
           <Text style={[styles.actionPillText, { color: Colors.danger }]}>
             Remove
           </Text>
@@ -147,7 +151,7 @@ const CompanyCard = ({ company, onPress, onEdit, onDelete }) => {
   );
 };
 
-const DashboardScreen = ({ navigation }) => {
+const CompanyScreen = ({ navigation }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(true);
@@ -241,7 +245,16 @@ const DashboardScreen = ({ navigation }) => {
   }, [loadingMore, hasMore, loading, page, searchQuery]);
 
   const handleEditCompany = company => {
-    nav.navigate('EditCompany', { company });
+    nav.navigate('EditCompany', {
+      company,
+      onUpdate: (updatedCompany) => {
+        setCompanies(prev => prev.map(c =>
+          (c._id === updatedCompany._id || c.id === updatedCompany.id)
+            ? updatedCompany
+            : c
+        ));
+      }
+    });
   };
 
   const handleDeleteCompany = company => {
@@ -362,7 +375,10 @@ const DashboardScreen = ({ navigation }) => {
               <CompanyCard
                 company={item}
                 onPress={() =>
-                  navigation.navigate('CompanyDetails', { company: item })
+                  navigation.navigate('CompanyDetails', {
+                    company: item,
+                    companyId: item._id || item.id,
+                  })
                 }
                 onEdit={handleEditCompany}
                 onDelete={handleDeleteCompany}
@@ -487,11 +503,11 @@ const styles = StyleSheet.create({
   metricsRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: ms(10),
+    gap: ms(15),
     marginTop: Spacing.md,
   },
   metricItem: { flexDirection: 'row', alignItems: 'center', gap: 4 },
-  metricText: { fontSize: ms(11), color: Colors.textSecondary },
+  metricText: { fontSize: ms(14), color: Colors.textSecondary },
 
   // Actions
   actionStrip: {
@@ -503,7 +519,7 @@ const styles = StyleSheet.create({
     borderTopColor: Colors.divider,
   },
   actionPill: { flexDirection: 'row', alignItems: 'center', gap: 4 },
-  actionPillText: { fontSize: ms(12), fontWeight: '600' },
+  actionPillText: { fontSize: ms(14), fontWeight: '600' },
 
   // Empty
   emptyState: { alignItems: 'center', paddingTop: ms(80) },
@@ -539,4 +555,4 @@ const styles = StyleSheet.create({
   footerLoader: { paddingVertical: Spacing.md, alignItems: 'center' },
 });
 
-export default DashboardScreen;
+export default CompanyScreen;

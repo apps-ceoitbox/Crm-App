@@ -16,8 +16,9 @@ import {
     LayoutAnimation,
     Platform,
     UIManager,
+    Alert,
 } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import IonIcon from 'react-native-vector-icons/Ionicons';
 import { Colors } from '../../constants/Colors';
@@ -28,6 +29,7 @@ import { tasksAPI } from '../../api';
 import { showError } from '../../utils';
 import { useAuth } from '../../context';
 import CommonHeader from '../../components/CommonHeader';
+import { ROUTES } from '../../constants';
 
 // Enable LayoutAnimation for Android
 if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
@@ -55,21 +57,30 @@ const PRIORITY_CONFIG = {
     urgent: { color: '#dc2626', bg: '#FEF2F2' },
 };
 
-const FILTERS = ['All', 'Pending', 'Completed'];
+const FILTERS = ['All', 'Pending', 'In Progress', 'Completed'];
 
 // Format due date helper matching Expo
 function formatDueDate(dateStr) {
     if (!dateStr) return 'No date';
+
     try {
         const now = new Date();
         const due = new Date(dateStr);
+
         const diffMs = due.getTime() - now.getTime();
         const diffDays = Math.floor(diffMs / 86400000);
+
         if (diffDays < -1) return `${Math.abs(diffDays)}d overdue`;
         if (diffDays === -1) return 'Yesterday';
         if (diffDays === 0) return 'Today';
         if (diffDays === 1) return 'Tomorrow';
-        return due.toLocaleDateString('en-IN', { day: '2-digit', month: 'short' });
+
+        const day = String(due.getDate()).padStart(2, '0');
+        const month = due.toLocaleString('en-IN', { month: 'short' });
+        const year = due.getFullYear();
+
+        return `${day}-${month}-${year}`;
+
     } catch {
         return 'N/A';
     }
@@ -82,104 +93,117 @@ function isDueOrOverdue(dateStr) {
 
 // Task Card Component — matching Expo design
 const TaskCard = ({ task, onPress, onEdit, onDelete, onToggleComplete }) => {
-    const status = task.status?.toLowerCase() || 'pending';
+    const status = task.status?.toLowerCase() || 'open';
     const isDone = status === 'completed';
     const taskType = task.taskType || task.type || 'Call';
     const typeConfig = TYPE_ICONS[taskType] || TYPE_ICONS.Call;
     const priority = task.priority || 'Medium';
     const prioConfig = PRIORITY_CONFIG[priority] || PRIORITY_CONFIG.Medium;
-    const isOverdue = !isDone && isDueOrOverdue(task.dueDate);
+    const isOverdue = !isDone && isDueOrOverdue(task.dueAt || task.dueDate);
 
-    const getRelatedTo = () => {
-        if (task.lead) {
-            if (typeof task.lead === 'object') return task.lead.title || task.lead.name || null;
-            return task.lead;
+    const getRelatedToDetails = () => {
+        let name = '';
+        let email = '';
+        const obj = task.relatedTo?.entityId || task.relatedTo || task.lead;
+        if (obj && typeof obj === 'object') {
+            name = obj.name || obj.title || (obj.contact && `${obj.contact.firstName || ''} ${obj.contact.lastName || ''}`.trim()) || '';
+            email = obj.email || (obj.contact && obj.contact.email) || '';
+        } else if (typeof obj === 'string') {
+            name = obj;
         }
-        if (task.relatedTo) {
-            return typeof task.relatedTo === 'object' ? task.relatedTo.name : task.relatedTo;
-        }
-        return null;
+
+        return { name: name || 'Unknown', email };
     };
 
-    const getAssignedTo = () => {
-        if (task.assignedTo) {
-            if (typeof task.assignedTo === 'object') return task.assignedTo.name || task.assignedTo.firstName || null;
-            return task.assignedTo;
+    const getAssignedToName = () => {
+        const obj = task.assignedTo;
+        if (obj && typeof obj === 'object') {
+            return obj.name || obj.firstName || 'Unknown User';
         }
-        return null;
+        return obj || 'None';
     };
 
-    const relatedTo = getRelatedTo();
-    const assignedTo = getAssignedTo();
+    const relatedTo = getRelatedToDetails();
+    const assignedTo = getAssignedToName();
+
+    const statusConfig = {
+        completed: { color: Colors.success, bg: '#ECFDF5', icon: 'checkmark-circle', label: 'Completed' },
+        open: { color: '#F59E0B', bg: '#FFFBEB', icon: 'time', label: 'Pending' },
+        in_progress: { color: Colors.info, bg: '#EFF6FF', icon: 'play-circle', label: 'In Progress' },
+    };
+    const currentStatusConfig = statusConfig[status] || statusConfig.open;
 
     return (
-        <View style={[styles.taskCard, isDone && styles.taskCardDone]}>
-            {/* Left accent */}
-            <View style={[styles.taskAccent, { backgroundColor: isDone ? Colors.success : typeConfig.color }]} />
-
-            <View style={styles.taskContent}>
-                {/* Top row: checkbox + title + type icon */}
-                <View style={styles.taskTopRow}>
-                    <TouchableOpacity
-                        style={[styles.checkbox, isDone && styles.checkboxDone]}
-                        onPress={() => onToggleComplete?.(task)}
-                    >
-                        {isDone ? <IonIcon name="checkmark" size={14} color="#fff" /> : null}
-                    </TouchableOpacity>
-                    <TouchableOpacity style={styles.taskTitleWrap} onPress={onPress} activeOpacity={0.7}>
-                        <Text style={[styles.taskTitle, isDone && styles.taskTitleDone]} numberOfLines={2}>
-                            {task.title || 'Untitled Task'}
-                        </Text>
-                        {relatedTo ? (
-                            <Text style={styles.taskRelated} numberOfLines={1}>
-                                <IonIcon name="person-outline" size={11} color={Colors.textTertiary} /> {relatedTo}
-                            </Text>
-                        ) : null}
-                    </TouchableOpacity>
-                    <View style={[styles.typeIcon, { backgroundColor: typeConfig.bg }]}>
-                        <IonIcon name={typeConfig.icon} size={16} color={typeConfig.color} />
-                    </View>
+        <TouchableOpacity
+            style={[styles.taskCard, isDone && styles.taskCardDone]}
+            onPress={onPress}
+            activeOpacity={0.7}
+        >
+            {/* Header: Title + Date */}
+            <View style={styles.taskCardHeader}>
+                <View style={styles.taskTitleWrap}>
+                    <Text style={[styles.taskTitle, isDone && styles.taskTitleDone]} numberOfLines={2}>
+                        {task.title || 'Untitled Task'}
+                    </Text>
                 </View>
+                <View style={styles.dateWrap}>
+                    <IonIcon name="calendar" size={ms(12)} color={isOverdue && !isDone ? Colors.danger : Colors.textTertiary} />
+                    <Text style={[styles.dateText, isOverdue && !isDone ? { color: Colors.danger } : null]}>
+                        {formatDueDate(task.dueAt || task.dueDate)}
+                    </Text>
+                </View>
+            </View>
 
-                {/* Tags row */}
-                <View style={styles.tagsRow}>
-                    <View style={[styles.tag, { backgroundColor: prioConfig.bg }]}>
-                        <IonIcon name="flag" size={10} color={prioConfig.color} />
-                        <Text style={[styles.tagText, { color: prioConfig.color }]}>
+            {/* Body: Assigned & Related Details */}
+            <View style={styles.taskBody}>
+                {assignedTo && assignedTo !== 'None' ? (
+                    <View style={styles.detailRow}>
+                        <IonIcon name="person" size={ms(13)} color={Colors.textTertiary} />
+                        <Text style={styles.detailText} numberOfLines={1}>
+                            <Text style={styles.detailLabel}>Assignee: </Text>
+                            {assignedTo}
+                        </Text>
+                    </View>
+                ) : null}
+
+                {relatedTo.name && relatedTo.name !== 'Unknown' ? (
+                    <View style={styles.detailRow}>
+                        <IonIcon name="briefcase" size={ms(13)} color={Colors.textTertiary} />
+                        <Text style={styles.detailText} numberOfLines={1}>
+                            <Text style={styles.detailLabel}>Related to: </Text>
+                            {relatedTo.name} {relatedTo.email ? `(${relatedTo.email})` : ''}
+                        </Text>
+                    </View>
+                ) : null}
+            </View>
+
+            {/* Footer: Status, Priority, Actions */}
+            <View style={styles.taskFooter}>
+                <View style={styles.tagsContainer}>
+                    <View style={[styles.pillTag, { backgroundColor: currentStatusConfig.bg }]}>
+                        <IonIcon name={currentStatusConfig.icon} size={ms(12)} color={currentStatusConfig.color} />
+                        <Text style={[styles.pillTagText, { color: currentStatusConfig.color }]}>
+                            {currentStatusConfig.label}
+                        </Text>
+                    </View>
+                    <View style={[styles.pillTag, { backgroundColor: prioConfig.bg }]}>
+                        <IonIcon name="flag" size={ms(12)} color={prioConfig.color} />
+                        <Text style={[styles.pillTagText, { color: prioConfig.color }]}>
                             {typeof priority === 'string' ? priority.charAt(0).toUpperCase() + priority.slice(1).toLowerCase() : priority}
                         </Text>
                     </View>
-                    <View style={[styles.tag, { backgroundColor: isOverdue ? Colors.dangerBg : Colors.background }]}>
-                        <IonIcon name="time-outline" size={10} color={isOverdue ? Colors.danger : Colors.textSecondary} />
-                        <Text style={[styles.tagText, { color: isOverdue ? Colors.danger : Colors.textSecondary }]}>
-                            {formatDueDate(task.dueDate)}
-                        </Text>
-                    </View>
-                    {assignedTo ? (
-                        <View style={[styles.tag, { backgroundColor: Colors.background }]}>
-                            <IonIcon name="person-outline" size={10} color={Colors.textTertiary} />
-                            <Text style={[styles.tagText, { color: Colors.textTertiary }]}>{assignedTo}</Text>
-                        </View>
-                    ) : null}
                 </View>
 
-                {/* Actions */}
-                <View style={styles.actionRow}>
-                    <TouchableOpacity
-                        style={styles.actionBtn}
-                        onPress={() => onEdit?.(task)}
-                    >
-                        <IonIcon name="create-outline" size={15} color={Colors.info} />
+                <View style={styles.actionButtons}>
+                    <TouchableOpacity style={styles.miniActionBtn} onPress={() => onEdit?.(task)}>
+                        <IonIcon name="create-outline" size={ms(17)} color={Colors.info} />
                     </TouchableOpacity>
-                    <TouchableOpacity
-                        style={styles.actionBtn}
-                        onPress={() => onDelete?.(task)}
-                    >
-                        <IonIcon name="trash-outline" size={15} color={Colors.danger} />
+                    <TouchableOpacity style={styles.miniActionBtn} onPress={() => onDelete?.(task)}>
+                        <IonIcon name="trash-outline" size={ms(17)} color={Colors.danger} />
                     </TouchableOpacity>
                 </View>
             </View>
-        </View>
+        </TouchableOpacity>
     );
 };
 
@@ -201,14 +225,24 @@ const TasksScreen = ({ navigation }) => {
     const [hasMore, setHasMore] = useState(true);
     const [tasks, setTasks] = useState([]);
 
-    // Filter tasks by status
-    const filtered = tasks.filter((t) => {
-        if (filter === 'Pending') return t.status?.toLowerCase() !== 'completed';
-        if (filter === 'Completed') return t.status?.toLowerCase() === 'completed';
-        return true;
-    });
+    // Map filter name to the matching API status(es)
+    const statusMatchesFilter = (taskStatus, filterName) => {
+        const s = taskStatus?.toLowerCase() || 'open';
+        switch (filterName) {
+            case 'All': return true;
+            case 'Pending': return s === 'open';
+            case 'In Progress': return s === 'in_progress';
+            case 'Completed': return s === 'completed';
+            default: return true;
+        }
+    };
 
-    const pendingCount = tasks.filter((t) => t.status?.toLowerCase() !== 'completed').length;
+    // Filter tasks by the active filter
+    const filtered = tasks.filter((t) => statusMatchesFilter(t.status, filter));
+
+    // Count helper — used by both the subtitle and filter pills
+    const getCount = (f) => tasks.filter((t) => statusMatchesFilter(t.status, f)).length;
+    const pendingCount = getCount('Pending');
 
     // Debounced search effect
     useEffect(() => {
@@ -227,11 +261,13 @@ const TasksScreen = ({ navigation }) => {
         };
     }, [searchQuery]);
 
-    // Fetch tasks on mount (initial load only)
-    useEffect(() => {
-        fetchTasks(1, true, '');
-        isInitialLoadRef.current = false;
-    }, []);
+    // Refetch tasks every time screen gains focus (covers create, edit, delete from other screens)
+    useFocusEffect(
+        useCallback(() => {
+            fetchTasks(1, true, searchQuery.trim());
+            isInitialLoadRef.current = false;
+        }, [])
+    );
 
     const fetchTasks = async (pageNum = 1, showLoader = false, search = '') => {
         try {
@@ -281,12 +317,37 @@ const TasksScreen = ({ navigation }) => {
     }, [loadingMore, hasMore, loading, page, searchQuery]);
 
     const handleEditTask = (task) => {
-        nav.navigate('EditTask', { task });
+        nav.navigate(ROUTES.EDIT_TASK, { task });
     };
 
     const handleDeleteTask = (task) => {
-        console.log('Delete task:', task._id);
-        // TODO: Implement delete confirmation
+        const taskId = task._id || task.id;
+        Alert.alert(
+            'Delete Task',
+            `Are you sure you want to delete "${task.title}"?`,
+            [
+                { text: 'Cancel', style: 'cancel' },
+                {
+                    text: 'Delete',
+                    style: 'destructive',
+                    onPress: async () => {
+                        try {
+                            const response = await tasksAPI.delete(taskId);
+                            console.log('Delete response:', response);
+                            if (response.success) {
+                                // Remove from local state
+                                setTasks(prev => prev.filter(t => (t._id || t.id) !== taskId));
+                            } else {
+                                Alert.alert('Error', response.error || 'Failed to delete task');
+                            }
+                        } catch (error) {
+                            console.error('Error deleting task:', error);
+                            Alert.alert('Error', 'Failed to delete task');
+                        }
+                    },
+                },
+            ],
+        );
     };
 
     const handleTaskPress = (task) => {
@@ -392,9 +453,7 @@ const TasksScreen = ({ navigation }) => {
             {/* Filter pills */}
             <View style={styles.filterRow}>
                 {FILTERS.map((f) => {
-                    const count = f === 'All' ? tasks.length :
-                        f === 'Pending' ? pendingCount :
-                            tasks.length - pendingCount;
+                    const count = getCount(f);
                     const isActive = filter === f;
                     return (
                         <TouchableOpacity
@@ -488,36 +547,53 @@ const styles = StyleSheet.create({
 
     listContent: { paddingHorizontal: Spacing.lg, paddingBottom: ms(100) },
 
-    // Task card — Expo style
+    // Task card — Redesigned Premium Style
     taskCard: {
-        flexDirection: 'row', backgroundColor: Colors.surface,
-        borderRadius: BorderRadius.lg, marginBottom: Spacing.md,
-        overflow: 'hidden', ...Shadow.sm,
+        backgroundColor: Colors.surface,
+        borderRadius: ms(16),
+        padding: ms(16),
+        marginBottom: Spacing.md,
+        borderWidth: 1.5,
+        borderColor: Colors.surfaceBorder,
+        ...Shadow.sm,
     },
-    taskCardDone: { opacity: 0.7 },
-    taskAccent: { width: ms(4) },
-    taskContent: { flex: 1, padding: ms(14) },
-    taskTopRow: { flexDirection: 'row', alignItems: 'flex-start' },
-    checkbox: {
-        width: ms(22), height: ms(22), borderRadius: ms(7),
-        borderWidth: 2, borderColor: Colors.surfaceBorder,
-        justifyContent: 'center', alignItems: 'center', marginTop: 2,
+    taskCardDone: { opacity: 0.65 },
+
+    // Header
+    taskCardHeader: {
+        flexDirection: 'row',
+        alignItems: 'flex-start',
+        justifyContent: 'space-between',
+        marginBottom: Spacing.md,
     },
-    checkboxDone: { backgroundColor: Colors.success, borderColor: Colors.success },
-    taskTitleWrap: { flex: 1, marginLeft: Spacing.sm },
-    taskTitle: { fontSize: ms(15), fontWeight: '600', color: Colors.textPrimary, lineHeight: ms(20) },
+    taskTitleWrap: { flex: 1, paddingRight: Spacing.md, justifyContent: 'flex-start' },
+    taskTitle: { fontSize: ms(16), fontWeight: '700', color: Colors.textPrimary, lineHeight: ms(22) },
     taskTitleDone: { textDecorationLine: 'line-through', color: Colors.textTertiary },
-    taskRelated: { fontSize: ms(11), color: Colors.textTertiary, marginTop: 3 },
-    typeIcon: {
-        width: ms(32), height: ms(32), borderRadius: ms(10),
-        justifyContent: 'center', alignItems: 'center', marginLeft: 8,
+
+    dateWrap: { flexDirection: 'row', alignItems: 'center', gap: ms(4), marginTop: ms(2) },
+    dateText: { fontSize: ms(12), color: Colors.textSecondary, fontWeight: '600' },
+
+    // Body
+    taskBody: { marginBottom: Spacing.md, paddingLeft: ms(2) },
+    detailRow: { flexDirection: 'row', alignItems: 'center', marginBottom: ms(6) },
+    detailLabel: { color: Colors.textSecondary, fontWeight: '500' },
+    detailText: { flex: 1, fontSize: ms(13), color: Colors.textPrimary, marginLeft: ms(6) },
+
+    // Footer
+    taskFooter: {
+        flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
+        paddingTop: Spacing.md, borderTopWidth: 1, borderTopColor: Colors.surfaceBorder,
     },
-    tagsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: Spacing.sm, paddingLeft: ms(30) },
-    tag: {
-        flexDirection: 'row', alignItems: 'center', gap: 3,
-        paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6,
+    tagsContainer: { flexDirection: 'row', flexWrap: 'wrap', gap: ms(8), flex: 1, paddingRight: ms(8) },
+    pillTag: {
+        flexDirection: 'row', alignItems: 'center', gap: ms(4),
+        paddingHorizontal: ms(8), paddingVertical: ms(4),
+        borderRadius: ms(6),
     },
-    tagText: { fontSize: ms(10), fontWeight: '600' },
+    pillTagText: { fontSize: ms(12), fontWeight: '600' },
+
+    actionButtons: { flexDirection: 'row', alignItems: 'center', gap: ms(12) },
+    miniActionBtn: { padding: ms(4) },
     actionRow: {
         flexDirection: 'row', justifyContent: 'flex-end', gap: Spacing.sm,
         marginTop: Spacing.sm, paddingTop: Spacing.sm,
