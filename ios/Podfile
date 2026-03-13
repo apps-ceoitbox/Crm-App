@@ -10,29 +10,39 @@ prepare_react_native_project!
 
 linkage = ENV['USE_FRAMEWORKS']
 if linkage != nil
-  Pod::UI.puts "Configuring Pod withcd #{linkage}ally linked Frameworks".green
+  Pod::UI.puts "Configuring Pod with #{linkage}ally linked Frameworks".green
   use_frameworks! :linkage => linkage.to_sym
 end
 
+# Capture react_native_path at the outer scope so post_install can access it
+react_native_path = nil
+
 target 'CbxCrm' do
   config = use_native_modules!
+  react_native_path = config[:reactNativePath]
 
   # ✅ Modular headers ONLY for Firebase related pods
   pod 'FirebaseCoreInternal', :modular_headers => true
   pod 'GoogleUtilities', :modular_headers => true
 
-
   use_react_native!(
-    :path => config[:reactNativePath],
+    :path => react_native_path,
     :app_path => "#{Pod::Config.instance.installation_root}/.."
   )
+end
 
-  post_install do |installer|
-    react_native_post_install(
-      installer,
-      config[:reactNativePath],
-      :mac_catalyst_enabled => false,
-      # :ccache_enabled => true
-    )
+post_install do |installer|
+  react_native_post_install(
+    installer,
+    react_native_path,
+    :mac_catalyst_enabled => false
+  )
+
+  installer.pods_project.targets.each do |target|
+    if target.name == "hermes-engine"
+      target.build_configurations.each do |config|
+        config.build_settings['DEBUG_INFORMATION_FORMAT'] = 'dwarf-with-dsym'
+      end
+    end
   end
 end
