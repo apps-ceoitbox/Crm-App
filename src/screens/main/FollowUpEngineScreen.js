@@ -311,6 +311,24 @@ const FollowUpEngineScreen = ({ navigation }) => {
                     }
                 });
             }
+            if (activeTab === TAB_DUE_TODAY) {
+                navigation.navigate(ROUTES.LEAD_DETAILS, {
+                    lead: item,
+                    id: item._id || item.id,
+                    refreshFollowUps: () => {
+                        fetchTabData(TAB_DUE_TODAY, 1, false);
+                    }
+                });
+            }
+            if (activeTab === TAB_RULE_GENERATED) {
+                navigation.navigate(ROUTES.LEAD_DETAILS, {
+                    lead: item,
+                    id: item._id || item.id,
+                    refreshFollowUps: () => {
+                        fetchTabData(TAB_RULE_GENERATED, 1, false);
+                    }
+                });
+            }
         }
     };
 

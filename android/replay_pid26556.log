@@ -2,33 +2,63 @@ version 2
 JvmtiExport can_access_local_variables 0
 JvmtiExport can_hotswap_or_post_breakpoint 0
 JvmtiExport can_post_on_exceptions 0
-# 235 ciObject found
-instanceKlass org/gradle/internal/logging/console/ThrottlingOutputEventListener
+# 171 ciObject found
+instanceKlass com/google/common/collect/ImmutableList
 ciInstanceKlass java/lang/Cloneable 1 0 7 100 1 100 1 1 1
 instanceKlass org/gradle/internal/logging/console/DefaultTextArea$2$1
 instanceKlass org/gradle/internal/logging/console/DefaultTextArea$2
 instanceKlass org/gradle/internal/logging/text/AbstractLineChoppingStyledTextOutput$StateContext
+instanceKlass org/gradle/internal/serialize/ExceptionReplacingObjectInputStream$1
+instanceKlass  @bci java/io/ObjectInputFilter$Config <clinit> ()V 368 <appendix> argL0 ; # java/io/ObjectInputFilter$Config$$Lambda+0x0000016e36160f80
+instanceKlass jdk/internal/access/JavaObjectInputFilterAccess
+instanceKlass java/io/ObjectInputFilter$Config$BuiltinFilterFactory
+instanceKlass  @bci java/io/ObjectInputFilter$Config <clinit> ()V 80 <appendix> argL0 ; # java/io/ObjectInputFilter$Config$$Lambda+0x0000016e36160948
+instanceKlass  @bci java/io/ObjectInputFilter$Config <clinit> ()V 56 <appendix> argL0 ; # java/io/ObjectInputFilter$Config$$Lambda+0x0000016e36160738
+instanceKlass sun/util/logging/PlatformLogger$ConfigurableBridge$LoggerConfiguration
+instanceKlass jdk/internal/logger/LoggerFinderLoader
+instanceKlass  @bci java/lang/System$LoggerFinder accessProvider ()Ljava/lang/System$LoggerFinder; 8 <appendix> argL0 ; # java/lang/System$LoggerFinder$$Lambda+0x0000016e360ffb70
+instanceKlass jdk/internal/logger/LazyLoggers$LazyLoggerFactories
+instanceKlass jdk/internal/logger/LazyLoggers$1
+instanceKlass jdk/internal/logger/LazyLoggers
+instanceKlass java/io/ObjectInputFilter
+instanceKlass java/io/ObjectInputFilter$Config
+instanceKlass java/io/ObjectInputStream$ValidationList
+instanceKlass java/io/ObjectInputStream$HandleTable$HandleList
+instanceKlass java/io/ObjectInputStream$HandleTable
+instanceKlass  @bci java/io/ObjectInputStream <clinit> ()V 100 <appendix> argL0 ; # java/io/ObjectInputStream$$Lambda+0x0000016e360fe058
+instanceKlass jdk/internal/access/JavaObjectInputStreamReadString
+instanceKlass  @bci java/io/ObjectInputStream <clinit> ()V 92 <appendix> argL0 ; # java/io/ObjectInputStream$$Lambda+0x0000016e360fdc58
+instanceKlass  @cpi java/io/ObjectInputStream 1214 form vmentry <vmtarget> ; # java/lang/invoke/LambdaForm$DMH+0x0000016e3614c400
+instanceKlass jdk/internal/access/JavaObjectInputStreamAccess
+instanceKlass java/io/ObjectOutput
+instanceKlass java/io/ObjectStreamConstants
+instanceKlass java/io/ObjectInput
+instanceKlass org/gradle/internal/serialize/Message
 instanceKlass com/google/common/collect/Lists$ReverseList$1
 instanceKlass org/gradle/internal/logging/console/DefaultColorMap$CompositeColor
 instanceKlass org/gradle/internal/logging/console/DefaultColorMap$ForegroundColor
-# instanceKlass java/lang/invoke/LambdaForm$MH+0x0000022701142000
+# instanceKlass java/lang/invoke/LambdaForm$MH+0x0000016e3614c000
 instanceKlass java/lang/invoke/MethodHandle$1
 instanceKlass com/google/common/base/ExtraObjectsMethodsForWeb
+instanceKlass org/gradle/internal/logging/console/WorkInProgressRenderer$AssociationLabel
+instanceKlass org/gradle/internal/logging/console/DefaultColorMap$AttributeColor
+instanceKlass org/gradle/internal/logging/console/DefaultRedrawableLabel$1
 instanceKlass org/gradle/internal/time/TimeFormatting
+instanceKlass org/gradle/internal/logging/console/ProgressOperation
 instanceKlass org/gradle/internal/logging/format/TersePrettyDurationFormatter
 instanceKlass org/gradle/internal/logging/format/DurationFormatter
 instanceKlass org/gradle/internal/logging/console/ProgressBar
+instanceKlass net/rubygrapefruit/platform/internal/MutableTerminalSize
+instanceKlass com/google/common/collect/NullnessCasts
+instanceKlass org/gradle/internal/logging/sink/GroupingProgressLogEventGenerator$OperationState
 instanceKlass org/gradle/launcher/daemon/client/DaemonCancelForwarder$1
 instanceKlass org/gradle/launcher/daemon/client/DaemonCancelForwarder
 instanceKlass org/gradle/internal/daemon/client/clientinput/DaemonClientInputForwarder$ForwardingUserInput
-instanceKlass  @bci java/util/concurrent/Executors$AutoShutdownDelegatedExecutorService <init> (Ljava/util/concurrent/ExecutorService;)V 6 <appendix> member <vmtarget> ; # java/util/concurrent/Executors$AutoShutdownDelegatedExecutorService$$Lambda+0x00000227010fc6f0
-instanceKlass  @bci org/gradle/internal/daemon/client/clientinput/DaemonClientInputForwarder <init> (Ljava/io/InputStream;Lorg/gradle/internal/dispatch/Dispatch;Lorg/gradle/internal/logging/console/GlobalUserInputReceiver;)V 10 <appendix> argL0 ; # org/gradle/internal/daemon/client/clientinput/DaemonClientInputForwarder$$Lambda+0x0000022701145930
+instanceKlass  @bci java/util/concurrent/Executors$AutoShutdownDelegatedExecutorService <init> (Ljava/util/concurrent/ExecutorService;)V 6 <appendix> member <vmtarget> ; # java/util/concurrent/Executors$AutoShutdownDelegatedExecutorService$$Lambda+0x0000016e360fc070
+instanceKlass  @bci org/gradle/internal/daemon/client/clientinput/DaemonClientInputForwarder <init> (Ljava/io/InputStream;Lorg/gradle/internal/dispatch/Dispatch;Lorg/gradle/internal/logging/console/GlobalUserInputReceiver;)V 10 <appendix> argL0 ; # org/gradle/internal/daemon/client/clientinput/DaemonClientInputForwarder$$Lambda+0x0000016e361454a0
 instanceKlass org/gradle/internal/logging/console/UserInputReceiver
 instanceKlass org/gradle/internal/daemon/client/clientinput/DaemonClientInputForwarder
 instanceKlass org/gradle/launcher/daemon/diagnostics/DaemonDiagnostics
-instanceKlass jdk/internal/foreign/MemorySessionImpl
-instanceKlass java/lang/foreign/MemorySegment$Scope
-instanceKlass com/google/common/collect/NullnessCasts
 instanceKlass java/nio/channels/spi/AbstractSelector$1
 instanceKlass java/lang/Long$LongCache
 instanceKlass org/gradle/launcher/daemon/client/DaemonClientConnection
@@ -45,19 +75,11 @@ instanceKlass java/nio/BufferMismatch
 instanceKlass sun/nio/ch/IOStatus
 instanceKlass sun/nio/ch/Util$BufferCache
 instanceKlass com/sun/security/sasl/Provider$1
-instanceKlass  @bci sun/security/provider/certpath/ldap/JdkLDAP <init> ()V 15 <appendix> member <vmtarget> ; # sun/security/provider/certpath/ldap/JdkLDAP$$Lambda+0x00000227010f7f30
+instanceKlass  @bci sun/security/provider/certpath/ldap/JdkLDAP <init> ()V 15 <appendix> member <vmtarget> ; # sun/security/provider/certpath/ldap/JdkLDAP$$Lambda+0x0000016e360f8010
+instanceKlass com/sun/security/sasl/gsskerb/JdkSASL$1
 instanceKlass org/jcp/xml/dsig/internal/dom/XMLDSigRI$2
 instanceKlass org/jcp/xml/dsig/internal/dom/XMLDSigRI$1
-instanceKlass com/sun/security/sasl/gsskerb/JdkSASL$1
-instanceKlass  @bci sun/security/jgss/SunProvider <init> ()V 15 <appendix> member <vmtarget> ; # sun/security/jgss/SunProvider$$Lambda+0x00000227011404b0
-instanceKlass sun/security/smartcardio/SunPCSC$1
-instanceKlass sun/security/mscapi/SunMSCAPI$2
-instanceKlass sun/security/mscapi/SunMSCAPI$1
-instanceKlass  @bci sun/security/pkcs11/SunPKCS11 register (Lsun/security/pkcs11/SunPKCS11$Descriptor;)V 27 <appendix> argL0 ; # sun/security/pkcs11/SunPKCS11$$Lambda+0x000002270113a460
-instanceKlass sun/security/pkcs11/SunPKCS11$Descriptor
-instanceKlass javax/security/auth/callback/CallbackHandler
-instanceKlass javax/security/auth/Subject
-instanceKlass  @bci sun/security/ssl/SunJSSE registerAlgorithms ()V 1 <appendix> member <vmtarget> ; # sun/security/ssl/SunJSSE$$Lambda+0x00000227010f6660
+instanceKlass  @bci sun/security/ssl/SunJSSE registerAlgorithms ()V 1 <appendix> member <vmtarget> ; # sun/security/ssl/SunJSSE$$Lambda+0x0000016e360f7498
 instanceKlass java/security/spec/ECFieldF2m
 instanceKlass sun/security/util/ObjectIdentifier
 instanceKlass sun/security/util/ByteArrayTagOrder
@@ -71,13 +93,21 @@ instanceKlass java/security/spec/ECFieldFp
 instanceKlass java/security/spec/ECField
 instanceKlass sun/security/util/CurveDB
 instanceKlass sun/security/ec/SunEC$1
+instanceKlass  @bci sun/security/pkcs11/SunPKCS11 register (Lsun/security/pkcs11/SunPKCS11$Descriptor;)V 27 <appendix> argL0 ; # sun/security/pkcs11/SunPKCS11$$Lambda+0x0000016e36141000
+instanceKlass sun/security/pkcs11/SunPKCS11$Descriptor
+instanceKlass javax/security/auth/callback/CallbackHandler
+instanceKlass javax/security/auth/Subject
+instanceKlass sun/security/smartcardio/SunPCSC$1
+instanceKlass sun/security/mscapi/SunMSCAPI$2
+instanceKlass sun/security/mscapi/SunMSCAPI$1
+instanceKlass  @bci sun/security/jgss/SunProvider <init> ()V 15 <appendix> member <vmtarget> ; # sun/security/jgss/SunProvider$$Lambda+0x0000016e3613c400
 instanceKlass jdk/internal/module/ModulePatcher$PatchedModuleReader
 instanceKlass sun/security/jca/ProviderConfig$ProviderLoader
 instanceKlass sun/security/jca/ProviderConfig$3
 instanceKlass sun/security/rsa/SunRsaSignEntries
 instanceKlass sun/net/NetProperties$1
 instanceKlass sun/net/NetProperties
-instanceKlass  @bci sun/nio/ch/UnixDomainSocketsUtil getTempDir ()Ljava/lang/String; 0 <appendix> argL0 ; # sun/nio/ch/UnixDomainSocketsUtil$$Lambda+0x00000227010f23f0
+instanceKlass  @bci sun/nio/ch/UnixDomainSocketsUtil getTempDir ()Ljava/lang/String; 0 <appendix> argL0 ; # sun/nio/ch/UnixDomainSocketsUtil$$Lambda+0x0000016e360f24d0
 instanceKlass sun/nio/ch/UnixDomainSocketsUtil
 instanceKlass sun/nio/ch/UnixDomainSockets
 instanceKlass sun/nio/ch/PipeImpl$Initializer$LoopbackConnector
@@ -104,31 +134,23 @@ instanceKlass sun/net/NetHooks
 instanceKlass java/net/SocketImpl
 instanceKlass java/net/SocketOptions
 instanceKlass java/net/Socket
-instanceKlass org/gradle/internal/logging/console/DefaultColorMap$AttributeColor
-instanceKlass org/gradle/internal/logging/console/DefaultRedrawableLabel$1
-instanceKlass org/gradle/internal/logging/console/WorkInProgressRenderer$AssociationLabel
-instanceKlass net/rubygrapefruit/platform/internal/MutableTerminalSize
-instanceKlass org/gradle/internal/logging/console/ProgressOperation
-instanceKlass  @bci java/nio/channels/spi/SelectorProvider$Holder provider ()Ljava/nio/channels/spi/SelectorProvider; 0 <appendix> argL0 ; # java/nio/channels/spi/SelectorProvider$Holder$$Lambda+0x00000227010ee2f8
-instanceKlass org/gradle/internal/logging/sink/GroupingProgressLogEventGenerator$OperationState
+instanceKlass  @bci java/nio/channels/spi/SelectorProvider$Holder provider ()Ljava/nio/channels/spi/SelectorProvider; 0 <appendix> argL0 ; # java/nio/channels/spi/SelectorProvider$Holder$$Lambda+0x0000016e360ee3d8
 instanceKlass java/nio/channels/spi/SelectorProvider$Holder
-# instanceKlass java/lang/invoke/LambdaForm$MH+0x0000022701138c00
-# instanceKlass java/lang/invoke/LambdaForm$MH+0x0000022701138800
-# instanceKlass java/lang/invoke/LambdaForm$MH+0x0000022701138400
-# instanceKlass java/lang/invoke/LambdaForm$DMH+0x0000022701138000
+# instanceKlass java/lang/invoke/LambdaForm$DMH+0x0000016e3613c000
 instanceKlass org/gradle/internal/logging/events/OutputEventListener$1
 instanceKlass org/gradle/internal/dispatch/MethodInvocation
 instanceKlass org/gradle/internal/operations/OperationIdentifier
 instanceKlass org/gradle/internal/logging/progress/DefaultProgressLoggerFactory$ProgressLoggerImpl
 instanceKlass org/gradle/launcher/daemon/client/DefaultDaemonConnector$CleanupOnStaleAddress
+instanceKlass com/google/common/base/Joiner
 instanceKlass org/gradle/launcher/daemon/toolchain/DaemonJvmCriteria$JavaHome
 instanceKlass org/gradle/launcher/daemon/toolchain/DaemonJvmCriteria$Spec
 instanceKlass org/gradle/internal/Pair
 instanceKlass java/util/LinkedList$ListItr
-instanceKlass  @bci org/gradle/launcher/daemon/client/DefaultDaemonConnector partitionByState (Ljava/util/Collection;Lorg/gradle/launcher/daemon/server/api/DaemonState;)Lorg/gradle/internal/Pair; 2 <appendix> member <vmtarget> ; # org/gradle/launcher/daemon/client/DefaultDaemonConnector$$Lambda+0x0000022701135170
-instanceKlass  @bci org/gradle/cache/internal/DefaultFileLockManager$DefaultFileLock close ()V 32 <appendix> member <vmtarget> ; # org/gradle/cache/internal/DefaultFileLockManager$DefaultFileLock$$Lambda+0x0000022701134f58
-instanceKlass  @bci org/gradle/cache/internal/DefaultFileLockManager$DefaultFileLock close ()V 21 <appendix> member <vmtarget> ; # org/gradle/cache/internal/DefaultFileLockManager$DefaultFileLock$$Lambda+0x0000022701134d40
-instanceKlass  @bci org/gradle/cache/internal/DefaultFileLockManager$DefaultFileLock close ()V 10 <appendix> member <vmtarget> ; # org/gradle/cache/internal/DefaultFileLockManager$DefaultFileLock$$Lambda+0x0000022701134b28
+instanceKlass  @bci org/gradle/launcher/daemon/client/DefaultDaemonConnector partitionByState (Ljava/util/Collection;Lorg/gradle/launcher/daemon/server/api/DaemonState;)Lorg/gradle/internal/Pair; 2 <appendix> member <vmtarget> ; # org/gradle/launcher/daemon/client/DefaultDaemonConnector$$Lambda+0x0000016e36138000
+instanceKlass  @bci org/gradle/cache/internal/DefaultFileLockManager$DefaultFileLock close ()V 32 <appendix> member <vmtarget> ; # org/gradle/cache/internal/DefaultFileLockManager$DefaultFileLock$$Lambda+0x0000016e36135ce8
+instanceKlass  @bci org/gradle/cache/internal/DefaultFileLockManager$DefaultFileLock close ()V 21 <appendix> member <vmtarget> ; # org/gradle/cache/internal/DefaultFileLockManager$DefaultFileLock$$Lambda+0x0000016e36135ad0
+instanceKlass  @bci org/gradle/cache/internal/DefaultFileLockManager$DefaultFileLock close ()V 10 <appendix> member <vmtarget> ; # org/gradle/cache/internal/DefaultFileLockManager$DefaultFileLock$$Lambda+0x0000016e361358b8
 instanceKlass org/gradle/launcher/daemon/registry/DaemonInfo
 instanceKlass org/gradle/jvm/toolchain/internal/DefaultJavaLanguageVersion
 instanceKlass org/gradle/jvm/toolchain/JavaLanguageVersion
@@ -157,12 +179,12 @@ instanceKlass org/gradle/cache/internal/filelock/DefaultLockStateSerializer
 instanceKlass org/gradle/internal/time/ExponentialBackoff$Query
 instanceKlass org/gradle/cache/FileLock$State
 instanceKlass org/gradle/cache/internal/filelock/LockStateSerializer
-instanceKlass  @bci org/gradle/cache/internal/FileBackedObjectHolder get ()Ljava/lang/Object; 5 <appendix> member <vmtarget> ; # org/gradle/cache/internal/FileBackedObjectHolder$$Lambda+0x000002270112ef78
+instanceKlass  @bci org/gradle/cache/internal/FileBackedObjectHolder get ()Ljava/lang/Object; 5 <appendix> member <vmtarget> ; # org/gradle/cache/internal/FileBackedObjectHolder$$Lambda+0x0000016e36130450
 instanceKlass net/rubygrapefruit/platform/internal/jni/PosixProcessFunctions
 instanceKlass sun/security/provider/AbstractDrbg$NonceProvider
-instanceKlass  @bci sun/security/provider/AbstractDrbg$SeederHolder <clinit> ()V 42 <appendix> member <vmtarget> ; # sun/security/provider/AbstractDrbg$SeederHolder$$Lambda+0x00000227010eca80
-instanceKlass  @cpi sun/security/provider/AbstractDrbg$SeederHolder 91 form vmentry <vmtarget> ; # java/lang/invoke/LambdaForm$DMH+0x000002270112b000
-# instanceKlass java/lang/invoke/LambdaForm$DMH+0x000002270112ac00
+instanceKlass  @bci sun/security/provider/AbstractDrbg$SeederHolder <clinit> ()V 42 <appendix> member <vmtarget> ; # sun/security/provider/AbstractDrbg$SeederHolder$$Lambda+0x0000016e360ecb60
+instanceKlass  @cpi sun/security/provider/AbstractDrbg$SeederHolder 91 form vmentry <vmtarget> ; # java/lang/invoke/LambdaForm$DMH+0x0000016e36134c00
+# instanceKlass java/lang/invoke/LambdaForm$DMH+0x0000016e36134800
 instanceKlass sun/nio/fs/BasicFileAttributesHolder
 instanceKlass sun/nio/fs/WindowsDirectoryStream$WindowsDirectoryIterator
 instanceKlass sun/nio/fs/WindowsDirectoryStream
@@ -174,15 +196,15 @@ instanceKlass sun/security/provider/SeedGenerator$1
 instanceKlass sun/security/provider/SeedGenerator
 instanceKlass sun/security/provider/AbstractDrbg$SeederHolder
 instanceKlass java/security/DrbgParameters$NextBytes
-instanceKlass  @bci sun/security/provider/AbstractDrbg <clinit> ()V 12 <appendix> argL0 ; # sun/security/provider/AbstractDrbg$$Lambda+0x00000227010ea428
-instanceKlass  @cpi sun/security/provider/AbstractDrbg 383 form vmentry <vmtarget> ; # java/lang/invoke/LambdaForm$DMH+0x000002270112a800
-# instanceKlass java/lang/invoke/LambdaForm$DMH+0x000002270112a400
+instanceKlass  @bci sun/security/provider/AbstractDrbg <clinit> ()V 12 <appendix> argL0 ; # sun/security/provider/AbstractDrbg$$Lambda+0x0000016e360ea8d8
+instanceKlass  @cpi sun/security/provider/AbstractDrbg 383 form vmentry <vmtarget> ; # java/lang/invoke/LambdaForm$DMH+0x0000016e36134400
+# instanceKlass java/lang/invoke/LambdaForm$DMH+0x0000016e36134000
 instanceKlass sun/security/provider/EntropySource
 instanceKlass sun/security/provider/AbstractDrbg
 instanceKlass java/security/DrbgParameters$Instantiation
 instanceKlass java/security/DrbgParameters
 instanceKlass sun/security/provider/MoreDrbgParameters
-instanceKlass  @bci sun/security/provider/DRBG <init> (Ljava/security/SecureRandomParameters;)V 26 <appendix> argL0 ; # sun/security/provider/DRBG$$Lambda+0x00000227010e8f68
+instanceKlass  @bci sun/security/provider/DRBG <init> (Ljava/security/SecureRandomParameters;)V 26 <appendix> argL0 ; # sun/security/provider/DRBG$$Lambda+0x0000016e360e9418
 instanceKlass java/security/SecureRandomSpi
 instanceKlass java/security/SecureRandomParameters
 instanceKlass java/util/UUID$Holder
@@ -200,15 +222,15 @@ instanceKlass org/gradle/internal/classpath/ClassPath
 instanceKlass org/gradle/util/internal/GUtil
 instanceKlass org/gradle/launcher/exec/DefaultBuildActionParameters
 instanceKlass org/gradle/launcher/daemon/context/DaemonCompatibilitySpec
-# instanceKlass java/lang/invoke/LambdaForm$MH+0x000002270112a000
-# instanceKlass java/lang/invoke/LambdaForm$MH+0x0000022701129c00
-# instanceKlass java/lang/invoke/LambdaForm$MH+0x0000022701129800
-# instanceKlass java/lang/invoke/LambdaForm$MH+0x0000022701129400
-# instanceKlass java/lang/invoke/LambdaForm$MH+0x0000022701129000
-# instanceKlass java/lang/invoke/LambdaForm$MH+0x0000022701128c00
-# instanceKlass java/lang/invoke/LambdaForm$MH+0x0000022701128800
-# instanceKlass java/lang/invoke/LambdaForm$MH+0x0000022701128400
-# instanceKlass java/lang/invoke/LambdaForm$DMH+0x0000022701128000
+# instanceKlass java/lang/invoke/LambdaForm$MH+0x0000016e3612e000
+# instanceKlass java/lang/invoke/LambdaForm$MH+0x0000016e3612dc00
+# instanceKlass java/lang/invoke/LambdaForm$MH+0x0000016e3612d800
+# instanceKlass java/lang/invoke/LambdaForm$MH+0x0000016e3612d400
+# instanceKlass java/lang/invoke/LambdaForm$MH+0x0000016e3612d000
+# instanceKlass java/lang/invoke/LambdaForm$MH+0x0000016e3612cc00
+# instanceKlass java/lang/invoke/LambdaForm$MH+0x0000016e3612c800
+# instanceKlass java/lang/invoke/LambdaForm$MH+0x0000016e3612c400
+# instanceKlass java/lang/invoke/LambdaForm$DMH+0x0000016e3612c000
 instanceKlass org/gradle/launcher/daemon/protocol/DaemonMessageSerializer$OutputMessageSerializer
 instanceKlass org/gradle/internal/logging/serializer/LogLevelChangeEventSerializer
 instanceKlass org/gradle/internal/logging/serializer/ProgressEventSerializer
@@ -244,15 +266,15 @@ instanceKlass org/gradle/launcher/daemon/client/DaemonStartListener
 instanceKlass org/gradle/launcher/daemon/context/DaemonConnectDetails
 instanceKlass org/gradle/launcher/daemon/client/DaemonClientConnection$StaleAddressDetector
 instanceKlass org/gradle/launcher/daemon/client/DefaultDaemonConnector
-# instanceKlass java/lang/invoke/LambdaForm$MH+0x0000022701120400
-# instanceKlass java/lang/invoke/LambdaForm$MH+0x0000022701120000
-# instanceKlass java/lang/invoke/LambdaForm$MH+0x0000022701119c00
-# instanceKlass java/lang/invoke/LambdaForm$MH+0x0000022701119800
-# instanceKlass java/lang/invoke/LambdaForm$MH+0x0000022701119400
-# instanceKlass java/lang/invoke/LambdaForm$MH+0x0000022701119000
-# instanceKlass java/lang/invoke/LambdaForm$MH+0x0000022701118c00
-# instanceKlass java/lang/invoke/LambdaForm$MH+0x0000022701118800
-# instanceKlass java/lang/invoke/LambdaForm$MH+0x0000022701118400
+# instanceKlass java/lang/invoke/LambdaForm$MH+0x0000016e36122000
+# instanceKlass java/lang/invoke/LambdaForm$MH+0x0000016e36121c00
+# instanceKlass java/lang/invoke/LambdaForm$MH+0x0000016e36121800
+# instanceKlass java/lang/invoke/LambdaForm$MH+0x0000016e36121400
+# instanceKlass java/lang/invoke/LambdaForm$MH+0x0000016e36121000
+# instanceKlass java/lang/invoke/LambdaForm$MH+0x0000016e36120c00
+# instanceKlass java/lang/invoke/LambdaForm$MH+0x0000016e36120800
+# instanceKlass java/lang/invoke/LambdaForm$MH+0x0000016e36120400
+# instanceKlass java/lang/invoke/LambdaForm$MH+0x0000016e36120000
 instanceKlass org/gradle/internal/serialize/DefaultSerializerRegistry$TypeInfo
 instanceKlass java/util/AbstractMap$SimpleImmutableEntry
 instanceKlass java/util/concurrent/ConcurrentSkipListMap$Iter
@@ -286,34 +308,34 @@ instanceKlass org/gradle/internal/operations/CurrentBuildOperationRef
 instanceKlass org/gradle/internal/logging/services/ProgressLoggingBridge
 instanceKlass org/gradle/internal/logging/progress/ProgressLogger
 instanceKlass org/gradle/internal/logging/progress/DefaultProgressLoggerFactory
-# instanceKlass java/lang/invoke/LambdaForm$MH+0x0000022701118000
-# instanceKlass java/lang/invoke/LambdaForm$MH+0x0000022701116c00
-# instanceKlass java/lang/invoke/LambdaForm$MH+0x0000022701116800
+# instanceKlass java/lang/invoke/LambdaForm$MH+0x0000016e3611b000
+# instanceKlass java/lang/invoke/LambdaForm$MH+0x0000016e3611ac00
+# instanceKlass java/lang/invoke/LambdaForm$MH+0x0000016e3611a800
 instanceKlass org/gradle/internal/operations/DefaultBuildOperationIdFactory
 instanceKlass org/gradle/internal/serialize/FlushableEncoder
 instanceKlass org/gradle/api/internal/classpath/ModuleRegistry
 instanceKlass org/gradle/jvm/toolchain/JavaToolchainSpec
 instanceKlass org/gradle/api/Describable
 instanceKlass org/gradle/launcher/daemon/client/DefaultDaemonStarter
-instanceKlass  @bci org/gradle/launcher/daemon/client/DaemonClientServicesSupport createDaemonStarter (Lorg/gradle/launcher/daemon/registry/DaemonDir;Lorg/gradle/launcher/daemon/configuration/DaemonParameters;Lorg/gradle/launcher/daemon/client/DaemonGreeter;Lorg/gradle/internal/jvm/inspection/JvmVersionDetector;Lorg/gradle/launcher/daemon/context/DaemonRequestContext;Lorg/gradle/api/internal/provider/PropertyFactory;Lorg/gradle/internal/service/ServiceRegistry;)Lorg/gradle/launcher/daemon/client/DaemonStarter; 5 <appendix> member <vmtarget> ; # org/gradle/launcher/daemon/client/DaemonClientServicesSupport$$Lambda+0x0000022701113328
-instanceKlass  @bci org/gradle/internal/lazy/Lazy unsafe ()Lorg/gradle/internal/lazy/Lazy$Factory; 0 <appendix> argL0 ; # org/gradle/internal/lazy/Lazy$$Lambda+0x0000022701113118
+instanceKlass  @bci org/gradle/launcher/daemon/client/DaemonClientServicesSupport createDaemonStarter (Lorg/gradle/launcher/daemon/registry/DaemonDir;Lorg/gradle/launcher/daemon/configuration/DaemonParameters;Lorg/gradle/launcher/daemon/client/DaemonGreeter;Lorg/gradle/internal/jvm/inspection/JvmVersionDetector;Lorg/gradle/launcher/daemon/context/DaemonRequestContext;Lorg/gradle/api/internal/provider/PropertyFactory;Lorg/gradle/internal/service/ServiceRegistry;)Lorg/gradle/launcher/daemon/client/DaemonStarter; 5 <appendix> member <vmtarget> ; # org/gradle/launcher/daemon/client/DaemonClientServicesSupport$$Lambda+0x0000016e36115d38
+instanceKlass  @bci org/gradle/internal/lazy/Lazy unsafe ()Lorg/gradle/internal/lazy/Lazy$Factory; 0 <appendix> argL0 ; # org/gradle/internal/lazy/Lazy$$Lambda+0x0000016e36115b28
 instanceKlass org/gradle/internal/lazy/UnsafeLazy
 instanceKlass org/gradle/internal/lazy/Lazy$Factory
 instanceKlass org/gradle/internal/lazy/Lazy
-# instanceKlass java/lang/invoke/LambdaForm$MH+0x0000022701116400
-# instanceKlass java/lang/invoke/LambdaForm$MH+0x0000022701116000
-# instanceKlass java/lang/invoke/LambdaForm$MH+0x0000022701115c00
-# instanceKlass java/lang/invoke/LambdaForm$MH+0x0000022701115800
-# instanceKlass java/lang/invoke/LambdaForm$MH+0x0000022701115400
-# instanceKlass java/lang/invoke/LambdaForm$MH+0x0000022701115000
-# instanceKlass java/lang/invoke/LambdaForm$MH+0x0000022701114c00
-# instanceKlass java/lang/invoke/LambdaForm$MH+0x0000022701114800
-# instanceKlass java/lang/invoke/LambdaForm$MH+0x0000022701114400
-# instanceKlass java/lang/invoke/LambdaForm$DMH+0x0000022701114000
+# instanceKlass java/lang/invoke/LambdaForm$MH+0x0000016e3611a400
+# instanceKlass java/lang/invoke/LambdaForm$MH+0x0000016e3611a000
+# instanceKlass java/lang/invoke/LambdaForm$MH+0x0000016e36119c00
+# instanceKlass java/lang/invoke/LambdaForm$MH+0x0000016e36119800
+# instanceKlass java/lang/invoke/LambdaForm$MH+0x0000016e36119400
+# instanceKlass java/lang/invoke/LambdaForm$MH+0x0000016e36119000
+# instanceKlass java/lang/invoke/LambdaForm$MH+0x0000016e36118c00
+# instanceKlass java/lang/invoke/LambdaForm$MH+0x0000016e36118800
+# instanceKlass java/lang/invoke/LambdaForm$MH+0x0000016e36118400
+# instanceKlass java/lang/invoke/LambdaForm$DMH+0x0000016e36118000
 instanceKlass org/gradle/internal/jvm/inspection/DefaultJvmVersionDetector
 instanceKlass org/gradle/cache/internal/DefaultCacheCoordinator$IndexedCacheEntry
 instanceKlass org/gradle/cache/internal/DefaultMultiProcessSafeIndexedCache
-instanceKlass  @bci org/gradle/cache/internal/DefaultCacheCoordinator newCache (Lorg/gradle/cache/IndexedCacheParameters;)Lorg/gradle/cache/MultiProcessSafeIndexedCache; 72 <appendix> member <vmtarget> ; # org/gradle/cache/internal/DefaultCacheCoordinator$$Lambda+0x0000022701111f18
+instanceKlass  @bci org/gradle/cache/internal/DefaultCacheCoordinator newCache (Lorg/gradle/cache/IndexedCacheParameters;)Lorg/gradle/cache/MultiProcessSafeIndexedCache; 72 <appendix> member <vmtarget> ; # org/gradle/cache/internal/DefaultCacheCoordinator$$Lambda+0x0000016e36114928
 instanceKlass org/gradle/cache/internal/btree/BTreePersistentIndexedCache
 instanceKlass org/gradle/internal/serialize/AbstractSerializer
 instanceKlass org/gradle/internal/serialize/BaseSerializerFactory
@@ -323,25 +345,25 @@ instanceKlass org/gradle/internal/jvm/inspection/PersistentJvmMetadataDetector$F
 instanceKlass org/gradle/cache/internal/DefaultCacheFactory$ReferenceTrackingCache
 instanceKlass org/gradle/cache/internal/DefaultCacheFactory$DirCacheReference
 instanceKlass org/gradle/cache/internal/cacheops/CacheOperationStack
-instanceKlass  @bci org/gradle/cache/internal/DefaultCacheCoordinator open ()V 2 <appendix> member <vmtarget> ; # org/gradle/cache/internal/DefaultCacheCoordinator$$Lambda+0x000002270110e208
+instanceKlass  @bci org/gradle/cache/internal/DefaultCacheCoordinator open ()V 2 <appendix> member <vmtarget> ; # org/gradle/cache/internal/DefaultCacheCoordinator$$Lambda+0x0000016e36110cc0
 instanceKlass org/gradle/cache/internal/DefaultCacheCoordinator$TransparentFileAccess
-instanceKlass  @bci org/gradle/cache/internal/DefaultCacheCoordinator <init> (Ljava/lang/String;Ljava/io/File;Lorg/gradle/cache/LockOptions;Ljava/io/File;Lorg/gradle/cache/FileLockManager;Lorg/gradle/cache/internal/CacheInitializationAction;Lorg/gradle/cache/internal/CacheCleanupExecutor;Lorg/gradle/internal/concurrent/ExecutorFactory;)V 264 <appendix> member <vmtarget> ; # org/gradle/cache/internal/DefaultCacheCoordinator$$Lambda+0x000002270110dda8
+instanceKlass  @bci org/gradle/cache/internal/DefaultCacheCoordinator <init> (Ljava/lang/String;Ljava/io/File;Lorg/gradle/cache/LockOptions;Ljava/io/File;Lorg/gradle/cache/FileLockManager;Lorg/gradle/cache/internal/CacheInitializationAction;Lorg/gradle/cache/internal/CacheCleanupExecutor;Lorg/gradle/internal/concurrent/ExecutorFactory;)V 264 <appendix> member <vmtarget> ; # org/gradle/cache/internal/DefaultCacheCoordinator$$Lambda+0x0000016e36110860
 instanceKlass org/gradle/cache/internal/DefaultCacheCoordinator$1
-instanceKlass  @bci org/gradle/cache/internal/DefaultCacheCoordinator <init> (Ljava/lang/String;Ljava/io/File;Lorg/gradle/cache/LockOptions;Ljava/io/File;Lorg/gradle/cache/FileLockManager;Lorg/gradle/cache/internal/CacheInitializationAction;Lorg/gradle/cache/internal/CacheCleanupExecutor;Lorg/gradle/internal/concurrent/ExecutorFactory;)V 82 <appendix> member <vmtarget> ; # org/gradle/cache/internal/DefaultCacheCoordinator$$Lambda+0x000002270110d988
-instanceKlass  @bci org/gradle/cache/internal/DefaultCacheCoordinator <init> (Ljava/lang/String;Ljava/io/File;Lorg/gradle/cache/LockOptions;Ljava/io/File;Lorg/gradle/cache/FileLockManager;Lorg/gradle/cache/internal/CacheInitializationAction;Lorg/gradle/cache/internal/CacheCleanupExecutor;Lorg/gradle/internal/concurrent/ExecutorFactory;)V 74 <appendix> member <vmtarget> ; # org/gradle/cache/internal/DefaultCacheCoordinator$$Lambda+0x000002270110d760
+instanceKlass  @bci org/gradle/cache/internal/DefaultCacheCoordinator <init> (Ljava/lang/String;Ljava/io/File;Lorg/gradle/cache/LockOptions;Ljava/io/File;Lorg/gradle/cache/FileLockManager;Lorg/gradle/cache/internal/CacheInitializationAction;Lorg/gradle/cache/internal/CacheCleanupExecutor;Lorg/gradle/internal/concurrent/ExecutorFactory;)V 82 <appendix> member <vmtarget> ; # org/gradle/cache/internal/DefaultCacheCoordinator$$Lambda+0x0000016e36110440
+instanceKlass  @bci org/gradle/cache/internal/DefaultCacheCoordinator <init> (Ljava/lang/String;Ljava/io/File;Lorg/gradle/cache/LockOptions;Ljava/io/File;Lorg/gradle/cache/FileLockManager;Lorg/gradle/cache/internal/CacheInitializationAction;Lorg/gradle/cache/internal/CacheCleanupExecutor;Lorg/gradle/internal/concurrent/ExecutorFactory;)V 74 <appendix> member <vmtarget> ; # org/gradle/cache/internal/DefaultCacheCoordinator$$Lambda+0x0000016e36110218
 instanceKlass org/gradle/cache/internal/cacheops/CacheAccessOperationsStack
 instanceKlass org/gradle/cache/internal/CacheInitializationAction$1
 instanceKlass org/gradle/cache/internal/CacheInitializationAction
-instanceKlass org/gradle/cache/AsyncCacheAccess
 instanceKlass org/gradle/cache/MultiProcessSafeIndexedCache
 instanceKlass org/gradle/cache/UnitOfWorkParticipant
+instanceKlass org/gradle/cache/AsyncCacheAccess
 instanceKlass org/gradle/cache/internal/AbstractCrossProcessCacheAccess
 instanceKlass org/gradle/cache/CrossProcessCacheAccess
 instanceKlass org/gradle/cache/internal/DefaultCacheCoordinator
 instanceKlass org/gradle/cache/internal/CacheCreationCoordinator
-instanceKlass java/nio/file/FileVisitor
 instanceKlass org/apache/commons/io/filefilter/IOFileFilter
 instanceKlass java/nio/file/PathMatcher
+instanceKlass java/nio/file/FileVisitor
 instanceKlass org/apache/commons/io/file/PathFilter
 instanceKlass org/apache/commons/io/FileUtils
 instanceKlass java/time/temporal/Temporal
@@ -349,24 +371,39 @@ instanceKlass java/time/temporal/TemporalAccessor
 instanceKlass org/gradle/cache/internal/DefaultCacheCleanupExecutor
 instanceKlass org/gradle/cache/internal/CacheCleanupExecutor
 instanceKlass org/gradle/cache/IndexedCache
+instanceKlass org/gradle/internal/logging/console/DefaultAnsiExecutor$AnsiContextImpl
+instanceKlass org/gradle/internal/logging/console/AnsiContext
 instanceKlass org/gradle/cache/internal/DefaultPersistentDirectoryStore
+instanceKlass org/fusesource/jansi/Ansi$1
 instanceKlass org/gradle/cache/internal/filelock/DefaultLockOptions
 instanceKlass org/gradle/cache/CacheCleanupStrategy$1
 instanceKlass org/gradle/cache/CacheCleanupStrategy
+instanceKlass com/google/common/collect/TransformedIterator
 instanceKlass org/gradle/cache/internal/DefaultCacheBuilder
 instanceKlass org/gradle/cache/internal/scopes/DefaultCacheScopeMapping$1
 instanceKlass org/gradle/internal/jvm/inspection/JvmInstallationMetadata
 instanceKlass org/gradle/internal/jvm/inspection/DefaultJvmMetadataDetector
+instanceKlass com/google/common/collect/Sets
 instanceKlass org/gradle/internal/jvm/inspection/PersistentJvmMetadataDetector
+# instanceKlass java/lang/invoke/LambdaForm$MH+0x0000016e36105800
+# instanceKlass java/lang/invoke/LambdaForm$MH+0x0000016e36105400
+instanceKlass org/gradle/internal/logging/console/WorkInProgressRenderer$1
+# instanceKlass java/lang/invoke/LambdaForm$MH+0x0000016e36105000
 instanceKlass org/gradle/cache/internal/scopes/DefaultCacheScopeMapping
+instanceKlass com/google/common/collect/FluentIterable
 instanceKlass org/gradle/cache/internal/CacheScopeMapping
 instanceKlass org/gradle/cache/CacheBuilder
+instanceKlass com/google/common/base/Predicates$InstanceOfPredicate
 instanceKlass org/gradle/cache/internal/DefaultUnscopedCacheBuilderFactory
+instanceKlass com/google/common/base/Predicate
 instanceKlass org/gradle/cache/internal/ReferencablePersistentCache
 instanceKlass org/gradle/cache/PersistentCache
 instanceKlass org/gradle/cache/HasCleanupAction
+instanceKlass com/google/common/base/CommonPattern
 instanceKlass org/gradle/cache/CleanableStore
+instanceKlass com/google/common/base/Predicates
 instanceKlass org/gradle/cache/ExclusiveCacheAccessCoordinator
+instanceKlass com/google/common/collect/Iterables
 instanceKlass org/gradle/cache/internal/DefaultCacheFactory
 instanceKlass org/gradle/internal/concurrent/ExecutorPolicy$CatchAndRecordFailures
 instanceKlass java/util/concurrent/LinkedTransferQueue$DualNode
@@ -375,10 +412,10 @@ instanceKlass org/gradle/internal/concurrent/ThreadFactoryImpl
 instanceKlass org/gradle/process/internal/ClientExecHandleBuilder
 instanceKlass org/gradle/process/internal/BaseExecHandleBuilder
 instanceKlass org/gradle/process/internal/DefaultClientExecHandleBuilderFactory
-# instanceKlass java/lang/invoke/LambdaForm$MH+0x0000022701102400
-# instanceKlass java/lang/invoke/LambdaForm$MH+0x0000022701102000
-# instanceKlass java/lang/invoke/LambdaForm$MH+0x0000022701101c00
-# instanceKlass java/lang/invoke/LambdaForm$MH+0x0000022701101800
+# instanceKlass java/lang/invoke/LambdaForm$MH+0x0000016e36104c00
+# instanceKlass java/lang/invoke/LambdaForm$MH+0x0000016e36104800
+# instanceKlass java/lang/invoke/LambdaForm$MH+0x0000016e36104400
+# instanceKlass java/lang/invoke/LambdaForm$MH+0x0000016e36104000
 instanceKlass org/gradle/initialization/DefaultBuildCancellationToken
 instanceKlass org/gradle/internal/remote/internal/ConnectCompletion
 instanceKlass org/gradle/internal/remote/internal/inet/TcpOutgoingConnector
@@ -387,22 +424,22 @@ instanceKlass org/gradle/launcher/daemon/registry/DaemonRegistryContent$Serializ
 instanceKlass org/gradle/launcher/daemon/registry/DaemonRegistryContent
 instanceKlass org/gradle/cache/LockOptions
 instanceKlass org/gradle/cache/internal/AbstractFileAccess
-instanceKlass org/gradle/internal/serialize/Encoder
 instanceKlass org/gradle/internal/serialize/Decoder
+instanceKlass org/gradle/internal/serialize/Encoder
 instanceKlass org/gradle/cache/internal/FileBackedObjectHolder
 instanceKlass org/gradle/cache/internal/FileIntegrityViolationSuppressingObjectHolderDecorator
 instanceKlass org/gradle/cache/ObjectHolder$UpdateAction
 instanceKlass org/gradle/cache/ObjectHolder
 instanceKlass org/gradle/launcher/daemon/registry/PersistentDaemonRegistry
-instanceKlass  @bci org/gradle/cache/internal/CacheAccessSerializer get (Ljava/lang/Object;Ljava/util/function/Function;)Ljava/lang/Object; 7 <appendix> member <vmtarget> ; # org/gradle/cache/internal/CacheAccessSerializer$$Lambda+0x0000022701104238
-instanceKlass  @bci org/gradle/cache/Cache get (Ljava/lang/Object;Ljava/util/function/Supplier;)Ljava/lang/Object; 3 <appendix> member <vmtarget> ; # org/gradle/cache/Cache$$Lambda+0x0000022701104000
-instanceKlass  @bci org/gradle/launcher/daemon/registry/DaemonRegistryServices createDaemonRegistry (Lorg/gradle/launcher/daemon/registry/DaemonDir;Lorg/gradle/cache/FileLockManager;Lorg/gradle/internal/file/Chmod;)Lorg/gradle/launcher/daemon/registry/DaemonRegistry; 16 <appendix> member <vmtarget> ; # org/gradle/launcher/daemon/registry/DaemonRegistryServices$$Lambda+0x00000227010d9d20
-instanceKlass  @bci jdk/internal/reflect/DirectMethodHandleAccessor invokeImpl (Ljava/lang/Object;[Ljava/lang/Object;)Ljava/lang/Object; 92 <adapter> ; # java/lang/invoke/LambdaForm$MH+0x0000022701101400
-# instanceKlass java/lang/invoke/LambdaForm$MH+0x0000022701101000
-# instanceKlass java/lang/invoke/LambdaForm$MH+0x0000022701100c00
-# instanceKlass java/lang/invoke/LambdaForm$MH+0x0000022701100800
-# instanceKlass java/lang/invoke/LambdaForm$MH+0x0000022701100400
-# instanceKlass java/lang/invoke/LambdaForm$DMH+0x0000022701100000
+instanceKlass  @bci org/gradle/cache/internal/CacheAccessSerializer get (Ljava/lang/Object;Ljava/util/function/Function;)Ljava/lang/Object; 7 <appendix> member <vmtarget> ; # org/gradle/cache/internal/CacheAccessSerializer$$Lambda+0x0000016e360db250
+instanceKlass  @bci org/gradle/cache/Cache get (Ljava/lang/Object;Ljava/util/function/Supplier;)Ljava/lang/Object; 3 <appendix> member <vmtarget> ; # org/gradle/cache/Cache$$Lambda+0x0000016e360db018
+instanceKlass  @bci org/gradle/launcher/daemon/registry/DaemonRegistryServices createDaemonRegistry (Lorg/gradle/launcher/daemon/registry/DaemonDir;Lorg/gradle/cache/FileLockManager;Lorg/gradle/internal/file/Chmod;)Lorg/gradle/launcher/daemon/registry/DaemonRegistry; 16 <appendix> member <vmtarget> ; # org/gradle/launcher/daemon/registry/DaemonRegistryServices$$Lambda+0x0000016e360dae00
+instanceKlass  @bci jdk/internal/reflect/DirectMethodHandleAccessor invokeImpl (Ljava/lang/Object;[Ljava/lang/Object;)Ljava/lang/Object; 92 <adapter> ; # java/lang/invoke/LambdaForm$MH+0x0000016e360de400
+# instanceKlass java/lang/invoke/LambdaForm$MH+0x0000016e360de000
+# instanceKlass java/lang/invoke/LambdaForm$MH+0x0000016e360ddc00
+# instanceKlass java/lang/invoke/LambdaForm$MH+0x0000016e360dd800
+# instanceKlass java/lang/invoke/LambdaForm$MH+0x0000016e360dd400
+# instanceKlass java/lang/invoke/LambdaForm$DMH+0x0000016e360dd000
 instanceKlass java/util/Random
 instanceKlass java/util/random/RandomGenerator
 instanceKlass org/gradle/cache/internal/DefaultFileLockManager$RandomLongIdGenerator
@@ -421,38 +458,26 @@ instanceKlass sun/nio/ch/SocketOptionRegistry
 instanceKlass sun/nio/ch/DatagramChannelImpl$DefaultOptionsHolder
 instanceKlass java/net/StandardSocketOptions$StdSocketOption
 instanceKlass java/net/StandardSocketOptions
-instanceKlass  @bci sun/nio/ch/DatagramSocketAdaptor$DatagramSockets <clinit> ()V 0 <appendix> argL0 ; # sun/nio/ch/DatagramSocketAdaptor$DatagramSockets$$Lambda+0x00000227010e3938
+instanceKlass  @bci sun/nio/ch/DatagramSocketAdaptor$DatagramSockets <clinit> ()V 0 <appendix> argL0 ; # sun/nio/ch/DatagramSocketAdaptor$DatagramSockets$$Lambda+0x0000016e360e3de8
 instanceKlass sun/nio/ch/DatagramSocketAdaptor$DatagramSockets
-instanceKlass  @bci sun/nio/ch/DatagramChannelImpl releaserFor (Ljava/io/FileDescriptor;[Lsun/nio/ch/NativeSocketAddress;)Ljava/lang/Runnable; 2 <appendix> member <vmtarget> ; # sun/nio/ch/DatagramChannelImpl$$Lambda+0x00000227010e3168
-instanceKlass  @cpi sun/nio/ch/DatagramChannelImpl 1342 form vmentry <vmtarget> ; # java/lang/invoke/LambdaForm$DMH+0x00000227010d8c00
+instanceKlass  @bci sun/nio/ch/DatagramChannelImpl releaserFor (Ljava/io/FileDescriptor;[Lsun/nio/ch/NativeSocketAddress;)Ljava/lang/Runnable; 2 <appendix> member <vmtarget> ; # sun/nio/ch/DatagramChannelImpl$$Lambda+0x0000016e360e3618
+instanceKlass  @cpi sun/nio/ch/DatagramChannelImpl 1342 form vmentry <vmtarget> ; # java/lang/invoke/LambdaForm$DMH+0x0000016e360dcc00
 instanceKlass sun/nio/ch/NativeSocketAddress
 instanceKlass sun/net/ResourceManager
 instanceKlass jdk/net/ExtendedSocketOptions$2
 instanceKlass jdk/net/ExtendedSocketOptions$PlatformSocketOptions
-instanceKlass org/gradle/internal/logging/console/DefaultAnsiExecutor$AnsiContextImpl
-instanceKlass org/gradle/internal/logging/console/AnsiContext
 instanceKlass jdk/net/ExtendedSocketOptions$ExtSocketOption
 instanceKlass java/net/SocketOption
-instanceKlass org/fusesource/jansi/Ansi$1
 instanceKlass jdk/net/ExtendedSocketOptions
 instanceKlass sun/net/ext/ExtendedSocketOptions
-instanceKlass com/google/common/collect/TransformedIterator
 instanceKlass sun/nio/ch/Net$1
 instanceKlass java/net/ProtocolFamily
 instanceKlass sun/nio/ch/Net
-instanceKlass com/google/common/collect/Sets
-instanceKlass org/gradle/internal/logging/console/WorkInProgressRenderer$1
 instanceKlass java/nio/channels/MulticastChannel
 instanceKlass java/nio/channels/NetworkChannel
 instanceKlass sun/nio/ch/SelChImpl
-instanceKlass com/google/common/collect/FluentIterable
-instanceKlass com/google/common/base/Predicates$InstanceOfPredicate
-instanceKlass com/google/common/base/Predicate
-instanceKlass  @bci sun/nio/ch/DefaultSelectorProvider <clinit> ()V 0 <appendix> argL0 ; # sun/nio/ch/DefaultSelectorProvider$$Lambda+0x000002270107ee50
+instanceKlass  @bci sun/nio/ch/DefaultSelectorProvider <clinit> ()V 0 <appendix> argL0 ; # sun/nio/ch/DefaultSelectorProvider$$Lambda+0x0000016e3607f2d8
 instanceKlass java/nio/channels/spi/SelectorProvider
-instanceKlass com/google/common/base/CommonPattern
-instanceKlass com/google/common/base/Predicates
-instanceKlass com/google/common/collect/Iterables
 instanceKlass sun/nio/ch/DefaultSelectorProvider
 instanceKlass java/net/InetSocketAddress$InetSocketAddressHolder
 instanceKlass java/net/NetworkInterface$1
@@ -480,11 +505,11 @@ instanceKlass org/gradle/cache/internal/locklistener/DefaultFileLockCommunicator
 instanceKlass org/gradle/internal/service/scopes/BasicGlobalScopeServices$1
 instanceKlass org/gradle/cache/internal/locklistener/FileLockCommunicator
 instanceKlass org/gradle/cache/internal/locklistener/DefaultFileLockContentionHandler
-# instanceKlass java/lang/invoke/LambdaForm$MH+0x00000227010d8800
-# instanceKlass java/lang/invoke/LambdaForm$MH+0x00000227010d8400
-# instanceKlass java/lang/invoke/LambdaForm$MH+0x00000227010d8000
-instanceKlass org/gradle/internal/concurrent/ManagedThreadPoolExecutor
+# instanceKlass java/lang/invoke/LambdaForm$MH+0x0000016e360dc800
+# instanceKlass java/lang/invoke/LambdaForm$MH+0x0000016e360dc400
+# instanceKlass java/lang/invoke/LambdaForm$MH+0x0000016e360dc000
 instanceKlass org/gradle/internal/concurrent/ManagedScheduledExecutor
+instanceKlass org/gradle/internal/concurrent/ManagedThreadPoolExecutor
 instanceKlass org/gradle/internal/concurrent/ManagedExecutor
 instanceKlass org/gradle/internal/concurrent/AsyncStoppable
 instanceKlass org/gradle/internal/concurrent/ExecutorPolicy
@@ -494,11 +519,11 @@ instanceKlass org/gradle/internal/nativeintegration/processenvironment/AbstractP
 instanceKlass net/rubygrapefruit/platform/internal/DefaultProcess
 instanceKlass net/rubygrapefruit/platform/internal/WrapperProcess
 instanceKlass org/gradle/util/internal/GFileUtils
-instanceKlass org/gradle/api/internal/provider/DefaultPropertyFactory
 instanceKlass org/gradle/cache/internal/scopes/AbstractScopedCacheBuilderFactory
 instanceKlass org/gradle/cache/GlobalCache
 instanceKlass org/gradle/cache/scopes/GlobalScopedCacheBuilderFactory
 instanceKlass org/gradle/initialization/layout/GlobalCacheDir
+instanceKlass org/gradle/api/internal/provider/DefaultPropertyFactory
 instanceKlass java/util/UUID
 instanceKlass org/gradle/launcher/daemon/client/DaemonClient
 instanceKlass org/gradle/jvm/toolchain/internal/JavaToolchainQueryService
@@ -506,14 +531,14 @@ instanceKlass org/gradle/cache/scopes/ScopedCacheBuilderFactory
 instanceKlass org/gradle/api/internal/provider/PropertyFactory
 instanceKlass org/gradle/launcher/daemon/registry/DaemonDir
 instanceKlass org/gradle/api/internal/specs/ExplainingSpec
-instanceKlass org/gradle/internal/logging/progress/ProgressLoggerFactory
-instanceKlass org/gradle/internal/logging/progress/ProgressListener
-instanceKlass org/gradle/launcher/daemon/client/DaemonConnector
-instanceKlass org/gradle/cache/UnscopedCacheBuilderFactory
+instanceKlass org/gradle/cache/internal/CacheFactory
 instanceKlass org/gradle/internal/jvm/inspection/JvmVersionDetector
 instanceKlass org/gradle/launcher/daemon/client/DaemonStarter
-instanceKlass org/gradle/cache/internal/CacheFactory
+instanceKlass org/gradle/launcher/daemon/client/DaemonConnector
+instanceKlass org/gradle/cache/UnscopedCacheBuilderFactory
 instanceKlass org/gradle/internal/operations/BuildOperationIdFactory
+instanceKlass org/gradle/internal/logging/progress/ProgressLoggerFactory
+instanceKlass org/gradle/internal/logging/progress/ProgressListener
 instanceKlass org/gradle/launcher/daemon/client/DaemonClientServicesSupport
 instanceKlass org/gradle/api/internal/file/FileFactory
 instanceKlass org/gradle/jvm/toolchain/internal/install/JavaToolchainProvisioningService
@@ -536,6 +561,9 @@ instanceKlass org/gradle/launcher/daemon/registry/DaemonRegistry
 instanceKlass org/gradle/cache/Cache
 instanceKlass org/gradle/launcher/daemon/registry/DaemonRegistryServices
 instanceKlass org/gradle/launcher/daemon/client/DaemonClientFactory$1
+# instanceKlass java/lang/invoke/LambdaForm$MH+0x0000016e360d4800
+# instanceKlass java/lang/invoke/LambdaForm$MH+0x0000016e360d4400
+# instanceKlass java/lang/invoke/LambdaForm$MH+0x0000016e360d4000
 instanceKlass org/gradle/launcher/daemon/client/DaemonClientFactory$2
 instanceKlass java/lang/reflect/WildcardType
 instanceKlass sun/reflect/generics/reflectiveObjects/LazyReflectiveObjectGenerator
@@ -551,7 +579,7 @@ instanceKlass org/gradle/launcher/daemon/client/DaemonClientFactory
 instanceKlass org/gradle/launcher/daemon/client/DaemonGreeter
 instanceKlass org/gradle/internal/serialize/Serializer
 instanceKlass org/gradle/launcher/daemon/client/DaemonClientGlobalServices
-instanceKlass  @bci org/gradle/process/internal/JvmOptions getJvmArgs ()Ljava/util/List; 9 <appendix> argL0 ; # org/gradle/process/internal/JvmOptions$$Lambda+0x00000227010cbcf0
+instanceKlass  @bci org/gradle/process/internal/JvmOptions getJvmArgs ()Ljava/util/List; 9 <appendix> argL0 ; # org/gradle/process/internal/JvmOptions$$Lambda+0x0000016e360d0228
 instanceKlass org/gradle/launcher/daemon/context/DaemonRequestContext
 instanceKlass org/gradle/launcher/cli/Parameters
 instanceKlass org/gradle/internal/buildconfiguration/tasks/DaemonJvmPropertiesAccessor
@@ -569,24 +597,25 @@ instanceKlass org/gradle/internal/buildoption/Option$Value
 instanceKlass org/gradle/internal/RunDefaultTasksExecutionRequest
 instanceKlass org/gradle/TaskExecutionRequest
 instanceKlass org/gradle/internal/concurrent/DefaultParallelismConfiguration
-instanceKlass  @bci org/gradle/launcher/cli/DefaultCommandLineActionFactory$ParseAndBuildAction configureCreators ()V 5 <appendix> member <vmtarget> ; # org/gradle/launcher/cli/DefaultCommandLineActionFactory$ParseAndBuildAction$$Lambda+0x00000227010cd9e0
+instanceKlass org/gradle/cli/CommandLineParser$OptionString
+instanceKlass  @bci org/gradle/launcher/cli/DefaultCommandLineActionFactory$ParseAndBuildAction configureCreators ()V 5 <appendix> member <vmtarget> ; # org/gradle/launcher/cli/DefaultCommandLineActionFactory$ParseAndBuildAction$$Lambda+0x0000016e360ce230
+instanceKlass org/gradle/launcher/daemon/configuration/DaemonServerConfiguration
+instanceKlass org/gradle/launcher/exec/BuildActionExecutor
 instanceKlass org/gradle/StartParameter
 instanceKlass org/gradle/concurrent/ParallelismConfiguration
-instanceKlass org/gradle/launcher/exec/BuildActionExecutor
 instanceKlass org/gradle/launcher/exec/BuildActionParameters
 instanceKlass org/gradle/launcher/daemon/context/DaemonContext
-instanceKlass org/gradle/launcher/daemon/configuration/DaemonServerConfiguration
 instanceKlass org/gradle/launcher/cli/BuildActionsFactory
 instanceKlass org/gradle/launcher/cli/converter/StartParameterConverter
-instanceKlass  @bci org/gradle/api/internal/file/DefaultFileCollectionFactory <init> (Lorg/gradle/internal/file/PathToFileResolver;Lorg/gradle/api/internal/tasks/TaskDependencyFactory;Lorg/gradle/api/internal/file/collections/DirectoryFileTreeFactory;Lorg/gradle/api/tasks/util/internal/PatternSetFactory;Lorg/gradle/api/internal/provider/PropertyHost;Lorg/gradle/internal/nativeintegration/filesystem/FileSystem;)V 10 <appendix> argL0 ; # org/gradle/api/internal/file/DefaultFileCollectionFactory$$Lambda+0x00000227010c7b08
+instanceKlass  @bci org/gradle/api/internal/file/DefaultFileCollectionFactory <init> (Lorg/gradle/internal/file/PathToFileResolver;Lorg/gradle/api/internal/tasks/TaskDependencyFactory;Lorg/gradle/api/internal/file/collections/DirectoryFileTreeFactory;Lorg/gradle/api/tasks/util/internal/PatternSetFactory;Lorg/gradle/api/internal/provider/PropertyHost;Lorg/gradle/internal/nativeintegration/filesystem/FileSystem;)V 10 <appendix> argL0 ; # org/gradle/api/internal/file/DefaultFileCollectionFactory$$Lambda+0x0000016e360cc430
 instanceKlass org/gradle/api/internal/file/collections/FileCollectionObservationListener
 instanceKlass org/gradle/api/internal/tasks/DefaultTaskDependencyFactory
 instanceKlass org/gradle/api/internal/tasks/TaskDependencyFactory
+instanceKlass org/gradle/api/file/ConfigurableFileTree
+instanceKlass org/gradle/api/file/DirectoryTree
 instanceKlass org/gradle/api/file/ConfigurableFileCollection
 instanceKlass org/gradle/api/provider/SupportsConvention
 instanceKlass org/gradle/api/provider/HasConfigurableValue
-instanceKlass org/gradle/api/file/ConfigurableFileTree
-instanceKlass org/gradle/api/file/DirectoryTree
 instanceKlass org/gradle/api/internal/file/collections/MinimalFileTree
 instanceKlass org/gradle/api/internal/file/collections/MinimalFileCollection
 instanceKlass org/gradle/api/internal/file/FileTreeInternal
@@ -594,39 +623,37 @@ instanceKlass org/gradle/api/file/FileTree
 instanceKlass org/gradle/api/internal/file/FileCollectionInternal
 instanceKlass org/gradle/api/internal/tasks/TaskDependencyContainer
 instanceKlass org/gradle/api/internal/file/DefaultFileCollectionFactory
-# instanceKlass java/lang/invoke/LambdaForm$MH+0x00000227010c9400
-# instanceKlass java/lang/invoke/LambdaForm$MH+0x00000227010c9000
-# instanceKlass java/lang/invoke/LambdaForm$MH+0x00000227010c8c00
-# instanceKlass java/lang/invoke/LambdaForm$MH+0x00000227010c8800
-# instanceKlass java/lang/invoke/LambdaForm$MH+0x00000227010c8400
-# instanceKlass java/lang/invoke/LambdaForm$MH+0x00000227010c8000
-# instanceKlass java/lang/invoke/LambdaForm$MH+0x00000227010c3c00
-instanceKlass  @bci org/gradle/api/internal/provider/PropertyHost <clinit> ()V 0 <appendix> argL0 ; # org/gradle/api/internal/provider/PropertyHost$$Lambda+0x00000227010c5a28
+# instanceKlass java/lang/invoke/LambdaForm$MH+0x0000016e360c9000
+# instanceKlass java/lang/invoke/LambdaForm$MH+0x0000016e360c8c00
+# instanceKlass java/lang/invoke/LambdaForm$MH+0x0000016e360c8800
+# instanceKlass java/lang/invoke/LambdaForm$MH+0x0000016e360c8400
+# instanceKlass java/lang/invoke/LambdaForm$MH+0x0000016e360c8000
+# instanceKlass java/lang/invoke/LambdaForm$MH+0x0000016e360c7c00
+instanceKlass  @bci org/gradle/api/internal/provider/PropertyHost <clinit> ()V 0 <appendix> argL0 ; # org/gradle/api/internal/provider/PropertyHost$$Lambda+0x0000016e360c2220
 instanceKlass org/gradle/internal/state/ModelObject
 instanceKlass org/gradle/api/internal/file/collections/DefaultDirectoryFileTreeFactory
-# instanceKlass java/lang/invoke/LambdaForm$MH+0x00000227010c3800
-# instanceKlass java/lang/invoke/LambdaForm$MH+0x00000227010c3400
-# instanceKlass java/lang/invoke/LambdaForm$MH+0x00000227010c3000
-# instanceKlass java/lang/invoke/LambdaForm$DMH+0x00000227010c2c00
+# instanceKlass java/lang/invoke/LambdaForm$MH+0x0000016e360c7800
+# instanceKlass java/lang/invoke/LambdaForm$MH+0x0000016e360c7400
+# instanceKlass java/lang/invoke/LambdaForm$DMH+0x0000016e360c7000
 instanceKlass org/gradle/internal/nativeintegration/filesystem/services/FallbackStat
 instanceKlass org/gradle/internal/nativeintegration/filesystem/services/EmptyChmod
 instanceKlass org/gradle/internal/nativeintegration/filesystem/jdk7/Jdk7Symlink
-# instanceKlass java/lang/invoke/LambdaForm$MH+0x00000227010c2800
-# instanceKlass java/lang/invoke/LambdaForm$MH+0x00000227010c2400
-# instanceKlass java/lang/invoke/LambdaForm$MH+0x00000227010c2000
-# instanceKlass java/lang/invoke/LambdaForm$MH+0x00000227010c1c00
-# instanceKlass java/lang/invoke/LambdaForm$MH+0x00000227010c1800
-# instanceKlass java/lang/invoke/LambdaForm$MH+0x00000227010c1400
-# instanceKlass java/lang/invoke/LambdaForm$MH+0x00000227010c1000
-# instanceKlass java/lang/invoke/LambdaForm$DMH+0x00000227010c0c00
+# instanceKlass java/lang/invoke/LambdaForm$MH+0x0000016e360c6c00
+# instanceKlass java/lang/invoke/LambdaForm$MH+0x0000016e360c6800
+# instanceKlass java/lang/invoke/LambdaForm$MH+0x0000016e360c6400
+# instanceKlass java/lang/invoke/LambdaForm$MH+0x0000016e360c6000
+# instanceKlass java/lang/invoke/LambdaForm$MH+0x0000016e360c5c00
+# instanceKlass java/lang/invoke/LambdaForm$MH+0x0000016e360c5800
+# instanceKlass java/lang/invoke/LambdaForm$MH+0x0000016e360c5400
+# instanceKlass java/lang/invoke/LambdaForm$DMH+0x0000016e360c5000
 instanceKlass net/rubygrapefruit/platform/file/PosixFileInfo
 instanceKlass org/gradle/internal/nativeintegration/services/NativeServices$BrokenService
 instanceKlass org/gradle/internal/nativeintegration/filesystem/services/UnavailablePosixFiles
 instanceKlass net/rubygrapefruit/platform/memory/WindowsMemory
-instanceKlass  @bci jdk/internal/reflect/DirectConstructorHandleAccessor invokeImpl ([Ljava/lang/Object;)Ljava/lang/Object; 88 <adapter> ; # java/lang/invoke/LambdaForm$MH+0x00000227010c0800
-# instanceKlass java/lang/invoke/LambdaForm$MH+0x00000227010c0400
-# instanceKlass java/lang/invoke/LambdaForm$MH+0x00000227010c0000
-# instanceKlass java/lang/invoke/LambdaForm$MH+0x00000227010bcc00
+instanceKlass  @bci jdk/internal/reflect/DirectConstructorHandleAccessor invokeImpl ([Ljava/lang/Object;)Ljava/lang/Object; 88 <adapter> ; # java/lang/invoke/LambdaForm$MH+0x0000016e360c4c00
+# instanceKlass java/lang/invoke/LambdaForm$MH+0x0000016e360c4800
+# instanceKlass java/lang/invoke/LambdaForm$MH+0x0000016e360c4400
+# instanceKlass java/lang/invoke/LambdaForm$MH+0x0000016e360c4000
 instanceKlass org/gradle/api/internal/file/temp/GradleUserHomeTemporaryFileProvider$1
 instanceKlass org/gradle/internal/nativeintegration/services/NativeServices$2
 instanceKlass net/rubygrapefruit/platform/file/WindowsFileInfo
@@ -637,8 +664,8 @@ instanceKlass org/gradle/internal/nativeintegration/filesystem/services/NativePl
 instanceKlass org/gradle/api/tasks/util/PatternSet
 instanceKlass org/gradle/api/tasks/util/PatternFilterable
 instanceKlass org/gradle/api/tasks/util/internal/DefaultPatternSetFactory
-instanceKlass  @bci sun/reflect/annotation/AnnotationParser parseEnumArray (ILjava/lang/Class;Ljava/nio/ByteBuffer;Ljdk/internal/reflect/ConstantPool;Ljava/lang/Class;)Ljava/lang/Object; 16 <appendix> form vmentry <vmtarget> ; # java/lang/invoke/LambdaForm$DMH+0x00000227010bc800
-instanceKlass  @bci sun/reflect/annotation/AnnotationParser parseEnumArray (ILjava/lang/Class;Ljava/nio/ByteBuffer;Ljdk/internal/reflect/ConstantPool;Ljava/lang/Class;)Ljava/lang/Object; 16 <appendix> member <vmtarget> ; # sun/reflect/annotation/AnnotationParser$$Lambda+0x0000022701078c88
+instanceKlass  @bci sun/reflect/annotation/AnnotationParser parseEnumArray (ILjava/lang/Class;Ljava/nio/ByteBuffer;Ljdk/internal/reflect/ConstantPool;Ljava/lang/Class;)Ljava/lang/Object; 16 <appendix> form vmentry <vmtarget> ; # java/lang/invoke/LambdaForm$DMH+0x0000016e360bc800
+instanceKlass  @bci sun/reflect/annotation/AnnotationParser parseEnumArray (ILjava/lang/Class;Ljava/nio/ByteBuffer;Ljdk/internal/reflect/ConstantPool;Ljava/lang/Class;)Ljava/lang/Object; 16 <appendix> member <vmtarget> ; # sun/reflect/annotation/AnnotationParser$$Lambda+0x0000016e36079110
 instanceKlass org/gradle/internal/reflect/JavaReflectionUtil
 instanceKlass org/gradle/internal/service/scopes/ParallelListener
 instanceKlass java/util/concurrent/atomic/AtomicBoolean
@@ -651,10 +678,10 @@ instanceKlass org/gradle/internal/service/scopes/ListenerService
 instanceKlass org/gradle/internal/service/scopes/StatefulListener
 instanceKlass org/gradle/internal/event/DefaultListenerManager$EventBroadcast
 instanceKlass org/gradle/internal/event/DefaultListenerManager
-# instanceKlass java/lang/invoke/LambdaForm$MH+0x00000227010bc400
-# instanceKlass java/lang/invoke/LambdaForm$MH+0x00000227010bc000
+# instanceKlass java/lang/invoke/LambdaForm$MH+0x0000016e360bc400
+# instanceKlass java/lang/invoke/LambdaForm$MH+0x0000016e360bc000
 instanceKlass org/gradle/internal/typeconversion/CompositeNotationConverter
-instanceKlass  @bci org/gradle/api/internal/file/AbstractFileResolver <init> ()V 47 <appendix> member <vmtarget> ; # org/gradle/api/internal/file/AbstractFileResolver$$Lambda+0x00000227010b88a8
+instanceKlass  @bci org/gradle/api/internal/file/AbstractFileResolver <init> ()V 47 <appendix> member <vmtarget> ; # org/gradle/api/internal/file/AbstractFileResolver$$Lambda+0x0000016e360b9148
 instanceKlass org/gradle/internal/typeconversion/TransformingConverter
 instanceKlass org/gradle/api/internal/file/UriNotationConverter
 instanceKlass org/gradle/internal/exceptions/DiagnosticsVisitor
@@ -670,15 +697,17 @@ instanceKlass org/gradle/internal/typeconversion/NotationConverter
 instanceKlass org/gradle/api/internal/file/AbstractFileResolver
 instanceKlass org/gradle/launcher/cli/BuildEnvironmentConfigurationConverter
 instanceKlass org/gradle/internal/id/UUIDGenerator
-instanceKlass org/gradle/internal/remote/MessagingClient
-instanceKlass org/gradle/internal/remote/internal/IncomingConnector
 instanceKlass org/gradle/internal/remote/MessagingServer
+instanceKlass org/gradle/internal/remote/MessagingClient
 instanceKlass org/gradle/internal/remote/internal/OutgoingConnector
+instanceKlass org/gradle/internal/remote/internal/IncomingConnector
 instanceKlass org/gradle/internal/id/IdGenerator
 instanceKlass org/gradle/internal/remote/services/MessagingServices
 instanceKlass org/gradle/api/internal/file/DefaultFileLookup
 instanceKlass org/jspecify/annotations/NullMarked
 instanceKlass org/gradle/internal/service/scopes/Scope$Settings
+instanceKlass jdk/internal/foreign/MemorySessionImpl
+instanceKlass java/lang/foreign/MemorySegment$Scope
 instanceKlass org/gradle/internal/service/scopes/Scope$Project
 instanceKlass org/gradle/internal/service/scopes/Scope$Gradle
 instanceKlass org/gradle/internal/service/scopes/Scope$Build
@@ -707,13 +736,13 @@ instanceKlass org/gradle/internal/event/ListenerManager
 instanceKlass org/gradle/process/internal/ClientExecHandleBuilderFactory
 instanceKlass org/gradle/internal/file/PathToFileResolver
 instanceKlass org/gradle/internal/concurrent/ExecutorFactory
-instanceKlass org/gradle/cache/internal/locklistener/FileLockContentionHandler
-instanceKlass org/gradle/cache/internal/locklistener/InetAddressProvider
-instanceKlass org/gradle/api/internal/file/collections/DirectoryFileTreeFactory
-instanceKlass org/gradle/initialization/BuildCancellationToken
-instanceKlass org/gradle/api/internal/file/FileCollectionFactory
 instanceKlass org/gradle/cache/FileLockManager
 instanceKlass org/gradle/cache/internal/ProcessMetaDataProvider
+instanceKlass org/gradle/initialization/BuildCancellationToken
+instanceKlass org/gradle/cache/internal/locklistener/FileLockContentionHandler
+instanceKlass org/gradle/cache/internal/locklistener/InetAddressProvider
+instanceKlass org/gradle/api/internal/file/FileCollectionFactory
+instanceKlass org/gradle/api/internal/file/collections/DirectoryFileTreeFactory
 instanceKlass org/gradle/internal/service/scopes/BasicGlobalScopeServices
 instanceKlass org/gradle/internal/service/scopes/Scope$Global
 instanceKlass org/gradle/internal/service/scopes/Scope
@@ -738,7 +767,7 @@ instanceKlass java/util/concurrent/ExecutorService
 instanceKlass java/util/concurrent/Executor
 instanceKlass java/util/concurrent/Executors
 instanceKlass org/gradle/internal/logging/console/ThrottlingOutputEventListener
-instanceKlass  @bci java/util/ArrayDeque copyElements (Ljava/util/Collection;)V 2 <appendix> member <vmtarget> ; # java/util/ArrayDeque$$Lambda+0x00000227010729d8
+instanceKlass  @bci java/util/ArrayDeque copyElements (Ljava/util/Collection;)V 2 <appendix> member <vmtarget> ; # java/util/ArrayDeque$$Lambda+0x0000016e360729d8
 instanceKlass org/gradle/internal/logging/console/ProgressOperations
 instanceKlass org/gradle/internal/logging/console/ConsoleLayoutCalculator
 instanceKlass org/gradle/internal/logging/events/StyledTextOutputEvent$Span
@@ -751,6 +780,8 @@ instanceKlass org/gradle/internal/logging/console/BuildLogLevelFilterRenderer
 instanceKlass org/gradle/internal/logging/console/WorkInProgressRenderer
 instanceKlass org/gradle/internal/logging/console/BuildStatusRenderer
 instanceKlass org/gradle/internal/logging/console/AbstractUserInputRenderer
+instanceKlass org/gradle/internal/logging/sink/ErrorOutputDispatchingListener
+instanceKlass org/gradle/internal/logging/text/StreamBackedStandardOutputListener
 instanceKlass org/gradle/internal/logging/console/StyledTextOutputBackedRenderer
 instanceKlass org/gradle/internal/logging/text/AbstractLineChoppingStyledTextOutput$SeenFromEol
 instanceKlass org/gradle/internal/logging/console/DefaultTextArea$1
@@ -801,31 +832,31 @@ instanceKlass org/gradle/internal/logging/sink/ConsoleConfigureAction
 instanceKlass org/gradle/internal/logging/services/DefaultLoggingManager$ProcessConsoleAttachment
 instanceKlass org/gradle/api/internal/file/temp/DefaultTemporaryFileProvider
 instanceKlass java/lang/Class$EnclosingMethodInfo
-instanceKlass net/rubygrapefruit/platform/memory/Memory
+instanceKlass net/rubygrapefruit/platform/WindowsRegistry
 instanceKlass net/rubygrapefruit/platform/file/FileSystems
 instanceKlass net/rubygrapefruit/platform/SystemInfo
-instanceKlass net/rubygrapefruit/platform/WindowsRegistry
+instanceKlass net/rubygrapefruit/platform/memory/Memory
 instanceKlass org/gradle/internal/file/StatStatistics
 instanceKlass org/gradle/internal/file/StatStatistics$Collector
 instanceKlass org/gradle/internal/nativeintegration/filesystem/services/GenericFileSystem
 instanceKlass org/gradle/internal/service/InjectUtil
-# instanceKlass java/lang/invoke/LambdaForm$MH+0x00000227010a1c00
-# instanceKlass java/lang/invoke/LambdaForm$MH+0x00000227010a1800
-# instanceKlass java/lang/invoke/LambdaForm$MH+0x00000227010a1400
-# instanceKlass java/lang/invoke/LambdaForm$MH+0x00000227010a1000
-# instanceKlass java/lang/invoke/LambdaForm$DMH+0x00000227010a0c00
-# instanceKlass java/lang/invoke/LambdaForm$DMH+0x00000227010a0800
-# instanceKlass java/lang/invoke/LambdaForm$DMH+0x00000227010a0400
+# instanceKlass java/lang/invoke/LambdaForm$MH+0x0000016e360a1c00
+# instanceKlass java/lang/invoke/LambdaForm$MH+0x0000016e360a1800
+# instanceKlass java/lang/invoke/LambdaForm$MH+0x0000016e360a1400
+# instanceKlass java/lang/invoke/LambdaForm$MH+0x0000016e360a1000
+# instanceKlass java/lang/invoke/LambdaForm$DMH+0x0000016e360a0c00
+# instanceKlass java/lang/invoke/LambdaForm$DMH+0x0000016e360a0800
+# instanceKlass java/lang/invoke/LambdaForm$DMH+0x0000016e360a0400
 instanceKlass java/lang/invoke/MethodHandleImpl$ArrayAccessor
 instanceKlass java/lang/invoke/MethodHandleImpl$LoopClauses
 instanceKlass java/lang/invoke/MethodHandleImpl$CasesHolder
-# instanceKlass java/lang/invoke/LambdaForm$MH+0x00000227010a0000
+# instanceKlass java/lang/invoke/LambdaForm$MH+0x0000016e360a0000
 instanceKlass org/gradle/internal/service/DefaultServiceRegistry$1
+instanceKlass org/gradle/internal/file/FileCanonicalizer
 instanceKlass org/gradle/api/internal/file/temp/TemporaryFileProvider
 instanceKlass net/rubygrapefruit/platform/file/PosixFiles
 instanceKlass net/rubygrapefruit/platform/file/Files
 instanceKlass org/gradle/internal/nativeintegration/filesystem/services/GenericFileSystem$Factory
-instanceKlass org/gradle/internal/file/FileCanonicalizer
 instanceKlass org/gradle/internal/nativeintegration/jansi/JansiStorage
 instanceKlass org/fusesource/jansi/Ansi
 instanceKlass org/gradle/internal/nativeintegration/jansi/JansiLibrary
@@ -833,13 +864,13 @@ instanceKlass org/gradle/internal/nativeintegration/jansi/JansiLibraryFactory$1
 instanceKlass org/gradle/internal/nativeintegration/services/NativeServices$FileEventFunctionsProvider
 instanceKlass org/gradle/internal/nativeintegration/services/NativeServices$NativeFeatures$1$2
 instanceKlass org/gradle/internal/nativeintegration/services/NativeServices$1
+instanceKlass org/gradle/internal/nativeintegration/filesystem/Symlink
 instanceKlass org/gradle/internal/nativeintegration/filesystem/FileSystem
 instanceKlass org/gradle/internal/file/FileSystem
 instanceKlass org/gradle/internal/file/Stat
 instanceKlass org/gradle/internal/file/Chmod
 instanceKlass org/gradle/internal/file/FileModeMutator
 instanceKlass org/gradle/internal/file/FileModeAccessor
-instanceKlass org/gradle/internal/nativeintegration/filesystem/Symlink
 instanceKlass org/gradle/internal/nativeintegration/filesystem/services/FileSystemServices
 instanceKlass net/rubygrapefruit/platform/internal/jni/NativeLibraryFunctions
 instanceKlass jdk/internal/loader/NativeLibraries$Unloader
@@ -856,12 +887,12 @@ instanceKlass org/gradle/internal/nativeintegration/jansi/JansiRuntimeResolver
 instanceKlass org/gradle/internal/nativeintegration/jansi/JansiLibraryFactory
 instanceKlass org/gradle/internal/nativeintegration/jansi/JansiStorageLocator
 instanceKlass org/gradle/internal/nativeintegration/jansi/JansiBootPathConfigurer
-instanceKlass org/gradle/internal/file/FileMetadataAccessor
 instanceKlass org/gradle/internal/nativeintegration/NativeCapabilities
-instanceKlass org/gradle/internal/nativeintegration/network/HostnameLookup
 instanceKlass net/rubygrapefruit/platform/ProcessLauncher
 instanceKlass net/rubygrapefruit/platform/NativeIntegration
+instanceKlass org/gradle/internal/nativeintegration/network/HostnameLookup
 instanceKlass org/gradle/internal/nativeintegration/console/ConsoleDetector
+instanceKlass org/gradle/internal/file/FileMetadataAccessor
 instanceKlass org/gradle/internal/nativeintegration/ProcessEnvironment
 instanceKlass org/gradle/initialization/GradleUserHomeDirProvider
 instanceKlass org/gradle/internal/nativeintegration/services/NativeServices
@@ -893,15 +924,15 @@ instanceKlass org/gradle/internal/logging/sink/OutputEventRenderer$SnapshotImpl
 instanceKlass org/gradle/internal/buildoption/AbstractBuildOption$OptionValue
 instanceKlass org/gradle/launcher/cli/converter/LayoutToPropertiesConverter$Result
 instanceKlass java/util/Collections$UnmodifiableMap$UnmodifiableEntrySet$UnmodifiableEntry
-instanceKlass  @bci org/gradle/launcher/cli/converter/LayoutToPropertiesConverter maybeConfigureFrom (Ljava/io/File;Ljava/util/Map;)V 48 <appendix> member <vmtarget> ; # org/gradle/launcher/cli/converter/LayoutToPropertiesConverter$$Lambda+0x0000022701095770
+instanceKlass  @bci org/gradle/launcher/cli/converter/LayoutToPropertiesConverter maybeConfigureFrom (Ljava/io/File;Ljava/util/Map;)V 48 <appendix> member <vmtarget> ; # org/gradle/launcher/cli/converter/LayoutToPropertiesConverter$$Lambda+0x0000016e36095770
 instanceKlass org/gradle/api/specs/Spec
 instanceKlass org/gradle/initialization/SettingsLocation
 instanceKlass org/gradle/initialization/layout/BuildLayoutConfiguration
 instanceKlass org/gradle/internal/buildoption/BuildOptionSet$2
-instanceKlass  @bci org/gradle/launcher/cli/converter/BuildLayoutConverter convert (Lorg/gradle/launcher/configuration/InitialProperties;Lorg/gradle/cli/ParsedCommandLine;Ljava/io/File;)Lorg/gradle/launcher/configuration/BuildLayoutResult; 4 <appendix> argL0 ; # org/gradle/launcher/cli/converter/BuildLayoutConverter$$Lambda+0x0000022701094af8
+instanceKlass  @bci org/gradle/launcher/cli/converter/BuildLayoutConverter convert (Lorg/gradle/launcher/configuration/InitialProperties;Lorg/gradle/cli/ParsedCommandLine;Ljava/io/File;)Lorg/gradle/launcher/configuration/BuildLayoutResult; 4 <appendix> argL0 ; # org/gradle/launcher/cli/converter/BuildLayoutConverter$$Lambda+0x0000016e36094af8
 instanceKlass org/gradle/launcher/cli/converter/InitialPropertiesConverter$1
 instanceKlass org/gradle/internal/instrumentation/agent/AgentUtils
-instanceKlass  @bci org/gradle/process/internal/CurrentProcess inferJvmOptions (Lorg/gradle/api/internal/file/FileCollectionFactory;Ljava/util/List;)Lorg/gradle/process/internal/JvmOptions; 16 <appendix> argL0 ; # org/gradle/process/internal/CurrentProcess$$Lambda+0x00000227010944a0
+instanceKlass  @bci org/gradle/process/internal/CurrentProcess inferJvmOptions (Lorg/gradle/api/internal/file/FileCollectionFactory;Ljava/util/List;)Lorg/gradle/process/internal/JvmOptions; 16 <appendix> argL0 ; # org/gradle/process/internal/CurrentProcess$$Lambda+0x0000016e360944a0
 instanceKlass org/gradle/process/internal/JvmDebugSpec$DefaultJvmDebugSpec
 instanceKlass org/gradle/api/file/FileCollection
 instanceKlass org/gradle/api/Buildable
@@ -909,17 +940,17 @@ instanceKlass org/gradle/api/tasks/AntBuilderAware
 instanceKlass org/gradle/process/internal/JvmDebugSpec
 instanceKlass org/gradle/process/internal/JvmOptions
 instanceKlass sun/management/Util
-instanceKlass  @bci java/util/stream/Collectors toList ()Ljava/util/stream/Collector; 14 <appendix> argL0 ; # java/util/stream/Collectors$$Lambda+0x000002270106fcd8
-instanceKlass  @bci java/util/stream/Collectors toList ()Ljava/util/stream/Collector; 9 <appendix> argL0 ; # java/util/stream/Collectors$$Lambda+0x000002270106fab8
-instanceKlass  @bci java/util/stream/Collectors toList ()Ljava/util/stream/Collector; 4 <appendix> argL0 ; # java/util/stream/Collectors$$Lambda+0x000002270106f8a8
-instanceKlass  @bci sun/management/spi/PlatformMBeanProvider$PlatformComponent getMBeans (Ljava/lang/Class;)Ljava/util/List; 63 <appendix> member <vmtarget> ; # sun/management/spi/PlatformMBeanProvider$PlatformComponent$$Lambda+0x000002270106f670
-instanceKlass  @bci sun/management/spi/PlatformMBeanProvider$PlatformComponent getMBeans (Ljava/lang/Class;)Ljava/util/List; 47 <appendix> member <vmtarget> ; # sun/management/spi/PlatformMBeanProvider$PlatformComponent$$Lambda+0x000002270106f428
-instanceKlass  @cpi sun/management/spi/PlatformMBeanProvider$PlatformComponent 113 form vmentry <vmtarget> ; # java/lang/invoke/LambdaForm$DMH+0x0000022701090000
+instanceKlass  @bci java/util/stream/Collectors toList ()Ljava/util/stream/Collector; 14 <appendix> argL0 ; # java/util/stream/Collectors$$Lambda+0x0000016e3606fcd8
+instanceKlass  @bci java/util/stream/Collectors toList ()Ljava/util/stream/Collector; 9 <appendix> argL0 ; # java/util/stream/Collectors$$Lambda+0x0000016e3606fab8
+instanceKlass  @bci java/util/stream/Collectors toList ()Ljava/util/stream/Collector; 4 <appendix> argL0 ; # java/util/stream/Collectors$$Lambda+0x0000016e3606f8a8
+instanceKlass  @bci sun/management/spi/PlatformMBeanProvider$PlatformComponent getMBeans (Ljava/lang/Class;)Ljava/util/List; 63 <appendix> member <vmtarget> ; # sun/management/spi/PlatformMBeanProvider$PlatformComponent$$Lambda+0x0000016e3606f670
+instanceKlass  @bci sun/management/spi/PlatformMBeanProvider$PlatformComponent getMBeans (Ljava/lang/Class;)Ljava/util/List; 47 <appendix> member <vmtarget> ; # sun/management/spi/PlatformMBeanProvider$PlatformComponent$$Lambda+0x0000016e3606f428
+instanceKlass  @cpi sun/management/spi/PlatformMBeanProvider$PlatformComponent 113 form vmentry <vmtarget> ; # java/lang/invoke/LambdaForm$DMH+0x0000016e36090000
 instanceKlass java/util/Collections$2
 instanceKlass sun/management/RuntimeImpl
 instanceKlass java/util/stream/ReduceOps$2ReducingSink
-instanceKlass  @bci java/lang/management/ManagementFactory$PlatformMBeanFinder findSingleton (Ljava/lang/Class;)Lsun/management/spi/PlatformMBeanProvider$PlatformComponent; 30 <appendix> member <vmtarget> ; # java/lang/management/ManagementFactory$PlatformMBeanFinder$$Lambda+0x000002270106e688
-instanceKlass  @bci java/lang/management/ManagementFactory$PlatformMBeanFinder findSingleton (Ljava/lang/Class;)Lsun/management/spi/PlatformMBeanProvider$PlatformComponent; 19 <appendix> member <vmtarget> ; # java/lang/management/ManagementFactory$PlatformMBeanFinder$$Lambda+0x000002270106e440
+instanceKlass  @bci java/lang/management/ManagementFactory$PlatformMBeanFinder findSingleton (Ljava/lang/Class;)Lsun/management/spi/PlatformMBeanProvider$PlatformComponent; 30 <appendix> member <vmtarget> ; # java/lang/management/ManagementFactory$PlatformMBeanFinder$$Lambda+0x0000016e3606e688
+instanceKlass  @bci java/lang/management/ManagementFactory$PlatformMBeanFinder findSingleton (Ljava/lang/Class;)Lsun/management/spi/PlatformMBeanProvider$PlatformComponent; 19 <appendix> member <vmtarget> ; # java/lang/management/ManagementFactory$PlatformMBeanFinder$$Lambda+0x0000016e3606e440
 instanceKlass java/util/HashMap$HashMapSpliterator
 instanceKlass jdk/management/jfr/internal/FlightRecorderMXBeanProvider$SingleMBeanComponent
 instanceKlass jdk/management/jfr/FlightRecorderMXBean
@@ -962,13 +993,13 @@ instanceKlass java/util/stream/Collector
 instanceKlass java/util/stream/Collectors
 instanceKlass com/sun/management/internal/PlatformMBeanProviderImpl$1
 instanceKlass sun/management/spi/PlatformMBeanProvider$PlatformComponent
-instanceKlass  @bci com/sun/management/internal/PlatformMBeanProviderImpl <clinit> ()V 8 <appendix> argL0 ; # com/sun/management/internal/PlatformMBeanProviderImpl$$Lambda+0x0000022701069550
+instanceKlass  @bci com/sun/management/internal/PlatformMBeanProviderImpl <clinit> ()V 8 <appendix> argL0 ; # com/sun/management/internal/PlatformMBeanProviderImpl$$Lambda+0x0000016e36069550
 instanceKlass sun/management/spi/PlatformMBeanProvider
 instanceKlass java/lang/management/ManagementFactory$PlatformMBeanFinder$1
 instanceKlass java/lang/management/ManagementFactory$PlatformMBeanFinder
 instanceKlass java/lang/management/RuntimeMXBean
 instanceKlass java/lang/management/PlatformManagedObject
-instanceKlass  @bci java/lang/management/ManagementFactory loadNativeLib ()V 0 <appendix> argL0 ; # java/lang/management/ManagementFactory$$Lambda+0x0000022701068540
+instanceKlass  @bci java/lang/management/ManagementFactory loadNativeLib ()V 0 <appendix> argL0 ; # java/lang/management/ManagementFactory$$Lambda+0x0000016e36068540
 instanceKlass java/lang/management/ManagementFactory
 instanceKlass com/google/common/base/Optional
 instanceKlass org/gradle/api/internal/jvm/JavaVersionParser
@@ -1059,7 +1090,7 @@ instanceKlass org/gradle/configuration/GradleLauncherMetaData
 instanceKlass org/gradle/configuration/DefaultBuildClientMetaData
 instanceKlass org/gradle/internal/logging/text/AbstractStyledTextOutputFactory
 instanceKlass org/apache/commons/lang3/ArrayFill
-instanceKlass  @bci java/util/regex/CharPredicates forUnicodeBlock (Ljava/lang/String;)Ljava/util/regex/Pattern$CharPredicate; 6 <appendix> member <vmtarget> ; # java/util/regex/CharPredicates$$Lambda+0x0000022701064580
+instanceKlass  @bci java/util/regex/CharPredicates forUnicodeBlock (Ljava/lang/String;)Ljava/util/regex/Pattern$CharPredicate; 6 <appendix> member <vmtarget> ; # java/util/regex/CharPredicates$$Lambda+0x0000016e36064580
 instanceKlass java/lang/Character$Subset
 instanceKlass org/apache/commons/lang3/StringUtils
 instanceKlass org/gradle/internal/exceptions/FailureResolutionAware$Context
@@ -1143,7 +1174,7 @@ instanceKlass java/util/Collections$3
 instanceKlass java/util/logging/LogManager$LoggerContext$1
 instanceKlass java/util/logging/LogManager$VisitedLoggers
 instanceKlass java/util/function/Predicate
-instanceKlass  @bci java/util/logging/LogManager$LoggerContext$1 run ()Ljava/lang/Void; 22 <appendix> form vmentry <vmtarget> ; # java/lang/invoke/LambdaForm$MH+0x000002270102c000
+instanceKlass  @bci java/util/logging/LogManager$LoggerContext$1 run ()Ljava/lang/Void; 22 <appendix> form vmentry <vmtarget> ; # java/lang/invoke/LambdaForm$MH+0x0000016e3602c000
 instanceKlass java/util/logging/LogManager$2
 instanceKlass java/lang/System$LoggerFinder
 instanceKlass java/util/logging/LogManager$LoggingProviderAccess
@@ -1180,9 +1211,9 @@ instanceKlass org/gradle/internal/operations/logging/StyledTextBuildOperationPro
 instanceKlass org/gradle/internal/io/TextStream
 instanceKlass org/gradle/internal/logging/source/PrintStreamLoggingSystem
 instanceKlass org/gradle/internal/logging/source/StdOutLoggingSystem
-# instanceKlass java/lang/invoke/LambdaForm$MH+0x0000022701024c00
-# instanceKlass java/lang/invoke/LambdaForm$MH+0x0000022701024800
-# instanceKlass java/lang/invoke/LambdaForm$DMH+0x0000022701024400
+# instanceKlass java/lang/invoke/LambdaForm$MH+0x0000016e36024c00
+# instanceKlass java/lang/invoke/LambdaForm$MH+0x0000016e36024800
+# instanceKlass java/lang/invoke/LambdaForm$DMH+0x0000016e36024400
 instanceKlass org/gradle/internal/service/AnnotatedServiceLifecycleHandler
 instanceKlass java/lang/reflect/ParameterizedType
 instanceKlass org/gradle/internal/service/DefaultServiceRegistry$ClassInspector$ClassDetails
@@ -1197,12 +1228,12 @@ instanceKlass com/google/errorprone/annotations/Keep
 instanceKlass java/lang/annotation/Target
 instanceKlass sun/reflect/annotation/AnnotationInvocationHandler
 instanceKlass sun/reflect/annotation/AnnotationParser$1
-# instanceKlass java/lang/invoke/LambdaForm$MH+0x0000022701024000
+# instanceKlass java/lang/invoke/LambdaForm$MH+0x0000016e36024000
 instanceKlass java/lang/Class$3
 instanceKlass java/lang/annotation/Inherited
 instanceKlass java/lang/annotation/Retention
 instanceKlass sun/reflect/annotation/ExceptionProxy
-instanceKlass  @bci sun/reflect/annotation/AnnotationParser parseClassArray (ILjava/nio/ByteBuffer;Ljdk/internal/reflect/ConstantPool;Ljava/lang/Class;)Ljava/lang/Object; 10 <appendix> member <vmtarget> ; # sun/reflect/annotation/AnnotationParser$$Lambda+0x0000022701060348
+instanceKlass  @bci sun/reflect/annotation/AnnotationParser parseClassArray (ILjava/nio/ByteBuffer;Ljdk/internal/reflect/ConstantPool;Ljava/lang/Class;)Ljava/lang/Object; 10 <appendix> member <vmtarget> ; # sun/reflect/annotation/AnnotationParser$$Lambda+0x0000016e36060348
 instanceKlass sun/reflect/annotation/AnnotationType$1
 instanceKlass sun/reflect/annotation/AnnotationType
 instanceKlass java/lang/reflect/GenericArrayType
@@ -1253,16 +1284,16 @@ instanceKlass org/gradle/internal/service/ServiceProvider
 instanceKlass org/gradle/internal/concurrent/Stoppable
 instanceKlass org/gradle/internal/logging/sink/OutputEventListenerManager$1
 instanceKlass org/gradle/internal/logging/sink/OutputEventListenerManager
-# instanceKlass java/lang/invoke/LambdaForm$MH+0x000002270101c000
+# instanceKlass java/lang/invoke/LambdaForm$MH+0x0000016e3601c000
 instanceKlass java/lang/reflect/Proxy$ProxyBuilder$1
 instanceKlass jdk/internal/org/objectweb/asm/Edge
-instanceKlass  @bci java/lang/reflect/ProxyGenerator addProxyMethod (Ljava/lang/reflect/Method;Ljava/lang/Class;)V 23 <appendix> argL0 ; # java/lang/reflect/ProxyGenerator$$Lambda+0x000002270105c318
-instanceKlass  @bci java/lang/reflect/ProxyGenerator addProxyMethod (Ljava/lang/reflect/ProxyGenerator$ProxyMethod;)V 10 <appendix> argL0 ; # java/lang/reflect/ProxyGenerator$$Lambda+0x000002270105c0e8
+instanceKlass  @bci java/lang/reflect/ProxyGenerator addProxyMethod (Ljava/lang/reflect/Method;Ljava/lang/Class;)V 23 <appendix> argL0 ; # java/lang/reflect/ProxyGenerator$$Lambda+0x0000016e3605c318
+instanceKlass  @bci java/lang/reflect/ProxyGenerator addProxyMethod (Ljava/lang/reflect/ProxyGenerator$ProxyMethod;)V 10 <appendix> argL0 ; # java/lang/reflect/ProxyGenerator$$Lambda+0x0000016e3605c0e8
 instanceKlass java/util/StringJoiner
 instanceKlass java/lang/reflect/ProxyGenerator$ProxyMethod
-instanceKlass  @bci java/lang/reflect/Proxy getLoader (Ljava/lang/Module;)Ljava/lang/ClassLoader; 6 <appendix> member <vmtarget> ; # java/lang/reflect/Proxy$$Lambda+0x000002270105b9c0
-instanceKlass  @bci java/lang/WeakPairMap computeIfAbsent (Ljava/lang/Object;Ljava/lang/Object;Ljava/util/function/BiFunction;)Ljava/lang/Object; 18 <appendix> member <vmtarget> ; # java/lang/WeakPairMap$$Lambda+0x000002270105b588
-instanceKlass  @bci java/lang/Module implAddExportsOrOpens (Ljava/lang/String;Ljava/lang/Module;ZZ)V 145 <appendix> argL0 ; # java/lang/Module$$Lambda+0x000002270105b368
+instanceKlass  @bci java/lang/reflect/Proxy getLoader (Ljava/lang/Module;)Ljava/lang/ClassLoader; 6 <appendix> member <vmtarget> ; # java/lang/reflect/Proxy$$Lambda+0x0000016e3605b9c0
+instanceKlass  @bci java/lang/WeakPairMap computeIfAbsent (Ljava/lang/Object;Ljava/lang/Object;Ljava/util/function/BiFunction;)Ljava/lang/Object; 18 <appendix> member <vmtarget> ; # java/lang/WeakPairMap$$Lambda+0x0000016e3605b588
+instanceKlass  @bci java/lang/Module implAddExportsOrOpens (Ljava/lang/String;Ljava/lang/Module;ZZ)V 145 <appendix> argL0 ; # java/lang/Module$$Lambda+0x0000016e3605b368
 instanceKlass  @bci java/lang/module/ModuleDescriptor$Builder packages (Ljava/util/Set;)Ljava/lang/module/ModuleDescriptor$Builder; 17 <appendix> argL0 ; # java/lang/module/ModuleDescriptor$Builder$$Lambda+0x800000002
 instanceKlass java/lang/WeakPairMap$Pair$Lookup
 instanceKlass java/lang/WeakPairMap$Pair
@@ -1271,10 +1302,10 @@ instanceKlass java/lang/Module$ReflectionData
 instanceKlass java/util/function/Consumer
 instanceKlass jdk/internal/module/Checks
 instanceKlass java/lang/module/ModuleDescriptor$Builder
-instanceKlass  @bci java/lang/reflect/Proxy$ProxyBuilder getDynamicModule (Ljava/lang/ClassLoader;)Ljava/lang/Module; 4 <appendix> argL0 ; # java/lang/reflect/Proxy$ProxyBuilder$$Lambda+0x000002270105aa50
+instanceKlass  @bci java/lang/reflect/Proxy$ProxyBuilder getDynamicModule (Ljava/lang/ClassLoader;)Ljava/lang/Module; 4 <appendix> argL0 ; # java/lang/reflect/Proxy$ProxyBuilder$$Lambda+0x0000016e3605aa50
 instanceKlass java/lang/PublicMethods
 instanceKlass java/lang/reflect/Proxy$ProxyBuilder
-instanceKlass  @bci java/lang/reflect/Proxy getProxyConstructor (Ljava/lang/Class;Ljava/lang/ClassLoader;[Ljava/lang/Class;)Ljava/lang/reflect/Constructor; 35 <appendix> argL0 ; # java/lang/reflect/Proxy$$Lambda+0x00000227010597e0
+instanceKlass  @bci java/lang/reflect/Proxy getProxyConstructor (Ljava/lang/Class;Ljava/lang/ClassLoader;[Ljava/lang/Class;)Ljava/lang/reflect/Constructor; 35 <appendix> argL0 ; # java/lang/reflect/Proxy$$Lambda+0x0000016e360597e0
 instanceKlass java/lang/reflect/Proxy
 instanceKlass org/gradle/internal/dispatch/ProxyDispatchAdapter$DispatchingInvocationHandler
 instanceKlass java/lang/reflect/InvocationHandler
@@ -1297,10 +1328,10 @@ instanceKlass org/gradle/internal/time/Clock
 instanceKlass org/gradle/internal/time/Time
 instanceKlass org/gradle/internal/Factory
 instanceKlass org/gradle/internal/logging/format/LogHeaderFormatter
-instanceKlass org/gradle/internal/logging/console/ColorMap
 instanceKlass org/gradle/internal/nativeintegration/console/ConsoleMetaData
-instanceKlass org/gradle/internal/logging/text/StyledTextOutput
 instanceKlass org/gradle/api/logging/StandardOutputListener
+instanceKlass org/gradle/internal/logging/text/StyledTextOutput
+instanceKlass org/gradle/internal/logging/console/ColorMap
 instanceKlass org/gradle/internal/logging/config/LoggingSystem$Snapshot
 instanceKlass org/gradle/internal/logging/events/InteractiveEvent
 instanceKlass org/gradle/internal/logging/events/OutputEvent
@@ -1313,6 +1344,7 @@ instanceKlass org/gradle/internal/service/ContainsServices
 instanceKlass org/gradle/internal/service/CloseableServiceRegistry
 instanceKlass org/gradle/internal/service/ServiceRegistryBuilder
 instanceKlass org/gradle/internal/logging/services/LoggingServiceRegistry$1
+instanceKlass org/gradle/internal/logging/console/GlobalUserInputReceiver
 instanceKlass org/gradle/internal/logging/LoggingManagerFactory
 instanceKlass org/gradle/internal/logging/config/LoggingRouter
 instanceKlass org/gradle/internal/logging/LoggingOutputInternal
@@ -1320,7 +1352,6 @@ instanceKlass org/gradle/api/logging/LoggingOutput
 instanceKlass org/gradle/internal/logging/config/LoggingConfigurer
 instanceKlass org/gradle/internal/logging/config/LoggingSourceSystem
 instanceKlass org/gradle/internal/logging/config/LoggingSystem
-instanceKlass org/gradle/internal/logging/console/GlobalUserInputReceiver
 instanceKlass org/gradle/internal/logging/events/OutputEventListener
 instanceKlass org/gradle/internal/logging/services/LoggingServiceRegistry
 instanceKlass org/gradle/internal/service/ServiceRegistry
@@ -1329,16 +1360,16 @@ instanceKlass org/gradle/internal/service/ServiceRegistrationProvider
 instanceKlass org/gradle/launcher/bootstrap/CommandLineActionFactory$CommandLineExecution
 instanceKlass org/gradle/launcher/cli/DefaultCommandLineActionFactory
 instanceKlass org/gradle/launcher/bootstrap/EntryPoint$RecordingExecutionListener
-# instanceKlass java/lang/invoke/LambdaForm$MH+0x0000022701012800
-# instanceKlass java/lang/invoke/LambdaForm$MH+0x0000022701012400
-# instanceKlass java/lang/invoke/LambdaForm$MH+0x0000022701012000
+# instanceKlass java/lang/invoke/LambdaForm$MH+0x0000016e36012800
+# instanceKlass java/lang/invoke/LambdaForm$MH+0x0000016e36012400
+# instanceKlass java/lang/invoke/LambdaForm$MH+0x0000016e36012000
 instanceKlass org/gradle/launcher/bootstrap/CommandLineActionFactory
-instanceKlass org/gradle/launcher/bootstrap/ExecutionCompleter
 instanceKlass org/gradle/api/Action
 instanceKlass org/gradle/internal/logging/text/StyledTextOutputFactory
 instanceKlass org/gradle/api/logging/configuration/LoggingConfiguration
 instanceKlass org/gradle/initialization/BuildClientMetaData
 instanceKlass org/gradle/internal/problems/failure/FailureFactory
+instanceKlass org/gradle/launcher/bootstrap/ExecutionCompleter
 instanceKlass org/gradle/launcher/bootstrap/ExecutionListener
 instanceKlass org/gradle/launcher/bootstrap/EntryPoint
 instanceKlass java/util/TreeMap$PrivateEntryIterator
@@ -1367,11 +1398,11 @@ instanceKlass org/gradle/api/Action
 instanceKlass org/gradle/internal/IoActions
 instanceKlass  @bci java/util/regex/Pattern Range (II)Ljava/util/regex/Pattern$CharPredicate; 23 <appendix> member <vmtarget> ; # java/util/regex/Pattern$$Lambda+0x80000002b
 instanceKlass  @bci java/util/regex/Pattern negate (Ljava/util/regex/Pattern$CharPredicate;)Ljava/util/regex/Pattern$CharPredicate; 1 <appendix> member <vmtarget> ; # java/util/regex/Pattern$$Lambda+0x800000032
-instanceKlass  @bci java/util/regex/CharPredicates ASCII_WORD ()Ljava/util/regex/Pattern$BmpCharPredicate; 0 <appendix> argL0 ; # java/util/regex/CharPredicates$$Lambda+0x0000022701058160
+instanceKlass  @bci java/util/regex/CharPredicates ASCII_WORD ()Ljava/util/regex/Pattern$BmpCharPredicate; 0 <appendix> argL0 ; # java/util/regex/CharPredicates$$Lambda+0x0000016e36058160
 instanceKlass org/gradle/internal/InternalTransformer
 instanceKlass org/gradle/util/internal/GUtil
-instanceKlass  @bci org/gradle/api/internal/classpath/DefaultModuleRegistry loadOptionalModule (Ljava/lang/String;)Lorg/gradle/api/internal/classpath/Module; 4 <appendix> member <vmtarget> ; # org/gradle/api/internal/classpath/DefaultModuleRegistry$$Lambda+0x000002270100e3e8
-instanceKlass  @cpi org/gradle/api/internal/classpath/DefaultModuleRegistry 541 form vmentry <vmtarget> ; # java/lang/invoke/LambdaForm$DMH+0x0000022701010000
+instanceKlass  @bci org/gradle/api/internal/classpath/DefaultModuleRegistry loadOptionalModule (Ljava/lang/String;)Lorg/gradle/api/internal/classpath/Module; 4 <appendix> member <vmtarget> ; # org/gradle/api/internal/classpath/DefaultModuleRegistry$$Lambda+0x0000016e3600e3e8
+instanceKlass  @cpi org/gradle/api/internal/classpath/DefaultModuleRegistry 541 form vmentry <vmtarget> ; # java/lang/invoke/LambdaForm$DMH+0x0000016e36010000
 instanceKlass org/gradle/internal/classpath/TransformedClassPath
 instanceKlass java/util/Collections$1
 instanceKlass org/gradle/api/internal/classpath/DefaultModuleRegistry$DefaultModule
@@ -1398,8 +1429,8 @@ instanceKlass org/gradle/internal/installation/GradleInstallation
 instanceKlass org/gradle/internal/classloader/ClasspathUtil
 instanceKlass org/gradle/internal/installation/CurrentGradleInstallationLocator
 instanceKlass org/gradle/internal/installation/CurrentGradleInstallation
-instanceKlass  @bci org/gradle/api/internal/classpath/DefaultModuleRegistry <clinit> ()V 0 <appendix> argL0 ; # org/gradle/api/internal/classpath/DefaultModuleRegistry$$Lambda+0x0000022701009a90
-instanceKlass  @cpi org/gradle/api/internal/classpath/DefaultModuleRegistry 545 form vmentry <vmtarget> ; # java/lang/invoke/LambdaForm$DMH+0x0000022701008400
+instanceKlass  @bci org/gradle/api/internal/classpath/DefaultModuleRegistry <clinit> ()V 0 <appendix> argL0 ; # org/gradle/api/internal/classpath/DefaultModuleRegistry$$Lambda+0x0000016e36009a90
+instanceKlass  @cpi org/gradle/api/internal/classpath/DefaultModuleRegistry 545 form vmentry <vmtarget> ; # java/lang/invoke/LambdaForm$DMH+0x0000016e36008400
 instanceKlass org/gradle/api/specs/Spec
 instanceKlass org/gradle/api/internal/classpath/Module
 instanceKlass org/gradle/api/internal/classpath/DefaultModuleRegistry
@@ -1409,14 +1440,14 @@ instanceKlass org/gradle/internal/classloader/ClassLoaderFactory
 instanceKlass org/gradle/api/internal/ClassPathRegistry
 instanceKlass org/gradle/api/internal/classpath/ModuleRegistry
 instanceKlass org/gradle/launcher/bootstrap/ProcessBootstrap
-# instanceKlass java/lang/invoke/LambdaForm$MH+0x0000022701008000
-# instanceKlass java/lang/invoke/LambdaForm$MH+0x0000022701005c00
-# instanceKlass java/lang/invoke/LambdaForm$MH+0x0000022701005800
-# instanceKlass java/lang/invoke/LambdaForm$MH+0x0000022701005400
-instanceKlass  @cpi org/gradle/cache/internal/DefaultCacheCoordinator 622 form vmentry <vmtarget> ; # java/lang/invoke/LambdaForm$DMH+0x0000022701005000
-instanceKlass  @cpi org/gradle/api/internal/file/DefaultFileCollectionFactory 277 form vmentry <vmtarget> ; # java/lang/invoke/LambdaForm$DMH+0x0000022701004400
+# instanceKlass java/lang/invoke/LambdaForm$MH+0x0000016e36008000
+# instanceKlass java/lang/invoke/LambdaForm$MH+0x0000016e36005c00
+# instanceKlass java/lang/invoke/LambdaForm$MH+0x0000016e36005800
+# instanceKlass java/lang/invoke/LambdaForm$MH+0x0000016e36005400
+instanceKlass  @cpi org/gradle/cache/internal/DefaultCacheCoordinator 622 form vmentry <vmtarget> ; # java/lang/invoke/LambdaForm$DMH+0x0000016e36005000
+instanceKlass  @cpi org/gradle/api/internal/file/DefaultFileCollectionFactory 277 form vmentry <vmtarget> ; # java/lang/invoke/LambdaForm$DMH+0x0000016e36004400
 instanceKlass org/gradle/launcher/GradleMain
-instanceKlass  @bci java/io/FilePermissionCollection add (Ljava/security/Permission;)V 68 <appendix> argL0 ; # java/io/FilePermissionCollection$$Lambda+0x0000022701057078
+instanceKlass  @bci java/io/FilePermissionCollection add (Ljava/security/Permission;)V 68 <appendix> argL0 ; # java/io/FilePermissionCollection$$Lambda+0x0000016e36057078
 instanceKlass sun/security/util/SecurityProperties
 instanceKlass sun/security/util/FilePermCompat
 instanceKlass java/io/FilePermission$1
@@ -1429,7 +1460,7 @@ instanceKlass java/util/jar/JarFile$ThreadTrackHolder
 instanceKlass java/util/StringTokenizer
 instanceKlass java/net/URLClassLoader$1
 instanceKlass org/gradle/wrapper/Install$InstallCheck
-instanceKlass  @bci java/util/regex/Pattern DOT ()Ljava/util/regex/Pattern$CharPredicate; 0 <appendix> argL0 ; # java/util/regex/Pattern$$Lambda+0x0000022701054790
+instanceKlass  @bci java/util/regex/Pattern DOT ()Ljava/util/regex/Pattern$CharPredicate; 0 <appendix> argL0 ; # java/util/regex/Pattern$$Lambda+0x0000016e36054790
 instanceKlass org/gradle/wrapper/BootstrapMainStarter$1
 instanceKlass sun/nio/ch/FileKey
 instanceKlass sun/nio/ch/FileLockTable
@@ -1523,7 +1554,7 @@ instanceKlass java/util/SortedMap
 instanceKlass java/lang/ProcessEnvironment$EntryComparator
 instanceKlass java/lang/ProcessEnvironment$NameComparator
 instanceKlass org/gradle/wrapper/GradleUserHomeLookup
-instanceKlass  @bci org/gradle/internal/daemon/client/clientinput/DaemonClientInputForwarder <init> (Ljava/io/InputStream;Lorg/gradle/internal/dispatch/Dispatch;Lorg/gradle/internal/logging/console/GlobalUserInputReceiver;)V 10 <appendix> form vmentry <vmtarget> ; # java/lang/invoke/LambdaForm$MH+0x0000022701004000
+instanceKlass  @bci java/io/ObjectInputFilter$Config <clinit> ()V 56 <appendix> form vmentry <vmtarget> ; # java/lang/invoke/LambdaForm$MH+0x0000016e36004000
 instanceKlass java/lang/invoke/InvokerBytecodeGenerator$ClassData
 instanceKlass jdk/internal/org/objectweb/asm/Frame
 instanceKlass java/lang/invoke/LambdaFormBuffer
@@ -1535,7 +1566,7 @@ instanceKlass java/lang/invoke/ClassSpecializer$Factory
 instanceKlass java/lang/invoke/ClassSpecializer$SpeciesData
 instanceKlass java/lang/invoke/ClassSpecializer$1
 instanceKlass java/lang/invoke/ClassSpecializer
-instanceKlass  @bci java/util/regex/Pattern ALL ()Ljava/util/regex/Pattern$CharPredicate; 0 <appendix> argL0 ; # java/util/regex/Pattern$$Lambda+0x00000227010438c8
+instanceKlass  @bci java/util/regex/Pattern ALL ()Ljava/util/regex/Pattern$CharPredicate; 0 <appendix> argL0 ; # java/util/regex/Pattern$$Lambda+0x0000016e360438c8
 instanceKlass org/gradle/cli/CommandLineParser$OptionParserState
 instanceKlass org/gradle/cli/ParsedCommandLineOption
 instanceKlass org/gradle/cli/ParsedCommandLine
@@ -1545,7 +1576,7 @@ instanceKlass java/util/regex/ASCII
 instanceKlass java/util/regex/Pattern$TreeInfo
 instanceKlass  @bci java/util/regex/Pattern union (Ljava/util/regex/Pattern$CharPredicate;Ljava/util/regex/Pattern$CharPredicate;Z)Ljava/util/regex/Pattern$CharPredicate; 6 <appendix> member <vmtarget> ; # java/util/regex/Pattern$$Lambda+0x800000033
 instanceKlass java/util/regex/Pattern$BitClass
-instanceKlass  @bci java/util/regex/CharPredicates ctype (I)Ljava/util/regex/Pattern$CharPredicate; 1 <appendix> member <vmtarget> ; # java/util/regex/CharPredicates$$Lambda+0x0000022701043210
+instanceKlass  @bci java/util/regex/CharPredicates ctype (I)Ljava/util/regex/Pattern$CharPredicate; 1 <appendix> member <vmtarget> ; # java/util/regex/CharPredicates$$Lambda+0x0000016e36043210
 instanceKlass java/lang/invoke/MethodHandles$Lookup$ClassDefiner
 instanceKlass java/lang/invoke/MethodHandles$Lookup$ClassFile
 instanceKlass jdk/internal/org/objectweb/asm/Handler
@@ -1729,7 +1760,6 @@ instanceKlass jdk/internal/access/JavaUtilZipFileAccess
 instanceKlass java/util/zip/ZipFile
 instanceKlass java/util/zip/ZipConstants
 instanceKlass java/lang/StringCoding
-instanceKlass sun/nio/cs/MS1252$Holder
 instanceKlass sun/nio/cs/ArrayDecoder
 instanceKlass java/nio/charset/CharsetDecoder
 instanceKlass sun/launcher/LauncherHelper
@@ -1860,6 +1890,7 @@ instanceKlass jdk/internal/misc/Signal
 instanceKlass java/lang/Terminator$1
 instanceKlass jdk/internal/misc/Signal$Handler
 instanceKlass java/lang/Terminator
+instanceKlass sun/nio/cs/MS1252$Holder
 instanceKlass java/nio/ByteOrder
 instanceKlass java/nio/Buffer$2
 instanceKlass jdk/internal/access/JavaNioAccess
@@ -2033,7 +2064,7 @@ instanceKlass java/lang/Comparable
 instanceKlass java/io/Serializable
 ciInstanceKlass java/lang/Object 1 1 124 7 1 10 12 1 1 10 7 12 1 1 1 10 7 12 1 1 1 10 12 1 1 8 1 10 12 1 1 10 7 12 1 1 1 10 12 1 10 12 1 1 10 7 12 1 1 1 10 12 1 10 12 1 7 1 10 7 12 1 1 1 10 12 1 1 10 12 1 100 1 8 1 10 12 1 3 8 1 7 1 5 0 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 100 1 1 1 1 1 1 1 1 1 1 7 1 1 1 1 1 1 1 1 1 1 3 1 1
 ciInstanceKlass java/io/Serializable 1 0 7 100 1 100 1 1 1
-ciInstanceKlass java/lang/System 1 1 834 10 7 12 1 1 1 9 7 12 1 1 1 10 12 1 10 12 1 1 10 12 1 1 10 12 1 9 12 1 1 10 7 12 1 1 1 11 100 12 1 1 1 10 100 12 1 1 1 10 12 1 1 10 12 1 1 100 1 8 1 10 12 1 10 7 12 1 1 1 10 100 12 1 1 1 18 12 1 1 10 7 12 1 1 1 7 1 10 12 1 1 10 7 12 1 1 1 10 12 1 10 7 12 1 1 1 9 100 12 1 1 1 10 7 12 1 1 1 11 7 12 1 1 1 10 12 1 1 10 7 12 1 1 1 7 1 10 10 12 1 1 8 1 10 12 1 8 1 10 12 1 9 12 1 1 8 1 10 7 12 1 1 1 10 12 1 1 100 1 8 1 10 9 12 1 1 8 1 10 12 1 1 10 100 12 1 1 1 8 1 10 12 1 7 1 10 12 1 8 1 10 12 1 10 12 1 1 100 1 10 12 10 12 1 9 12 1 1 9 12 1 1 10 7 12 1 1 1 10 7 12 1 1 1 10 12 1 1 10 12 1 10 12 1 10 7 12 1 1 1 10 12 1 100 1 100 1 8 1 10 12 1 10 12 1 1 7 1 10 12 1 100 1 8 1 10 10 12 1 100 1 8 1 10 8 1 10 7 12 1 1 8 1 10 12 100 1 8 1 10 10 12 1 1 10 100 12 1 1 1 100 1 18 12 1 100 1 9 100 12 1 1 1 10 12 1 100 1 10 12 1 1 10 12 1 1 10 7 12 1 1 1 10 12 1 1 10 12 1 10 12 1 10 12 1 1 10 12 1 7 1 10 12 1 9 7 12 1 1 1 10 7 12 1 1 1 10 12 1 10 12 1 10 7 12 1 1 1 7 1 8 1 10 9 12 1 9 12 1 10 12 1 10 7 12 1 1 10 12 1 10 12 1 1 8 1 10 12 1 1 8 1 11 12 1 10 12 11 12 1 1 11 7 12 1 1 1 11 7 12 1 1 11 12 1 1 7 1 11 12 1 10 12 1 8 1 10 12 1 1 8 1 8 1 8 1 8 1 11 12 1 10 12 1 10 12 1 10 12 1 8 1 10 12 1 1 8 1 9 12 1 8 1 10 7 12 1 1 8 1 7 1 9 7 12 1 1 1 10 12 1 7 1 9 12 10 9 12 7 1 10 12 9 12 1 1 8 1 10 12 1 1 8 1 10 7 12 1 1 10 12 1 10 12 1 1 11 7 12 1 1 10 12 10 7 12 1 1 1 9 12 1 1 7 1 8 1 10 12 1 1 10 7 12 1 1 1 7 1 10 12 1 1 10 12 1 8 1 8 1 10 8 1 8 1 8 1 8 1 10 10 7 12 1 1 10 12 1 10 12 1 1 10 12 1 1 10 12 1 10 100 12 1 1 1 10 7 1 8 1 10 10 10 12 1 1 10 12 1 1 8 1 10 12 1 8 1 8 1 10 12 1 10 7 12 1 1 1 10 12 1 1 7 1 10 10 12 1 10 12 1 9 12 1 1 3 1 3 1 1 1 1 1 1 1 1 1 1 1 1 100 1 1 100 1 1 1 1 1 1 1 1 1 1 1 100 1 7 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 100 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 100 1 1 16 15 10 12 1 1 16 15 10 12 16 1 15 10 100 12 1 1 1 1 1 1 1 1 1 100 1 100 1 1
+ciInstanceKlass java/lang/System 1 1 834 10 7 12 1 1 1 9 7 12 1 1 1 10 12 1 10 12 1 1 10 12 1 1 10 12 1 9 12 1 1 10 7 12 1 1 1 11 100 12 1 1 1 10 100 12 1 1 1 10 12 1 1 10 12 1 1 100 1 8 1 10 12 1 10 7 12 1 1 1 10 7 12 1 1 1 18 12 1 1 10 7 12 1 1 1 7 1 10 12 1 1 10 7 12 1 1 1 10 12 1 10 7 12 1 1 1 9 100 12 1 1 1 10 7 12 1 1 1 11 7 12 1 1 1 10 12 1 1 10 7 12 1 1 1 7 1 10 10 12 1 1 8 1 10 12 1 8 1 10 12 1 9 12 1 1 8 1 10 7 12 1 1 1 10 12 1 1 100 1 8 1 10 9 12 1 1 8 1 10 12 1 1 10 100 12 1 1 1 8 1 10 12 1 7 1 10 12 1 8 1 10 12 1 10 12 1 1 100 1 10 12 10 12 1 9 12 1 1 9 12 1 1 10 7 12 1 1 1 10 7 12 1 1 1 10 12 1 1 10 12 1 10 12 1 10 7 12 1 1 1 10 12 1 100 1 100 1 8 1 10 12 1 10 12 1 1 7 1 10 12 1 100 1 8 1 10 10 12 1 100 1 8 1 10 8 1 10 7 12 1 1 8 1 10 12 100 1 8 1 10 10 12 1 1 10 7 12 1 1 1 100 1 18 12 1 100 1 9 100 12 1 1 1 10 12 1 100 1 10 12 1 1 10 12 1 1 10 7 12 1 1 1 10 12 1 1 10 12 1 10 12 1 10 12 1 1 10 12 1 7 1 10 12 1 9 7 12 1 1 1 10 7 12 1 1 1 10 12 1 10 12 1 10 7 12 1 1 1 7 1 8 1 10 9 12 1 9 12 1 10 12 1 10 7 12 1 1 10 12 1 10 12 1 1 8 1 10 12 1 1 8 1 11 12 1 10 12 11 12 1 1 11 7 12 1 1 1 11 7 12 1 1 11 12 1 1 7 1 11 12 1 10 12 1 8 1 10 12 1 1 8 1 8 1 8 1 8 1 11 12 1 10 12 1 10 12 1 10 12 1 8 1 10 12 1 1 8 1 9 12 1 8 1 10 7 12 1 1 8 1 7 1 9 7 12 1 1 1 10 12 1 7 1 9 12 10 9 12 7 1 10 12 9 12 1 1 8 1 10 12 1 1 8 1 10 7 12 1 1 10 12 1 10 12 1 1 11 7 12 1 1 10 12 10 7 12 1 1 1 9 12 1 1 7 1 8 1 10 12 1 1 10 7 12 1 1 1 7 1 10 12 1 1 10 12 1 8 1 8 1 10 8 1 8 1 8 1 8 1 10 10 7 12 1 1 10 12 1 10 12 1 1 10 12 1 1 10 12 1 10 100 12 1 1 1 10 7 1 8 1 10 10 10 12 1 1 10 12 1 1 8 1 10 12 1 8 1 8 1 10 12 1 10 7 12 1 1 1 10 12 1 1 7 1 10 10 12 1 10 12 1 9 12 1 1 3 1 3 1 1 1 1 1 1 1 1 1 1 1 1 100 1 1 100 1 1 1 1 1 1 1 1 1 1 1 100 1 7 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 100 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 100 1 1 16 15 10 12 1 1 16 15 10 12 16 1 15 10 100 12 1 1 1 1 1 1 1 1 1 100 1 100 1 1
 staticfield java/lang/System in Ljava/io/InputStream; java/io/BufferedInputStream
 staticfield java/lang/System out Ljava/io/PrintStream; org/gradle/internal/io/LinePerThreadBufferingOutputStream
 staticfield java/lang/System err Ljava/io/PrintStream; org/gradle/internal/io/LinePerThreadBufferingOutputStream
@@ -2106,8 +2137,10 @@ instanceKlass java/lang/StackOverflowError
 instanceKlass java/lang/OutOfMemoryError
 instanceKlass java/lang/InternalError
 ciInstanceKlass java/lang/VirtualMachineError 1 1 34 10 100 12 1 1 1 10 12 1 10 12 1 10 12 1 100 1 1 1 1 5 0 1 1 1 1 1 1 1 1 1 1 1
-ciInstanceKlass java/util/Set 1 1 144 100 1 10 100 12 1 1 1 9 7 12 1 1 1 7 1 10 12 1 1 10 12 1 7 1 7 1 10 12 1 7 1 7 1 11 7 12 1 1 1 11 12 1 1 7 1 10 12 1 10 12 1 1 11 12 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1
 ciInstanceKlass java/util/Iterator 1 1 53 100 1 8 1 10 12 1 1 10 100 12 1 1 1 11 7 12 1 1 1 11 12 1 1 11 100 12 1 1 1 7 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1
+instanceKlass java/io/ObjectInputStream$PeekInputStream
+instanceKlass java/io/ObjectInputStream$BlockDataInputStream
+instanceKlass java/io/ObjectInputStream
 instanceKlass com/esotericsoftware/kryo/io/Input
 instanceKlass org/gradle/internal/serialize/kryo/KryoBackedDecoder$1
 instanceKlass org/gradle/internal/remote/internal/inet/SocketConnection$SocketInputStream
@@ -2170,7 +2203,6 @@ ciInstanceKlass java/net/URL 1 1 771 10 7 12 1 1 1 10 12 1 10 7 12 1 1 9 12 1 1 
 staticfield java/net/URL defaultFactory Ljava/net/URLStreamHandlerFactory; java/net/URL$DefaultFactory
 staticfield java/net/URL streamHandlerLock Ljava/lang/Object; java/lang/Object
 staticfield java/net/URL serialPersistentFields [Ljava/io/ObjectStreamField; 7 [Ljava/io/ObjectStreamField;
-ciMethod java/lang/System arraycopy (Ljava/lang/Object;ILjava/lang/Object;II)V 256 0 128 0 -1
 ciInstanceKlass java/lang/Module 1 1 1070 10 7 12 1 1 1 9 7 12 1 1 1 10 7 12 1 1 1 9 12 1 9 12 1 1 9 12 1 1 10 12 1 1 10 12 1 10 12 1 1 10 7 12 1 1 1 7 1 10 7 12 1 1 1 10 12 1 1 11 7 12 1 1 1 10 12 1 1 10 7 12 1 1 1 10 12 1 1 10 7 12 1 1 1 9 100 12 1 1 1 10 7 12 1 1 1 10 12 1 8 1 10 7 12 1 1 1 10 7 12 1 1 1 10 7 12 1 1 1 10 12 1 10 12 1 9 12 1 1 10 100 12 1 1 100 1 7 1 10 8 1 10 12 1 1 10 12 1 10 12 10 12 1 10 7 12 1 1 8 1 8 1 10 8 1 8 1 9 12 1 1 8 1 10 100 12 1 1 1 10 12 1 9 12 1 1 11 12 1 9 7 12 1 1 10 7 12 1 1 1 10 100 12 1 1 1 10 12 1 1 8 1 10 12 1 1 10 12 1 10 12 1 1 9 7 12 1 1 1 10 12 1 1 10 12 1 1 9 12 1 10 12 1 10 12 1 9 12 1 1 11 7 12 1 1 10 12 1 1 9 12 1 9 12 1 10 12 1 10 12 1 100 1 8 1 10 10 12 1 1 10 12 1 8 1 10 12 1 1 8 1 8 1 10 12 1 1 10 12 1 10 12 1 1 18 12 1 1 10 12 1 1 11 12 1 9 12 1 11 12 10 100 12 1 1 100 1 8 1 10 11 12 1 1 10 7 12 1 1 1 10 12 1 10 12 1 1 11 12 1 1 11 7 12 1 1 11 12 1 1 9 12 1 11 12 1 10 12 1 1 10 12 1 1 9 12 1 10 12 10 7 12 1 1 10 7 1 18 12 1 1 11 100 12 1 1 1 18 12 1 11 12 1 1 10 100 12 1 1 1 11 12 1 1 10 7 12 1 1 7 1 11 12 1 7 1 7 1 10 12 1 10 7 12 1 1 1 10 11 7 12 1 8 1 10 10 12 1 1 10 7 12 1 1 10 12 1 10 12 1 7 1 10 12 1 10 11 12 1 1 10 12 10 12 1 1 9 12 1 1 100 1 10 10 12 1 1 11 7 1 10 12 1 1 11 12 1 10 10 12 1 11 10 12 1 1 10 12 1 1 10 12 1 1 10 7 12 1 1 10 12 1 10 12 1 1 10 10 12 1 1 10 12 1 18 12 1 11 12 1 18 12 1 10 12 1 10 12 1 10 12 7 1 10 12 1 10 12 1 10 12 1 9 12 1 7 1 10 10 10 10 12 1 10 12 1 10 12 1 10 12 1 1 10 12 1 1 10 12 1 9 12 1 18 12 1 1 10 7 12 1 1 1 100 1 8 1 10 12 1 1 10 12 1 1 10 7 12 1 1 7 1 10 12 1 1 7 1 8 1 10 12 1 1 100 1 11 12 1 1 10 100 12 1 1 1 18 12 1 1 11 100 12 1 1 1 100 1 10 12 1 10 12 1 1 7 1 7 1 10 12 8 1 10 12 1 1 10 12 1 1 10 100 12 1 1 10 12 1 1 10 12 1 10 12 10 12 1 1 7 1 10 10 12 1 1 10 7 12 1 1 1 100 1 10 12 1 1 10 7 12 1 1 8 1 18 12 1 1 100 1 100 1 9 12 1 1 9 12 1 9 12 1 11 100 12 1 1 1 100 1 11 12 1 1 100 1 10 12 1 8 1 10 12 1 10 12 10 12 1 8 1 10 10 100 12 1 1 7 1 10 10 12 1 10 7 12 1 1 9 12 1 9 12 1 9 12 1 9 12 1 10 12 11 12 1 10 12 1 7 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 100 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 100 100 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 100 1 100 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 100 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 16 15 10 12 16 16 15 10 12 16 16 15 10 16 1 15 10 12 16 1 15 10 12 16 1 16 15 10 12 16 16 1 15 10 12 16 15 10 7 12 1 1 1 15 10 100 12 1 1 1 1 1 1 1 1 1 1 1 100 1 100 1 1 100 1 100 1 1
 staticfield java/lang/Module ALL_UNNAMED_MODULE Ljava/lang/Module; java/lang/Module
 staticfield java/lang/Module ALL_UNNAMED_MODULE_SET Ljava/util/Set; java/util/ImmutableCollections$Set12
@@ -2258,21 +2290,22 @@ ciInstanceKlass java/lang/ref/Finalizer 1 1 155 9 7 12 1 1 1 10 7 12 1 1 1 9 12 
 staticfield java/lang/ref/Finalizer lock Ljava/lang/Object; java/lang/Object
 staticfield java/lang/ref/Finalizer ENABLED Z 1
 staticfield java/lang/ref/Finalizer $assertionsDisabled Z 1
+instanceKlass java/lang/System$Logger$Level
 instanceKlass org/fusesource/jansi/Ansi$Color
-instanceKlass org/gradle/internal/logging/console/BuildStatusRenderer$Phase
 instanceKlass org/fusesource/jansi/Ansi$Erase
 instanceKlass org/fusesource/jansi/Ansi$Attribute
+instanceKlass org/gradle/internal/logging/console/BuildStatusRenderer$Phase
 instanceKlass org/gradle/internal/logging/progress/DefaultProgressLoggerFactory$State
 instanceKlass org/gradle/launcher/daemon/server/api/DaemonState
 instanceKlass java/security/DrbgParameters$Capability
 instanceKlass org/gradle/internal/operations/BuildOperationCategory
 instanceKlass org/gradle/tooling/events/OperationType
 instanceKlass org/gradle/cache/FileLockManager$LockMode
+instanceKlass com/google/common/collect/AbstractIterator$State
 instanceKlass org/gradle/cache/internal/VersionStrategy
 instanceKlass org/gradle/internal/jvm/inspection/ProbedSystemProperty
 instanceKlass java/net/StandardProtocolFamily
 instanceKlass jdk/internal/util/OperatingSystem
-instanceKlass com/google/common/collect/AbstractIterator$State
 instanceKlass org/gradle/launcher/daemon/configuration/DaemonPriority
 instanceKlass org/gradle/internal/watch/registry/WatchMode
 instanceKlass org/gradle/api/JavaVersion
@@ -2348,12 +2381,6 @@ staticfield java/nio/Buffer UNSAFE Ljdk/internal/misc/Unsafe; jdk/internal/misc/
 staticfield java/nio/Buffer SCOPED_MEMORY_ACCESS Ljdk/internal/misc/ScopedMemoryAccess; jdk/internal/misc/ScopedMemoryAccess
 staticfield java/nio/Buffer IOOBE_FORMATTER Ljava/util/function/BiFunction; jdk/internal/util/Preconditions$4
 staticfield java/nio/Buffer $assertionsDisabled Z 1
-ciInstanceKlass java/util/Objects 1 1 184 10 7 12 1 1 1 100 1 8 1 10 12 1 10 12 1 1 10 7 12 1 1 1 10 12 1 1 10 12 1 10 7 12 1 1 1 10 12 1 1 10 7 12 1 1 1 7 1 10 10 12 1 1 10 7 12 1 1 10 12 1 1 8 1 10 7 12 1 1 1 10 7 12 1 1 1 10 11 100 12 1 1 1 100 1 10 10 12 1 8 1 10 12 1 8 1 100 1 11 12 1 1 8 1 10 7 12 1 1 1 10 12 1 1 10 12 1 10 12 1 10 12 1 10 12 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1
-ciInstanceKlass jdk/internal/util/Preconditions 1 1 194 10 7 12 1 1 1 11 7 12 1 1 1 11 100 12 1 1 1 7 1 100 1 10 7 12 1 1 1 10 12 1 8 1 7 1 10 7 12 1 1 1 10 12 1 1 8 1 8 1 10 7 12 1 1 7 1 10 12 1 8 1 10 7 12 1 1 1 8 1 10 12 1 1 10 12 1 1 11 12 1 8 1 8 1 11 12 1 1 8 1 8 1 8 1 10 12 1 1 10 12 1 1 10 12 1 10 12 1 10 12 1 10 12 7 1 10 10 12 1 1 9 12 1 1 7 1 10 9 12 1 7 1 10 9 12 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1
-staticfield jdk/internal/util/Preconditions SIOOBE_FORMATTER Ljava/util/function/BiFunction; jdk/internal/util/Preconditions$4
-staticfield jdk/internal/util/Preconditions AIOOBE_FORMATTER Ljava/util/function/BiFunction; jdk/internal/util/Preconditions$4
-staticfield jdk/internal/util/Preconditions IOOBE_FORMATTER Ljava/util/function/BiFunction; jdk/internal/util/Preconditions$4
-ciMethod java/util/Objects checkIndex (II)I 512 0 18404 0 -1
 instanceKlass com/google/common/collect/Lists$ReverseList
 instanceKlass org/gradle/internal/classpath/DefaultClassPath$ImmutableUniqueList
 instanceKlass java/util/AbstractSequentialList
@@ -2370,9 +2397,6 @@ ciInstanceKlass java/lang/Iterable 1 1 62 10 7 12 1 1 1 11 7 12 1 1 1 11 7 12 1 
 ciInstanceKlass java/util/Collection 1 1 115 11 100 12 1 1 1 100 1 11 7 12 1 1 1 10 100 12 1 1 1 11 12 1 1 11 100 12 1 1 1 11 12 1 1 11 100 12 1 1 1 11 12 1 1 10 100 12 1 1 1 11 12 1 10 7 12 1 1 1 100 1 100 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1
 ciInstanceKlass java/util/SequencedCollection 1 1 109 100 1 10 12 1 1 11 7 12 1 1 1 11 7 12 1 1 1 11 12 1 1 11 12 1 7 1 7 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 100 1 8 1 1 12 10 1 1 1 8 1 1 1 8 1 1 1 8 1 1 1 8 1 1 8 1 1 1 8 1 1 8 1 1 1 8 1 1 8 1 1 1 8 1 1 8 1 1 8 1
 ciInstanceKlass java/util/List 1 1 251 10 100 12 1 1 1 11 100 12 1 1 1 11 100 12 1 1 1 11 12 1 1 11 100 12 1 1 11 12 1 1 11 12 1 1 10 100 12 1 1 1 100 1 100 1 10 12 1 1 100 1 10 100 12 1 1 1 11 12 1 1 11 12 1 11 12 1 100 1 10 12 1 11 12 1 1 11 12 1 1 11 12 1 10 100 12 1 1 1 9 7 12 1 1 1 7 1 10 12 10 12 1 7 1 10 12 1 1 10 12 1 10 12 1 1 11 12 1 1 100 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 100 1 100 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 100 1 1 100 1 1 1
-ciMethod java/util/List remove (I)Ljava/lang/Object; 0 0 1 0 -1
-ciMethod java/util/List isEmpty ()Z 0 0 1 0 -1
-ciMethod java/util/List add (Ljava/lang/Object;)Z 0 0 1 0 -1
 instanceKlass com/google/common/collect/ImmutableCollection
 instanceKlass java/util/IdentityHashMap$Values
 instanceKlass java/util/AbstractQueue
@@ -2499,6 +2523,7 @@ ciInstanceKlass java/lang/ClassNotFoundException 1 1 96 7 1 10 7 12 1 1 1 10 12 
 staticfield java/lang/ClassNotFoundException serialPersistentFields [Ljava/io/ObjectStreamField; 1 [Ljava/io/ObjectStreamField;
 ciInstanceKlass java/lang/IllegalMonitorStateException 1 1 26 10 100 12 1 1 1 10 12 1 100 1 1 1 1 5 0 1 1 1 1 1 1 1 1 1
 ciInstanceKlass java/lang/BootstrapMethodError 0 0 45 10 100 12 1 1 1 10 12 1 10 12 1 10 100 12 1 1 1 10 100 12 1 1 1 1 1 1 5 0 1 1 1 1 1 1 1 1 1 1 1 100 1 1 1
+instanceKlass java/lang/ClassFormatError
 instanceKlass java/lang/UnsatisfiedLinkError
 instanceKlass java/lang/IncompatibleClassChangeError
 instanceKlass java/lang/BootstrapMethodError
@@ -2615,95 +2640,13 @@ ciInstanceKlass java/util/ArrayList 1 1 509 10 7 12 1 1 1 7 1 9 7 12 1 1 1 9 12 
 staticfield java/util/ArrayList EMPTY_ELEMENTDATA [Ljava/lang/Object; 0 [Ljava/lang/Object;
 staticfield java/util/ArrayList DEFAULTCAPACITY_EMPTY_ELEMENTDATA [Ljava/lang/Object; 0 [Ljava/lang/Object;
 ciInstanceKlass java/util/RandomAccess 1 0 7 100 1 100 1 1 1
-ciMethod java/util/ArrayList isEmpty ()Z 512 0 6727 0 96
-ciMethod java/util/ArrayList remove (I)Ljava/lang/Object; 538 0 5499 0 504
-ciMethod java/util/ArrayList fastRemove ([Ljava/lang/Object;I)V 540 0 5499 0 0
 ciInstanceKlass java/lang/annotation/Annotation 1 0 17 100 1 100 1 1 1 1 1 1 1 1 1 1 1 1 1
-ciInstanceKlass java/util/function/BiFunction 1 1 65 10 100 12 1 1 1 18 12 1 1 11 7 12 1 1 11 100 12 1 7 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 16 15 11 12 15 10 100 12 1 1 1 1 100 1 100 1 1
-ciMethod java/util/Set add (Ljava/lang/Object;)Z 0 0 1 0 -1
-ciMethod jdk/internal/util/Preconditions checkIndex (IILjava/util/function/BiFunction;)I 780 0 3654 0 -1
-ciMethod java/util/Set remove (Ljava/lang/Object;)Z 0 0 1 0 -1
-ciInstanceKlass org/gradle/internal/logging/events/OutputEventListener 1 1 25 7 1 10 12 1 1 9 7 12 1 1 1 100 1 1 1 1 1 1 1 1 1 1 1
-staticfield org/gradle/internal/logging/events/OutputEventListener NO_OP Lorg/gradle/internal/logging/events/OutputEventListener; org/gradle/internal/logging/events/OutputEventListener$1
-ciInstanceKlass org/gradle/internal/logging/console/GlobalUserInputReceiver 1 0 30 100 1 100 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 100 1 100 1 1
-instanceKlass org/gradle/internal/logging/events/ProgressEvent
-instanceKlass org/gradle/internal/logging/events/ProgressCompleteEvent
-instanceKlass org/gradle/internal/logging/events/ReadStdInEvent
-instanceKlass org/gradle/internal/logging/events/UserInputRequestEvent
-instanceKlass org/gradle/internal/logging/events/UpdateNowEvent
-instanceKlass org/gradle/internal/logging/events/CategorisedOutputEvent
-instanceKlass org/gradle/internal/logging/events/EndOutputEvent
-instanceKlass org/gradle/internal/logging/events/LogLevelChangeEvent
-instanceKlass org/gradle/internal/logging/events/FlushOutputEvent
-ciInstanceKlass org/gradle/internal/logging/events/OutputEvent 1 1 20 10 7 12 1 1 1 100 1 1 1 1 1 1 1 1 1 1 1 1
-ciInstanceKlass org/gradle/internal/logging/events/InteractiveEvent 1 0 7 100 1 100 1 1 1
-ciInstanceKlass org/gradle/internal/logging/events/FlushOutputEvent 0 0 22 10 100 12 1 1 1 100 1 100 1 1 1 1 1 1 1 1 1 1 1 1
-ciInstanceKlass org/gradle/internal/logging/events/EndOutputEvent 1 1 20 10 7 12 1 1 1 100 1 1 1 1 1 1 1 1 1 1 1 1
-instanceKlass org/gradle/internal/logging/events/RenderableOutputEvent
-instanceKlass org/gradle/internal/logging/events/ProgressStartEvent
-ciInstanceKlass org/gradle/internal/logging/events/CategorisedOutputEvent 1 1 36 10 7 12 1 1 1 9 7 12 1 1 1 9 12 1 1 9 12 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1
-ciInstanceKlass org/gradle/internal/logging/events/ProgressStartEvent 1 1 140 9 7 12 1 1 1 10 7 12 1 1 1 9 7 12 1 1 1 9 12 1 9 12 1 1 9 12 1 9 12 1 9 12 1 1 9 12 1 1 9 12 1 9 7 12 1 1 1 9 12 1 100 1 10 12 1 8 1 10 12 1 1 10 12 1 8 1 8 1 8 1 10 12 1 1 10 12 1 1 10 12 1 10 12 1 10 12 1 1 10 100 12 1 1 1 100 1 1 1 8 1 1 8 1 1 1 1 1 1 1 1 1 1 1 1 100 1 100 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1
-instanceKlass org/gradle/internal/logging/console/UserInputConsoleRenderer
-ciInstanceKlass org/gradle/internal/logging/console/AbstractUserInputRenderer 1 1 137 10 7 12 1 1 1 7 1 10 9 7 12 1 1 1 9 12 1 1 9 12 1 1 7 1 10 12 1 7 1 10 12 1 1 7 1 10 12 1 1 7 1 10 12 1 1 7 1 11 100 12 1 1 1 9 12 1 1 11 100 12 1 1 1 11 7 12 1 1 1 10 12 1 1 11 12 1 10 12 1 100 1 8 1 10 12 1 10 12 1 10 12 1 11 12 1 1 11 100 12 1 1 1 11 12 1 1 100 1 11 12 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1
-ciInstanceKlass org/gradle/internal/logging/console/UserInputConsoleRenderer 1 1 66 10 7 12 1 1 1 9 7 12 1 1 1 10 12 1 1 10 12 1 1 11 100 12 1 1 1 10 100 12 1 1 1 11 12 1 1 11 100 12 1 1 11 12 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1
-ciInstanceKlass org/gradle/internal/logging/events/UserInputValidationProblemEvent 0 0 52 8 1 9 100 12 1 1 1 10 100 12 1 1 1 9 100 12 1 1 11 100 12 1 1 1 100 1 10 12 1 100 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1
-ciInstanceKlass org/gradle/internal/logging/events/UserInputResumeEvent 0 0 51 8 1 9 100 12 1 1 1 10 100 12 1 1 1 11 100 12 1 1 1 100 1 10 12 1 100 1 100 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1
-instanceKlass org/gradle/internal/logging/events/SelectOptionPromptEvent
-instanceKlass org/gradle/internal/logging/events/IntQuestionPromptEvent
-instanceKlass org/gradle/internal/logging/events/TextQuestionPromptEvent
-instanceKlass org/gradle/internal/logging/events/BooleanQuestionPromptEvent
-instanceKlass org/gradle/internal/logging/events/YesNoQuestionPromptEvent
-ciInstanceKlass org/gradle/internal/logging/events/PromptOutputEvent 0 0 93 8 1 9 100 12 1 1 1 10 100 12 1 1 1 11 100 12 1 1 1 10 100 12 1 1 1 11 12 1 1 100 1 10 12 1 8 1 10 12 1 1 10 12 1 1 10 12 1 8 1 10 12 1 8 1 8 1 10 12 1 100 1 10 100 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 100 1 1
-ciInstanceKlass org/gradle/internal/logging/console/BuildStatusRenderer 1 1 262 10 7 12 1 1 1 7 1 10 9 7 12 1 1 1 9 12 1 1 9 12 1 1 9 12 1 1 9 12 1 1 7 1 10 12 1 1 9 12 1 1 10 12 1 1 10 12 1 1 10 12 1 9 12 1 1 9 7 12 1 1 1 10 12 1 1 10 12 1 1 9 7 12 1 1 1 9 12 1 9 12 1 9 12 1 10 12 1 1 9 12 1 11 7 12 1 1 1 9 12 1 9 12 1 9 12 1 10 12 1 7 1 10 10 7 12 1 1 10 12 1 11 12 1 10 12 1 1 11 7 12 1 1 1 7 1 10 9 12 1 10 12 1 1 7 1 7 1 9 12 1 1 9 12 1 1 10 7 12 1 1 1 11 7 12 1 1 1 11 7 12 1 1 11 12 1 10 12 1 1 9 7 12 1 1 1 10 7 12 1 1 1 10 12 1 1 10 12 1 1 10 12 1 1 10 12 1 10 12 1 1 8 1 8 1 8 1 10 12 1 1 1 1 3 1 1 1 1 3 1 3 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1
-ciInstanceKlass org/gradle/internal/logging/console/ThrottlingOutputEventListener 1 1 150 9 7 12 1 1 1 9 12 1 1 8 1 10 7 12 1 1 1 10 12 1 1 10 7 12 1 1 1 10 12 1 1 10 7 12 1 1 9 12 1 1 7 1 10 9 12 1 1 9 12 1 1 9 12 1 1 9 12 1 1 10 12 1 7 1 10 12 1 9 7 12 1 1 1 11 7 12 1 1 1 11 7 12 1 1 1 11 12 1 10 12 1 7 1 7 1 11 12 1 11 12 1 1 11 12 1 1 7 1 11 7 12 1 1 1 10 7 12 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 100 1 1 1 1 1 1 1 1 1 1 1
-staticfield org/gradle/internal/logging/console/ThrottlingOutputEventListener LOGGER Lorg/slf4j/Logger; org/gradle/internal/logging/slf4j/OutputEventListenerBackedLogger
-ciInstanceKlass org/gradle/internal/logging/events/UpdateNowEvent 1 1 49 10 7 12 1 1 1 9 7 12 1 1 1 100 1 10 10 100 12 1 1 1 10 12 1 1 8 1 10 12 1 10 12 1 100 1 1 1 1 1 1 1 1 1 1 1 1 1 1
-ciInstanceKlass org/gradle/internal/logging/events/UserInputRequestEvent 0 0 26 10 100 12 1 1 1 9 100 12 1 1 1 100 1 100 1 1 1 1 1 1 1 1 1 1
-ciInstanceKlass org/gradle/internal/logging/events/ReadStdInEvent 0 0 28 10 100 12 1 1 1 9 100 12 1 1 1 100 1 100 1 1 1 1 1 1 1 1 1 1 1 1
-ciInstanceKlass org/gradle/internal/logging/events/ProgressCompleteEvent 1 1 67 10 7 12 1 1 1 9 7 12 1 1 1 9 12 1 1 9 12 1 1 9 12 1 1 100 1 10 8 1 10 12 1 1 10 12 1 8 1 10 12 1 1 9 7 12 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1
-ciInstanceKlass org/gradle/internal/operations/BuildOperationCategory 1 1 101 7 1 9 12 1 1 9 12 1 9 12 1 9 12 1 9 12 1 9 12 1 9 12 1 9 12 1 9 12 1 1 10 7 12 1 1 10 7 12 1 1 1 10 12 1 1 9 12 1 1 9 12 1 9 12 1 8 10 12 1 8 8 8 8 8 8 8 10 12 1 1 100 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1
-staticfield org/gradle/internal/operations/BuildOperationCategory CONFIGURE_ROOT_BUILD Lorg/gradle/internal/operations/BuildOperationCategory; org/gradle/internal/operations/BuildOperationCategory
-staticfield org/gradle/internal/operations/BuildOperationCategory CONFIGURE_BUILD Lorg/gradle/internal/operations/BuildOperationCategory; org/gradle/internal/operations/BuildOperationCategory
-staticfield org/gradle/internal/operations/BuildOperationCategory CONFIGURE_PROJECT Lorg/gradle/internal/operations/BuildOperationCategory; org/gradle/internal/operations/BuildOperationCategory
-staticfield org/gradle/internal/operations/BuildOperationCategory RUN_MAIN_TASKS Lorg/gradle/internal/operations/BuildOperationCategory; org/gradle/internal/operations/BuildOperationCategory
-staticfield org/gradle/internal/operations/BuildOperationCategory RUN_WORK Lorg/gradle/internal/operations/BuildOperationCategory; org/gradle/internal/operations/BuildOperationCategory
-staticfield org/gradle/internal/operations/BuildOperationCategory TASK Lorg/gradle/internal/operations/BuildOperationCategory; org/gradle/internal/operations/BuildOperationCategory
-staticfield org/gradle/internal/operations/BuildOperationCategory TRANSFORM Lorg/gradle/internal/operations/BuildOperationCategory; org/gradle/internal/operations/BuildOperationCategory
-staticfield org/gradle/internal/operations/BuildOperationCategory UNCATEGORIZED Lorg/gradle/internal/operations/BuildOperationCategory; org/gradle/internal/operations/BuildOperationCategory
-staticfield org/gradle/internal/operations/BuildOperationCategory $VALUES [Lorg/gradle/internal/operations/BuildOperationCategory; 8 [Lorg/gradle/internal/operations/BuildOperationCategory;
-ciInstanceKlass org/gradle/internal/operations/OperationIdentifier 1 1 53 10 7 12 1 1 1 100 1 8 1 10 12 1 9 7 12 1 1 1 10 100 12 1 1 1 10 12 1 1 100 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1
-ciInstanceKlass org/gradle/internal/logging/console/BuildStatusRenderer$Phase 1 1 61 7 1 9 12 1 1 9 12 1 9 12 1 9 12 1 1 10 100 12 1 1 10 7 12 1 1 1 10 12 1 1 8 10 8 8 10 12 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 100 1 1
-staticfield org/gradle/internal/logging/console/BuildStatusRenderer$Phase Initializing Lorg/gradle/internal/logging/console/BuildStatusRenderer$Phase; org/gradle/internal/logging/console/BuildStatusRenderer$Phase
-staticfield org/gradle/internal/logging/console/BuildStatusRenderer$Phase Configuring Lorg/gradle/internal/logging/console/BuildStatusRenderer$Phase; org/gradle/internal/logging/console/BuildStatusRenderer$Phase
-staticfield org/gradle/internal/logging/console/BuildStatusRenderer$Phase Executing Lorg/gradle/internal/logging/console/BuildStatusRenderer$Phase; org/gradle/internal/logging/console/BuildStatusRenderer$Phase
-staticfield org/gradle/internal/logging/console/BuildStatusRenderer$Phase $VALUES [Lorg/gradle/internal/logging/console/BuildStatusRenderer$Phase; 3 [Lorg/gradle/internal/logging/console/BuildStatusRenderer$Phase;
-ciMethodData java/util/Objects checkIndex (II)I 2 18148 orig 80 0 0 0 0 0 0 0 0 0 0 0 0 39 2 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 data 12 0x30002 0x46e4 0x0 0x0 0x0 0x0 0x0 0x0 0x9 0x2 0x0 0x0 oops 0 methods 0
-ciMethodData java/util/ArrayList isEmpty ()Z 2 6471 orig 80 0 0 0 0 0 0 0 0 0 0 0 0 39 2 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 data 13 0x40007 0x1191 0x38 0x7b6 0x80003 0x7b6 0x18 0x0 0x0 0x0 0x9 0x1 0x0 oops 0 methods 0
-ciMethodData java/util/ArrayList remove (I)Ljava/lang/Object; 2 5230 orig 80 0 0 0 0 0 0 0 0 0 0 0 0 39 2 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 data 19 0x50002 0x146e 0x150005 0x146e 0x0 0x0 0x0 0x0 0x0 0x0 0x0 0x0 0x0 0x0 0x0 0x9 0x2 0x0 0x0 oops 0 methods 0
-ciMethodData java/util/ArrayList fastRemove ([Ljava/lang/Object;I)V 2 5229 orig 80 0 0 0 0 0 0 0 0 0 0 0 0 39 2 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 data 24 0x130007 0xc4 0x30 0x13a9 0x1f0002 0x13a9 0x2a0104 0x0 0x0 0x0 0x0 0x0 0x0 0x0 0x0 0x0 0x0 0x0 0x0 0x9 0x3 0x0 0x0 0x0 oops 0 methods 0
-ciMethod org/gradle/internal/logging/events/OutputEventListener onOutput (Lorg/gradle/internal/logging/events/OutputEvent;)V 0 0 1 0 -1
-ciMethod org/gradle/internal/logging/console/GlobalUserInputReceiver readAndForwardStdin (Lorg/gradle/internal/logging/events/ReadStdInEvent;)V 0 0 1 0 -1
-ciMethod org/gradle/internal/logging/events/ProgressStartEvent getParentProgressOperationId ()Lorg/gradle/internal/operations/OperationIdentifier; 258 0 129 0 -1
-ciMethod org/gradle/internal/logging/events/ProgressStartEvent getProgressOperationId ()Lorg/gradle/internal/operations/OperationIdentifier; 266 0 133 0 -1
-ciMethod org/gradle/internal/logging/events/ProgressStartEvent isBuildOperationStart ()Z 264 0 132 0 -1
-ciMethod org/gradle/internal/logging/events/ProgressStartEvent getBuildOperationCategory ()Lorg/gradle/internal/operations/BuildOperationCategory; 274 0 137 0 -1
-ciMethod org/gradle/internal/logging/events/CategorisedOutputEvent getTimestamp ()J 144 0 72 0 -1
-ciMethod org/gradle/internal/logging/console/AbstractUserInputRenderer onOutput (Lorg/gradle/internal/logging/events/OutputEvent;)V 532 0 6651 0 384
-ciMethod org/gradle/internal/logging/console/AbstractUserInputRenderer handleValidationProblemEvent (Lorg/gradle/internal/logging/events/UserInputValidationProblemEvent;)V 0 0 1 0 -1
-ciMethod org/gradle/internal/logging/console/AbstractUserInputRenderer handlePromptOutputEvent (Lorg/gradle/internal/logging/events/PromptOutputEvent;)V 0 0 1 0 -1
-ciMethod org/gradle/internal/logging/console/AbstractUserInputRenderer handleUserInputRequestEvent ()V 0 0 1 0 -1
-ciMethod org/gradle/internal/logging/console/AbstractUserInputRenderer handleUserInputResumeEvent (Lorg/gradle/internal/logging/events/UserInputResumeEvent;)V 0 0 1 0 -1
-ciMethod org/gradle/internal/logging/console/BuildStatusRenderer onOutput (Lorg/gradle/internal/logging/events/OutputEvent;)V 768 0 5732 0 -1
-ciMethod org/gradle/internal/logging/console/BuildStatusRenderer renderNow (J)V 160 0 1087 0 -1
-ciMethod org/gradle/internal/logging/console/BuildStatusRenderer phaseStarted (Lorg/gradle/internal/logging/events/ProgressStartEvent;Lorg/gradle/internal/logging/console/BuildStatusRenderer$Phase;)V 4 0 3 0 -1
-ciMethod org/gradle/internal/logging/console/BuildStatusRenderer phaseHasMoreProgress (Lorg/gradle/internal/logging/events/ProgressStartEvent;)V 0 0 1 0 -1
-ciMethod org/gradle/internal/logging/console/BuildStatusRenderer phaseProgressed (Lorg/gradle/internal/logging/events/ProgressCompleteEvent;)V 16 0 70 0 -1
-ciMethod org/gradle/internal/logging/console/BuildStatusRenderer buildEnded ()V 0 0 1 0 -1
-ciMethod org/gradle/internal/logging/console/ThrottlingOutputEventListener renderNow ()V 120 446 1084 0 -1
-ciMethod org/gradle/internal/logging/events/UpdateNowEvent getTimestamp ()J 262 0 131 0 -1
-ciMethod org/gradle/internal/logging/events/ProgressCompleteEvent getProgressOperationId ()Lorg/gradle/internal/operations/OperationIdentifier; 304 0 152 0 -1
-ciMethod org/gradle/internal/operations/BuildOperationCategory isTopLevelWorkItem ()Z 256 0 128 0 -1
-ciMethod org/gradle/internal/operations/OperationIdentifier equals (Ljava/lang/Object;)Z 512 0 5390 0 -1
-ciMethodData org/gradle/internal/logging/console/ThrottlingOutputEventListener renderNow ()V 2 1024 orig 80 0 0 0 0 0 0 0 0 0 0 0 0 39 2 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 data 44 0x40005 0x0 0x0 0x227743db498 0x6bdf 0x0 0x0 0x90007 0x400 0xe0 0x67df 0x110005 0x0 0x0 0x227743db498 0x67df 0x0 0x0 0x160004 0x0 0x0 0x2277440ae18 0x180 0x2277440aec8 0x180 0x1f0005 0x0 0x0 0x2277440af78 0x67df 0x0 0x0 0x240003 0x67df 0xffffffffffffff00 0x0 0x0 0x0 0x0 0x0 0x0 0x9 0x1 0x0 oops 5 3 java/util/ArrayList 14 java/util/ArrayList 21 org/gradle/internal/logging/events/ProgressCompleteEvent 23 org/gradle/internal/logging/events/ProgressStartEvent 28 org/gradle/internal/logging/console/UserInputConsoleRenderer methods 0
-ciMethodData org/gradle/internal/logging/console/AbstractUserInputRenderer onOutput (Lorg/gradle/internal/logging/events/OutputEvent;)V 2 6385 orig 80 0 0 0 0 0 0 0 0 0 0 0 0 39 2 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 data 126 0x10004 0xffffffffffffe70f 0x0 0x0 0x0 0x0 0x0 0x40007 0x18f1 0x30 0x0 0x80002 0x0 0xd0004 0xffffffffffffe70f 0x0 0x0 0x0 0x0 0x0 0x100007 0x18f1 0x68 0x0 0x150004 0x0 0x0 0x0 0x0 0x0 0x0 0x180002 0x0 0x1d0004 0xffffffffffffe70f 0x0 0x0 0x0 0x0 0x0 0x200007 0x18f1 0x68 0x0 0x250004 0x0 0x0 0x0 0x0 0x0 0x0 0x280002 0x0 0x2d0004 0xffffffffffffe70f 0x0 0x0 0x0 0x0 0x0 0x300007 0x18f1 0x68 0x0 0x350004 0x0 0x0 0x0 0x0 0x0 0x0 0x380002 0x0 0x3d0004 0xffffffffffffe70f 0x0 0x0 0x0 0x0 0x0 0x400007 0x18f1 0x90 0x0 0x480004 0x0 0x0 0x0 0x0 0x0 0x0 0x4b0005 0x0 0x0 0x0 0x0 0x0 0x0 0x550007 0x18f1 0x58 0x0 0x5d0005 0x0 0x0 0x0 0x0 0x0 0x0 0x690005 0x0 0x0 0x227794b01f0 0x18f1 0x0 0x0 0x0 0x0 0x0 0x0 0x0 0x0 0x9 0x2 0x0 0x0 oops 1 112 org/gradle/internal/logging/console/BuildStatusRenderer methods 0
-compile org/gradle/internal/logging/console/ThrottlingOutputEventListener renderNow ()V -1 4 inline 6 0 -1 0 org/gradle/internal/logging/console/ThrottlingOutputEventListener renderNow ()V 1 4 0 java/util/ArrayList isEmpty ()Z 1 17 0 java/util/ArrayList remove (I)Ljava/lang/Object; 2 5 0 java/util/Objects checkIndex (II)I 2 21 0 java/util/ArrayList fastRemove ([Ljava/lang/Object;I)V 1 31 0 org/gradle/internal/logging/console/AbstractUserInputRenderer onOutput (Lorg/gradle/internal/logging/events/OutputEvent;)V
+instanceKlass com/google/common/collect/Lists$StringAsImmutableList
+instanceKlass com/google/common/collect/RegularImmutableList
+instanceKlass com/google/common/collect/ImmutableList$SubList
+instanceKlass com/google/common/collect/SingletonImmutableList
+instanceKlass com/google/common/collect/ImmutableList$ReverseImmutableList
+instanceKlass com/google/common/collect/ImmutableAsList
+ciInstanceKlass com/google/common/collect/ImmutableList 1 1 465 10 100 12 1 1 1 9 7 12 1 1 1 100 1 10 12 1 1 7 1 10 7 12 1 1 1 100 1 3 8 1 10 100 12 1 1 1 10 100 12 1 1 1 10 12 1 1 100 1 10 12 1 1 11 100 12 1 1 1 10 12 1 7 1 10 12 1 1 10 12 1 1 10 12 1 1 10 12 1 11 11 100 12 1 1 10 12 1 11 12 1 1 10 12 1 100 1 10 12 1 10 12 1 1 10 12 1 1 10 12 1 10 7 12 1 1 100 1 10 100 12 1 1 100 1 10 7 12 1 1 1 10 100 12 1 1 1 10 12 1 10 12 1 10 12 1 10 100 12 1 1 10 12 1 10 12 10 10 12 1 1 10 12 1 100 1 10 12 1 1 10 12 1 10 12 1 1 11 100 12 1 1 10 7 12 1 1 1 10 12 1 10 12 1 1 10 12 1 1 10 12 1 1 100 1 10 100 1 10 18 12 1 1 10 100 12 1 1 1 100 1 10 12 1 10 12 1 1 10 12 1 100 1 8 1 10 12 1 100 1 10 8 1 10 100 12 1 1 1 10 12 1 10 12 1 10 12 1 100 1 100 1 1 1 1 5 0 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 3 1 1 16 15 11 15 10 100 12 1 1 1 1 1 1 1 1 100 1 100 1 1 1 100 1 8 1 1 12 10 1 1
+ciMethod com/google/common/collect/ImmutableList asImmutableList ([Ljava/lang/Object;I)Lcom/google/common/collect/ImmutableList; 178 0 217 0 -1
+compile com/google/common/collect/ImmutableList asImmutableList ([Ljava/lang/Object;I)Lcom/google/common/collect/ImmutableList; -1 3

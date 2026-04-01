@@ -58,6 +58,7 @@ export const AuthProvider = ({ children }) => {
   const [isAppleReviewMode, setIsAppleReviewMode] = useState(false);
   const [isOffline, setIsOffline] = useState(false);
   const [allUsers, setAllUsers] = useState([]);
+  const [systemConfig, setSystemConfig] = useState(null);
 
   // Initialize auth state on app load
   useEffect(() => {
@@ -180,7 +181,8 @@ export const AuthProvider = ({ children }) => {
         if (cfg && typeof cfg.isAppleReviewMode !== 'undefined') {
           setIsAppleReviewMode(Boolean(cfg.isAppleReviewMode));
         }
-        // You can save system config to context or state if needed
+        // Save system config to state
+        setSystemConfig(cfg);
         console.log('System Config:', cfg);
       }
     } catch (error) {
@@ -598,6 +600,7 @@ export const AuthProvider = ({ children }) => {
     isOffline,
     rememberedEmail,
     isAppleReviewMode,
+    systemConfig,
 
     // Methods
     login,

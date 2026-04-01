@@ -33,5 +33,8 @@ export {
     EditContactScreen,
     AddContactScreen,
     EditTaskScreen,
+    OverdueDetailScreen,
+    CompanyDetailsScreen,
+    ContactDetailsScreen,
 } from './details';
 

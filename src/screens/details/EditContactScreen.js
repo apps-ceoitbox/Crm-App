@@ -248,7 +248,6 @@ const EditContactScreen = ({ navigation, route }) => {
                 setDataLoading(false);
             }
         };
-
         fetchDependencies();
 
         // Populate form from existing contact data

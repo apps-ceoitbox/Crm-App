@@ -41,6 +41,7 @@ import EditCompanyScreen from '../screens/main/EditCompanyScreen';
 
 // Import navigators
 import BottomTabNavigator from './BottomTabNavigator';
+import DrawerNavigator from './DrawerNavigator';
 import { OverdueDetailScreen, CompanyDetailsScreen, ContactDetailsScreen } from '../screens/details';
 
 const Stack = createNativeStackNavigator();
@@ -114,41 +115,11 @@ const AppNavigator = () => {
           options={{ animation: 'fade' }}
         />
 
-        {/* Main Tab Navigator */}
+        {/* Main Drawer Navigator */}
         <Stack.Screen
-          name={ROUTES.MAIN_TABS}
-          component={BottomTabNavigator}
+          name={ROUTES.MAIN_DRAWER}
+          component={DrawerNavigator}
           options={{ animation: 'fade' }}
-        />
-
-        {/* Detail Screens */}
-        <Stack.Screen
-          name={ROUTES.LEAD_DETAILS}
-          component={LeadDetailsScreen}
-        />
-        <Stack.Screen
-          name={ROUTES.CONTACT_DETAILS}
-          component={ContactDetailsScreen}
-        />
-        <Stack.Screen
-          name={ROUTES.TASK_DETAILS}
-          component={TaskDetailsScreen}
-        />
-        <Stack.Screen
-          name={ROUTES.ADD_LEAD}
-          component={AddLeadScreen}
-          options={{
-            animation: 'slide_from_bottom',
-            presentation: 'modal',
-          }}
-        />
-        <Stack.Screen
-          name={ROUTES.ADD_TASK}
-          component={AddTaskScreen}
-          options={{
-            animation: 'slide_from_bottom',
-            presentation: 'modal',
-          }}
         />
 
         {/* Company Screens */}

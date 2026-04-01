@@ -1,12 +1,13 @@
 /**
  * PipelineScreen.js
- * Pipeline Funnel View — Dynamic pipeline selector, lazy loading, clean architecture
+ * Pipeline Funnel View — Per-stage pagination (10 items/stage), lazy loading
  *
  * Flow:
  *  1. On mount → fetch all pipelines from GET /pipelines
- *  2. Render horizontal pipeline selector tabs (highlight default)
- *  3. On tab select → fetch leads for that pipeline ID with pagination
- *  4. Support pull-to-refresh + FlatList lazy loading (onEndReached)
+ *  2. Render horizontal pipeline selector tabs
+ *  3. On tab select → fetch page 1 of ALL 7 stages in parallel (limit=10 each)
+ *  4. Each stage shows its 10 leads; "Load More" fetches next page on demand
+ *  5. Pull-to-refresh resets and re-fetches all stage data
  */
 
 import React, {
@@ -41,7 +42,7 @@ import { AppButton } from '../../components';
 import { ROUTES } from '../../constants';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
-const PAGE_LIMIT = 20;
+const STAGE_PAGE_LIMIT = 10;
 
 // ─── Static stage config ────────────────────────────────────────────────────
 
@@ -54,6 +55,16 @@ const PIPELINE_STAGES = [
   { id: 'Closed Won', name: 'Won', color: '#10B981', bg: '#ECFDF5', icon: 'trophy' },
   { id: 'Closed Lost', name: 'Lost', color: '#EF4444', bg: '#FEF2F2', icon: 'close-circle' },
 ];
+
+/** Default empty state for one stage */
+const initStageState = () => ({
+  leads: [],
+  page: 0,          // 0 = never fetched
+  hasMore: true,
+  loading: false,
+  loadingMore: false,
+  total: 0,         // backend total count for this stage
+});
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
@@ -103,7 +114,7 @@ const PipelineTab = memo(({ item, isSelected, onPress }) => (
   </TouchableOpacity>
 ));
 
-/** Lead row card inside expanded stage */
+/** Individual lead row */
 const LeadCard = memo(({ lead, onPress }) => {
   const name = lead.title || lead.name || 'Unnamed';
   const avatarColor = getAvatarColor(name);
@@ -134,11 +145,25 @@ const LeadCard = memo(({ lead, onPress }) => {
   );
 });
 
-/** Stage card row */
-const StageCard = memo(({ stage, totalLeads, isExpanded, onToggle, onLeadPress }) => {
-  const percentage = totalLeads > 0 ? Math.round((stage.leads.length / totalLeads) * 100) : 0;
+/**
+ * Stage card with per-stage pagination.
+ * stageState = { leads, loading, loadingMore, hasMore, total }
+ */
+const StageCard = memo(({
+  stage,
+  stageState,
+  totalLeadCount,
+  isExpanded,
+  onToggle,
+  onLeadPress,
+  onLoadMore,
+}) => {
+  const { leads, loading, loadingMore, hasMore, total } = stageState;
+  const percentage = totalLeadCount > 0 ? Math.round((total / totalLeadCount) * 100) : 0;
+
   return (
     <View>
+      {/* ── Stage header row ── */}
       <TouchableOpacity
         style={styles.stageCard}
         activeOpacity={0.85}
@@ -150,11 +175,13 @@ const StageCard = memo(({ stage, totalLeads, isExpanded, onToggle, onLeadPress }
           </View>
           <View style={styles.stageInfo}>
             <Text style={styles.stageName}>{stage.name}</Text>
-            <Text style={styles.stageCount}>{stage.leads.length} deals</Text>
+            <Text style={styles.stageCount}>
+              {loading && total === 0 ? '…' : `${total} deals`}
+            </Text>
           </View>
           <View style={styles.stageRight}>
             <Text style={[styles.stageValue, { color: stage.color }]}>
-              ₹{formatValue(stage.leads.reduce((s, l) => s + (l.value || 0), 0))}
+              ₹{formatValue(leads.reduce((s, l) => s + (l.value || 0), 0))}
             </Text>
             <Text style={styles.stagePercentage}>{percentage}%</Text>
           </View>
@@ -175,17 +202,53 @@ const StageCard = memo(({ stage, totalLeads, isExpanded, onToggle, onLeadPress }
         </View>
       </TouchableOpacity>
 
-      {isExpanded && stage.leads.length > 0 && (
+      {/* ── Expanded leads list ── */}
+      {isExpanded && (
         <View style={styles.expandedLeads}>
-          {stage.leads.map(lead => (
-            <LeadCard key={lead._id || lead.id} lead={lead} onPress={onLeadPress} />
-          ))}
-        </View>
-      )}
+          {/* Initial stage loading */}
+          {loading && leads.length === 0 ? (
+            <View style={styles.stageLoadingWrap}>
+              <ActivityIndicator size="small" color={stage.color} />
+              <Text style={styles.stageLoadingText}>Loading deals…</Text>
+            </View>
+          ) : leads.length === 0 ? (
+            <View style={styles.emptyStage}>
+              <Text style={styles.emptyStageText}>No deals in this stage</Text>
+            </View>
+          ) : (
+            <>
+              {leads.map(lead => (
+                <LeadCard
+                  key={lead._id || lead.id}
+                  lead={lead}
+                  onPress={onLeadPress}
+                />
+              ))}
 
-      {isExpanded && stage.leads.length === 0 && (
-        <View style={styles.emptyStage}>
-          <Text style={styles.emptyStageText}>No deals in this stage</Text>
+              {/* Load More button */}
+              {loadingMore ? (
+                <View style={styles.stageLoadMoreWrap}>
+                  <ActivityIndicator size="small" color={stage.color} />
+                  <Text style={styles.stageLoadingText}>Loading more…</Text>
+                </View>
+              ) : hasMore ? (
+                <TouchableOpacity
+                  style={[styles.loadMoreBtn, { borderColor: stage.color + '50' }]}
+                  onPress={() => onLoadMore(stage.id)}
+                  activeOpacity={0.7}
+                >
+                  <IonIcon name="add-circle-outline" size={ms(16)} color={stage.color} />
+                  <Text style={[styles.loadMoreText, { color: stage.color }]}>
+                    Load More
+                  </Text>
+                </TouchableOpacity>
+              ) : leads.length > 0 ? (
+                <View style={styles.allLoadedWrap}>
+                  <Text style={styles.allLoadedText}>All {total} deals loaded</Text>
+                </View>
+              ) : null}
+            </>
+          )}
         </View>
       )}
     </View>
@@ -195,27 +258,27 @@ const StageCard = memo(({ stage, totalLeads, isExpanded, onToggle, onLeadPress }
 // ─── Main Screen ─────────────────────────────────────────────────────────────
 
 const PipelineScreen = ({ navigation }) => {
-  // ── Pipeline list state ───────────────────────────────────────────────────
+  // ── Pipeline list ─────────────────────────────────────────────────────────
   const [pipelineList, setPipelineList] = useState([]);
   const [pipelinesLoading, setPipelinesLoading] = useState(true);
   const [selectedPipelineId, setSelectedPipelineId] = useState(null);
 
-  // ── Leads / pipeline data state ───────────────────────────────────────────
-  const [leads, setLeads] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [refreshing, setRefreshing] = useState(false);
-  const [page, setPage] = useState(1);
-  const [hasMore, setHasMore] = useState(true);
-  const [loadingMore, setLoadingMore] = useState(false);
+  // ── Per-stage pagination state ────────────────────────────────────────────
+  const [stagePagination, setStagePagination] = useState(() =>
+    Object.fromEntries(PIPELINE_STAGES.map(s => [s.id, initStageState()]))
+  );
 
   // ── UI state ──────────────────────────────────────────────────────────────
+  const [refreshing, setRefreshing] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [searchOpen, setSearchOpen] = useState(false);
   const [expandedStage, setExpandedStage] = useState(null);
 
-  const searchTimeoutRef = useRef(null);
-  const isFetchingRef = useRef(false);   // true while any fetch is in-flight
-  const isInitialLoad = useRef(true);     // true only on the very first fetch
+  /**
+   * Per-stage in-flight guard — keyed by stageId.
+   * Prevents duplicate concurrent requests for the same stage.
+   */
+  const stageFetchingRef = useRef({});
 
   // ── Step 1: Fetch all pipelines on mount ─────────────────────────────────
   useEffect(() => {
@@ -231,86 +294,123 @@ const PipelineScreen = ({ navigation }) => {
           : Array.isArray(res.data) ? res.data
             : [];
         setPipelineList(list);
-        // Select the default pipeline automatically
         const defaultPipeline = list.find(p => p.isDefault) || list[0];
         if (defaultPipeline) {
           setSelectedPipelineId(defaultPipeline._id);
         }
       }
     } catch {
-      // silently fail — no pipelines will show
+      // silently fail
     } finally {
       setPipelinesLoading(false);
     }
   };
 
-  // ── Step 2: Fetch leads when selectedPipelineId or searchQuery changes ───
+  // ── Step 2: On pipeline select → fetch page 1 of all stages in parallel ──
   useEffect(() => {
     if (!selectedPipelineId) return;
-    // Reset pagination and fetch fresh
-    setLeads([]);
-    setPage(1);
-    setHasMore(true);
-    fetchLeads(selectedPipelineId, 1, searchQuery.trim(), false);
+    resetAndFetchAllStages(selectedPipelineId);
   }, [selectedPipelineId]);
 
-  // Debounced search
-  useEffect(() => {
-    if (!selectedPipelineId) return;
-    if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current);
-    searchTimeoutRef.current = setTimeout(() => {
-      setLeads([]);
-      setPage(1);
-      setHasMore(true);
-      fetchLeads(selectedPipelineId, 1, searchQuery.trim(), false);
-    }, 300);
-    return () => { if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current); };
-  }, [searchQuery]);
+  /**
+   * Reset all stage state then fire parallel page-1 fetches for all 7 stages.
+   * Each fetch is independent — they resolve/fail independently.
+   */
+  const resetAndFetchAllStages = useCallback(async (pipelineId) => {
+    // Clear per-stage locks
+    stageFetchingRef.current = {};
 
-  const fetchLeads = async (pipelineId, pageNum, search = '', isMore = false) => {
-    // Hard guard: don't fire if already in-flight
-    if (isFetchingRef.current) return;
-    // If loading-more, also check hasMore
-    if (isMore && !hasMore) return;
+    // Set all stages to loading=true, empty leads (shows global spinner)
+    setStagePagination(
+      Object.fromEntries(
+        PIPELINE_STAGES.map(s => [s.id, { ...initStageState(), loading: true }])
+      )
+    );
 
-    isFetchingRef.current = true;
+    // Fetch page 1 of every stage concurrently (70 items max across 7 stages)
+    await Promise.allSettled(
+      PIPELINE_STAGES.map(stage => _fetchStageLeads(pipelineId, stage.id, 1, false))
+    );
+  }, []);
 
-    // Show the right loader
-    if (isMore) {
-      setLoadingMore(true);
-    } else if (!refreshing) {
-      setLoading(true);
-    }
+  /**
+   * Fetch one page of leads for a specific stage.
+   * Uses per-stage lock to prevent concurrent fetches for the same stage.
+   *
+   * @param {string} pipelineId
+   * @param {string} stageId      — maps to `status` query param
+   * @param {number} pageNum
+   * @param {boolean} isMore      — true = appending, false = replacing
+   */
+  const _fetchStageLeads = useCallback(async (pipelineId, stageId, pageNum, isMore) => {
+    if (stageFetchingRef.current[stageId]) return;
+    stageFetchingRef.current[stageId] = true;
+
+    // Show appropriate loader without overwriting leads
+    setStagePagination(prev => ({
+      ...prev,
+      [stageId]: {
+        ...prev[stageId],
+        loading: !isMore,
+        loadingMore: isMore,
+      },
+    }));
 
     try {
-      const params = { page: pageNum, limit: PAGE_LIMIT };
-      if (search) params.search = search;
+      const res = await pipelineAPI.getLeadsByPipeline(pipelineId, {
+        page: pageNum,
+        limit: STAGE_PAGE_LIMIT,
+        status: stageId,
+      });
 
-      const res = await pipelineAPI.getLeadsByPipeline(pipelineId, params);
       if (res.success) {
         const newLeads =
           res.data?.data ||
           res.data?.leads ||
           (Array.isArray(res.data) ? res.data : []);
 
-        setLeads(prev => (isMore ? [...prev, ...newLeads] : newLeads));
-        setPage(pageNum);
-        // If fewer items than limit, no more pages
-        setHasMore(newLeads.length >= PAGE_LIMIT);
+        // Backend may return total count in various shapes
+        const backendTotal =
+          res.data?.total ??
+          res.data?.pagination?.total ??
+          res.data?.totalCount ??
+          null;
+
+        setStagePagination(prev => ({
+          ...prev,
+          [stageId]: {
+            leads: isMore ? [...prev[stageId].leads, ...newLeads] : newLeads,
+            page: pageNum,
+            // If we got fewer than limit, no more pages
+            hasMore: newLeads.length >= STAGE_PAGE_LIMIT,
+            loading: false,
+            loadingMore: false,
+            // Prefer backend total; fall back to count of what we have
+            total: backendTotal !== null
+              ? backendTotal
+              : isMore
+                ? prev[stageId].total
+                : newLeads.length,
+          },
+        }));
+      } else {
+        setStagePagination(prev => ({
+          ...prev,
+          [stageId]: { ...prev[stageId], loading: false, loadingMore: false },
+        }));
       }
     } catch {
-      // silently fail
+      setStagePagination(prev => ({
+        ...prev,
+        [stageId]: { ...prev[stageId], loading: false, loadingMore: false },
+      }));
     } finally {
-      setLoading(false);
-      setRefreshing(false);
-      // Small delay before hiding footer loader to avoid flicker
+      // Small debounce before releasing the lock
       setTimeout(() => {
-        setLoadingMore(false);
-        isFetchingRef.current = false;
+        stageFetchingRef.current[stageId] = false;
       }, 150);
-      isInitialLoad.current = false;
     }
-  };
+  }, []);
 
   // ── Handlers ──────────────────────────────────────────────────────────────
 
@@ -321,73 +421,86 @@ const PipelineScreen = ({ navigation }) => {
     setExpandedStage(null);
   }, [selectedPipelineId]);
 
-  const handleRefresh = useCallback(() => {
+  const handleRefresh = useCallback(async () => {
     setRefreshing(true);
-    setLeads([]);
-    setPage(1);
-    setHasMore(true);
-    fetchLeads(selectedPipelineId, 1, searchQuery.trim(), false);
-  }, [selectedPipelineId, searchQuery]);
-
-  const handleLoadMore = useCallback(() => {
-    // Block if: already fetching, no more pages, currently loading initial data, or pulling to refresh
-    if (!hasMore || loadingMore || loading || refreshing || isFetchingRef.current) return;
-    const nextPage = page + 1;
-    fetchLeads(selectedPipelineId, nextPage, searchQuery.trim(), true);
-  }, [hasMore, loadingMore, loading, refreshing, page, selectedPipelineId, searchQuery]);
-
-  const handleLeadPress = useCallback((lead) => {
-    navigation.navigate('LeadDetails', {
-      lead,
-      refreshPipeline: () => fetchLeads(selectedPipelineId, 1, searchQuery.trim(), false)
-    });
-  }, [navigation, selectedPipelineId, searchQuery]);
+    setExpandedStage(null);
+    await resetAndFetchAllStages(selectedPipelineId);
+    setRefreshing(false);
+  }, [selectedPipelineId, resetAndFetchAllStages]);
 
   const handleStageToggle = useCallback((stageId) => {
     setExpandedStage(prev => (prev === stageId ? null : stageId));
   }, []);
 
+  /** Trigger next-page load for a given stage */
+  const handleLoadMore = useCallback((stageId) => {
+    const st = stagePagination[stageId];
+    if (!st || !st.hasMore || st.loadingMore || stageFetchingRef.current[stageId]) return;
+    _fetchStageLeads(selectedPipelineId, stageId, st.page + 1, true);
+  }, [stagePagination, selectedPipelineId, _fetchStageLeads]);
+
+  const handleLeadPress = useCallback((lead) => {
+    navigation.navigate('LeadDetails', {
+      lead,
+      refreshPipeline: () => resetAndFetchAllStages(selectedPipelineId),
+    });
+  }, [navigation, selectedPipelineId, resetAndFetchAllStages]);
+
   // ── Computed stats ────────────────────────────────────────────────────────
 
-  const { stageData, totalValue, activeValue, convRate, totalLeads } = useMemo(() => {
-    const filtered = searchQuery.trim()
-      ? leads.filter(l =>
-        (l.title || l.name || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
-        (l.company?.name || l.company || '').toLowerCase().includes(searchQuery.toLowerCase())
-      )
-      : leads;
-
-    const totalValue = filtered.reduce((s, l) => s + (l.value || 0), 0);
-    const activeValue = filtered.filter(l => l.status !== 'Closed Lost').reduce((s, l) => s + (l.value || 0), 0);
-    const convWon = filtered.filter(l => l.status === 'Closed Won').length;
-    const convRate = filtered.length > 0 ? Math.round((convWon / filtered.length) * 100) : 0;
-    const totalLeads = filtered.length;
+  const { stageData, totalLeads, totalValue, activeValue, convRate } = useMemo(() => {
+    const q = searchQuery.trim().toLowerCase();
 
     const stageData = PIPELINE_STAGES.map(stage => {
-      const stageLeads = filtered.filter(l => {
-        const s = l.status || l.stage?.name || l.stage;
-        return s === stage.id || s === stage.name;
-      });
-      return { ...stage, leads: stageLeads };
+      const st = stagePagination[stage.id] ?? initStageState();
+
+      // Apply client-side search filter on cached leads
+      const filteredLeads = q
+        ? st.leads.filter(l =>
+          (l.title || l.name || '').toLowerCase().includes(q) ||
+          (l.company?.name || l.company || '').toLowerCase().includes(q)
+        )
+        : st.leads;
+
+      return {
+        ...stage,
+        leads: filteredLeads,
+        // While searching, total = matched count; otherwise backend total
+        total: q ? filteredLeads.length : st.total,
+        loading: st.loading,
+        loadingMore: st.loadingMore,
+        // Don't show Load More while searching (client-side only)
+        hasMore: q ? false : st.hasMore,
+      };
     });
 
-    return { stageData, totalValue, activeValue, convRate, totalLeads };
-  }, [leads, searchQuery]);
-
-  // ── List footer ───────────────────────────────────────────────────────────
-
-  const ListFooter = useCallback(() => {
-    if (!loadingMore) return <View style={{ height: ms(100) }} />;
-    return (
-      <View style={styles.footerLoader}>
-        <ActivityIndicator size="small" color={Colors.primary} />
-        <Text style={styles.footerLoaderText}>Loading more deals…</Text>
-      </View>
+    // Totals: counts from backend metadata, values from currently-loaded leads
+    const totalLeads = stageData.reduce((s, st) => s + st.total, 0);
+    const totalValue = stageData.reduce(
+      (s, st) => s + st.leads.reduce((a, l) => a + (l.value || 0), 0), 0
     );
-  }, [loadingMore]);
+    const activeValue = stageData
+      .filter(st => st.id !== 'Closed Lost')
+      .reduce((s, st) => s + st.leads.reduce((a, l) => a + (l.value || 0), 0), 0);
+    const convWon = stagePagination['Closed Won']?.total ?? 0;
+    const convRate = totalLeads > 0 ? Math.round((convWon / totalLeads) * 100) : 0;
 
-  // ── Prepare FlatList data ────────────────────────────────────────────────
-  // We render everything as a single FlatList with a header; each item = a stage card
+    return { stageData, totalLeads, totalValue, activeValue, convRate };
+  }, [stagePagination, searchQuery]);
+
+  /**
+   * Show full-screen spinner only when:
+   * - At least one stage is still loading its first page AND
+   * - No stage has any data yet
+   */
+  const isInitialLoading = useMemo(
+    () =>
+      PIPELINE_STAGES.some(s => stagePagination[s.id]?.loading) &&
+      PIPELINE_STAGES.every(s => (stagePagination[s.id]?.leads?.length ?? 0) === 0),
+    [stagePagination]
+  );
+
+  // ── Header component (summary + funnel chart) ─────────────────────────────
 
   const headerComponent = useMemo(() => (
     <View>
@@ -419,7 +532,7 @@ const PipelineScreen = ({ navigation }) => {
         {stageData.map((stage, index) => {
           const funnelRatio = 1 - index * 0.1;
           const barWidth = Math.max(
-            totalLeads > 0 ? Math.round((stage.leads.length / totalLeads) * 100) : 0,
+            totalLeads > 0 ? Math.round((stage.total / totalLeads) * 100) : 0,
             5
           ) * funnelRatio;
           return (
@@ -445,7 +558,7 @@ const PipelineScreen = ({ navigation }) => {
                       styles.funnelBarInner,
                       {
                         width: `${Math.min(
-                          totalLeads > 0 ? (stage.leads.length / totalLeads) * 100 : 0,
+                          totalLeads > 0 ? (stage.total / totalLeads) * 100 : 0,
                           100
                         )}%`,
                         backgroundColor: stage.color,
@@ -455,7 +568,9 @@ const PipelineScreen = ({ navigation }) => {
                 </View>
               </View>
               <View style={styles.funnelRight}>
-                <Text style={[styles.funnelCount, { color: stage.color }]}>{stage.leads.length}</Text>
+                <Text style={[styles.funnelCount, { color: stage.color }]}>
+                  {stage.loading && stage.total === 0 ? '…' : stage.total}
+                </Text>
                 <IonIcon
                   name={expandedStage === stage.id ? 'chevron-up' : 'chevron-down'}
                   size={14}
@@ -492,9 +607,19 @@ const PipelineScreen = ({ navigation }) => {
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
 
-      {/* ── Header ── */}
+      {/* ── Nav bar ── */}
       <View style={styles.navBar}>
-        <Text style={styles.title}>Pipeline</Text>
+        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+          {navigation?.openDrawer && (
+            <TouchableOpacity
+              onPress={() => navigation.openDrawer()}
+              style={styles.menuBtn}
+            >
+              <IonIcon name="menu-outline" size={ms(28)} color={Colors.textPrimary} />
+            </TouchableOpacity>
+          )}
+          <Text style={styles.title}>Pipeline</Text>
+        </View>
         <View style={{ flexDirection: 'row', gap: Spacing.sm }}>
           <TouchableOpacity
             style={styles.headerIconBtn}
@@ -554,7 +679,7 @@ const PipelineScreen = ({ navigation }) => {
       )}
 
       {/* ── Content ── */}
-      {loading && leads.length === 0 ? (
+      {isInitialLoading ? (
         <View style={styles.centered}>
           <ActivityIndicator size="large" color={Colors.primary} />
           <Text style={styles.loadingText}>Fetching pipeline data…</Text>
@@ -566,14 +691,22 @@ const PipelineScreen = ({ navigation }) => {
           renderItem={({ item }) => (
             <StageCard
               stage={item}
-              totalLeads={totalLeads}
+              stageState={{
+                leads: item.leads,
+                loading: item.loading,
+                loadingMore: item.loadingMore,
+                hasMore: item.hasMore,
+                total: item.total,
+              }}
+              totalLeadCount={totalLeads}
               isExpanded={expandedStage === item.id}
               onToggle={handleStageToggle}
               onLeadPress={handleLeadPress}
+              onLoadMore={handleLoadMore}
             />
           )}
           ListHeaderComponent={headerComponent}
-          ListFooterComponent={ListFooter}
+          ListFooterComponent={<View style={{ height: vs(100) }} />}
           contentContainerStyle={styles.listContent}
           showsVerticalScrollIndicator={false}
           refreshControl={
@@ -584,8 +717,6 @@ const PipelineScreen = ({ navigation }) => {
               tintColor={Colors.primary}
             />
           }
-          onEndReached={handleLoadMore}
-          onEndReachedThreshold={0.4}
           removeClippedSubviews
           maxToRenderPerBatch={8}
           windowSize={10}
@@ -600,9 +731,9 @@ const PipelineScreen = ({ navigation }) => {
           onPress={() => navigation.navigate(ROUTES.ADD_LEAD, {
             refreshPipeline: () => {
               if (selectedPipelineId) {
-                fetchLeads(selectedPipelineId, 1, searchQuery.trim(), false)
+                resetAndFetchAllStages(selectedPipelineId);
               }
-            }
+            },
           })}
           fullWidth={false}
           size="small"
@@ -634,6 +765,9 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: Colors.textPrimary,
     letterSpacing: -0.5,
+  },
+  menuBtn: {
+    marginRight: Spacing.xs,
   },
   headerIconBtn: {
     width: ms(40),
@@ -667,8 +801,6 @@ const styles = StyleSheet.create({
   // Pipeline selector
   pipelineTabsScroll: {
     flexGrow: 0,
-    // borderBottomWidth: 1,
-    // borderBottomColor: Colors.divider,
     marginBottom: ms(10),
   },
   pipelineTabsContainer: {
@@ -791,7 +923,7 @@ const styles = StyleSheet.create({
   },
   progressBarFill: { height: '100%', borderRadius: 2 },
 
-  // Expanded leads
+  // Expanded leads container
   expandedLeads: {
     backgroundColor: Colors.surface,
     borderRadius: BorderRadius.lg,
@@ -802,6 +934,59 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     ...Shadow.sm,
   },
+
+  // Per-stage loading states
+  stageLoadingWrap: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: ms(16),
+    gap: ms(8),
+  },
+  stageLoadMoreWrap: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: ms(12),
+    gap: ms(8),
+  },
+  stageLoadingText: {
+    fontSize: ms(13),
+    color: Colors.textTertiary,
+    fontWeight: '500',
+  },
+
+  // Load More button
+  loadMoreBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginHorizontal: ms(14),
+    marginTop: ms(2),
+    marginBottom: ms(10),
+    paddingVertical: ms(10),
+    borderRadius: BorderRadius.md,
+    borderWidth: 1,
+    gap: ms(6),
+    backgroundColor: Colors.background,
+  },
+  loadMoreText: {
+    fontSize: ms(13),
+    fontWeight: '600',
+  },
+
+  // "All X deals loaded" footer
+  allLoadedWrap: {
+    alignItems: 'center',
+    paddingVertical: ms(10),
+  },
+  allLoadedText: {
+    fontSize: ms(12),
+    color: Colors.textTertiary,
+    fontStyle: 'italic',
+  },
+
+  // Lead card
   leadCard: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -824,25 +1009,10 @@ const styles = StyleSheet.create({
   leadValue: { fontSize: ms(14), fontWeight: '700', color: Colors.success, marginRight: 8 },
 
   emptyStage: {
-    backgroundColor: Colors.surface,
-    borderRadius: BorderRadius.lg,
     padding: ms(16),
     alignItems: 'center',
-    marginBottom: Spacing.sm,
-    marginTop: -Spacing.sm + 2,
   },
   emptyStageText: { fontSize: ms(14), color: Colors.textTertiary },
-
-  // Footer loader — smooth, visible, not jarring
-  footerLoader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: ms(20),
-    gap: ms(10),
-    backgroundColor: Colors.background,
-  },
-  footerLoaderText: { fontSize: ms(14), color: Colors.textTertiary, fontWeight: '500' },
 
   // FAB
   floatingAction: {

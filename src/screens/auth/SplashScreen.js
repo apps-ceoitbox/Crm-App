@@ -4,7 +4,7 @@
  */
 
 import React, { useEffect, useRef } from 'react';
-import { View, StyleSheet, Animated } from 'react-native';
+import { View, StyleSheet, Animated, Image } from 'react-native';
 import IonIcon from 'react-native-vector-icons/Ionicons';
 import { Colors } from '../../constants/Colors';
 import { ms, vs } from '../../utils/Responsive';
@@ -42,11 +42,11 @@ const SplashScreen = ({ navigation }) => {
                 if (!onboarded) {
                     navigation.reset({ index: 0, routes: [{ name: 'Onboarding' }] });
                 } else if (isAuthenticated) {
-                    navigation.reset({ index: 0, routes: [{ name: 'MainTabs' }] });
+                    navigation.reset({ index: 0, routes: [{ name: 'MainDrawer' }] });
                 } else {
                     navigation.reset({ index: 0, routes: [{ name: 'Login' }] });
                 }
-            }, 2000); // slightly longer to appreciate the splash
+            }, 500); // slightly longer to appreciate the splash
 
             return () => clearTimeout(timer);
         }
@@ -64,12 +64,18 @@ const SplashScreen = ({ navigation }) => {
                 ]}
             >
                 <View style={styles.iconContainer}>
-                    <IonIcon name="briefcase" size={ms(50)} color={Colors.white} />
+                    {/* <IonIcon name="briefcase" size={ms(50)} color={Colors.white} /> */}
+                    <Image
+                        source={require('../../assets/splace.png')}
+                        style={styles.logo}
+                        resizeMode="contain"
+                    />
                 </View>
 
                 <Animated.View style={{ opacity: fadeAnim, alignItems: 'center' }}>
+
                     <AppText
-                        size={28}
+                        size={ms(25)}
                         weight="extraBold"
                         color={Colors.primary}
                         style={styles.companyName}
@@ -112,22 +118,27 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
     },
     iconContainer: {
-        width: ms(90),
-        height: ms(90),
+        width: ms(120),
+        height: ms(120),
         borderRadius: ms(28),
         backgroundColor: Colors.primary,
         justifyContent: 'center',
         alignItems: 'center',
-        marginBottom: vs(24),
+        marginBottom: vs(15),
         shadowColor: Colors.primary,
         shadowOffset: { width: 0, height: 8 },
         shadowOpacity: 0.3,
         shadowRadius: 12,
         elevation: 10,
     },
+    logo: {
+        width: ms(80),
+        height: ms(80),
+        borderRadius: ms(28),
+    },
     companyName: {
         letterSpacing: 2,
-        marginBottom: vs(8),
+        marginBottom: vs(7),
     },
     taglineContainer: {
         flexDirection: 'row',

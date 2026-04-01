@@ -275,8 +275,9 @@ const EmptyState = ({ icon, title, subtitle }) => (
 
 const LeadDetailsScreen = ({ route, navigation }) => {
     const { lead: initialLead } = route.params || {};
-    const leadId = initialLead?._id || initialLead?.id;
-
+    const leadId = initialLead?._id || initialLead?.id || initialLead;
+    // console.log('route params from lead : ', route.params);
+    // console.log('initialLead from lead : ', initialLead);
     // ── State ──
     const [lead, setLead] = useState(null);
     const [loadingLead, setLoadingLead] = useState(true);
@@ -477,7 +478,7 @@ const LeadDetailsScreen = ({ route, navigation }) => {
 
     // ── Derived data ──
 
-    console.log("lead", lead);
+    // console.log("lead", lead);
 
     const leadName = lead
         ? lead.title || 'Untitled Lead'

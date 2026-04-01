@@ -105,7 +105,7 @@ const LoginScreen = ({ navigation }) => {
       // Navigate to main app
       navigation.reset({
         index: 0,
-        routes: [{ name: 'MainTabs' }],
+        routes: [{ name: 'MainDrawer' }],
       });
     } else if (result.requiresTwoFactor) {
       // Show OTP verification UI inside this screen
@@ -140,7 +140,7 @@ const LoginScreen = ({ navigation }) => {
       // Navigate to main app
       navigation.reset({
         index: 0,
-        routes: [{ name: 'MainTabs' }],
+        routes: [{ name: 'MainDrawer' }],
       });
     } else {
       setErrors({
@@ -173,7 +173,7 @@ const LoginScreen = ({ navigation }) => {
     setLoading(false);
 
     if (result.success) {
-      navigation.reset({ index: 0, routes: [{ name: 'MainTabs' }] });
+      navigation.reset({ index: 0, routes: [{ name: 'MainDrawer' }] });
     } else {
       setErrors({
         general: result.error || 'Apple Sign-In failed. Please try again.',
@@ -258,7 +258,7 @@ const LoginScreen = ({ navigation }) => {
         twoFactor.rememberMe,
       );
       if (res && res.success) {
-        navigation.reset({ index: 0, routes: [{ name: 'MainTabs' }] });
+        navigation.reset({ index: 0, routes: [{ name: 'MainDrawer' }] });
       } else {
         setOtpError(res.error || 'Invalid code. Please try again.');
       }

@@ -662,6 +662,15 @@ export const contactsAPI = {
             apiClient.delete(API_ENDPOINTS.CONTACTS.DELETE_DOCUMENT(id, documentId)),
         );
     },
+
+    /**
+     * Scan visiting card image via backend (OCR API key kept server-side). Returns extracted contact fields.
+     */
+    scanVisitingCard: (formData) => {
+        return handleRequest(apiClient.post(API_ENDPOINTS.CONTACTS.SCAN_VISITING_CARD, formData, {
+            headers: { 'Content-Type': 'multipart/form-data' },
+        }));
+    },
 };
 
 // ============================================
@@ -768,9 +777,9 @@ export const followUpAPI = {
 
 export const settingsAPI = {
     /**
-     * Get settings
+     * Get all settings
      */
-    get: () => {
+    getAll: () => {
         return handleRequest(apiClient.get(API_ENDPOINTS.SETTINGS.GET));
     },
 
@@ -1206,6 +1215,25 @@ export const uploadAPI = {
     },
 };
 
+// ============================================
+// COMMUNICATION APIs
+// ============================================
+export const communicationAPI = {
+    /**
+     * Get all intro templates
+     */
+    getIntroTemplates: () => {
+        return handleRequest(apiClient.get(API_ENDPOINTS.COMMUNICATION.INTRO_TEMPLATES));
+    },
+
+    /**
+     * Get all communication groups with stages and templates
+     */
+    getGroupsWithStages: () => {
+        return handleRequest(apiClient.get(API_ENDPOINTS.COMMUNICATION.GROUPS_WITH_STAGES));
+    },
+};
+
 // Export all APIs
 export default {
     auth: authAPI,
@@ -1230,4 +1258,5 @@ export default {
     users: usersAPI,
     notes: notesAPI,
     upload: uploadAPI,
+    communication: communicationAPI,
 };

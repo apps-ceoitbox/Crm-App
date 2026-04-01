@@ -23,6 +23,7 @@ import { Spacing, BorderRadius, Shadow } from '../../constants/Spacing';
 import { ms, vs } from '../../utils/Responsive';
 import { ScreenWrapper, AppText } from '../../components';
 import { useNotification } from '../../context';
+import { ROUTES } from '../../constants';
 
 const CATEGORIES = ['CRM', 'Marketing', 'Other'];
 const CAT_ICONS = {
@@ -191,11 +192,20 @@ const NotificationsScreen = () => {
     );
 
     const handleNotificationPress = (item) => {
-        if (item.entityId && item.type === 'lead') {
-            navigation.navigate('LeadDetails', { id: item.entityId });
-        } else if (item.entityId && item.type === 'task') {
-            navigation.navigate('TaskDetails', { id: item.entityId });
+        // console.log('Notification:', item);
+        if (item.type === 'lead') {
+            // console.log('Lead ID:', item);
+            if (item.entityId) {
+                navigation.navigate('LeadDetails', { lead: item.entityId });
+            }
+        } else if (item.type === 'task') {
+            if (item.entityId) {
+                navigation.navigate('TaskDetails', { task: null, taskId: item.entityId, source: 'notification' });
+            }
+        } else if (item.type === 'company') {
+            navigation.navigate(ROUTES.COMPANY)
         }
+
     };
 
     const handleImagePress = (uri) => {

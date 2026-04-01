@@ -41,6 +41,11 @@ export const ROUTES = {
 
     // Main Stack
     MAIN_TABS: 'MainTabs',
+    MAIN_DRAWER: 'MainDrawer',
+
+    // Modules
+    SALES_MODULE: 'SalesModule',
+    MARKETING_MODULE: 'MarketingModule',
 
     // Company Screens
     EDIT_COMPANY: 'EditCompany',
@@ -76,6 +81,10 @@ export const ROUTES = {
     NOTIFICATIONS: 'Notifications',
     AI_ASSISTANT: 'AIAssistant',
     OVERDUE_DETAIL: 'OverdueDetail',
+
+    // Marketing Screens
+    SCAN_ADD_CONTACT: 'ScanAddContact',
+    ADD_SINGLE_CONTACT: 'AddSingleContact',
 };
 
 

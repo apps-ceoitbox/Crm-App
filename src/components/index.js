@@ -11,3 +11,4 @@ export { default as toastConfig } from './ToastConfig';
 export { default as CustomDropdownModal } from './CustomDropdownModal';
 export { default as DatePickerModal } from './DatePickerModal';
 export { default as DeleteConfirmationModal } from './DeleteConfirmationModal';
+export { default as SearchablePicker } from './SearchablePicker';

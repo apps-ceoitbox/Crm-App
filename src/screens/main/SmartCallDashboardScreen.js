@@ -63,6 +63,16 @@ const parseYMD = (ymd) => {
     return new Date(parseInt(y, 10), parseInt(m, 10) - 1, parseInt(d, 10));
 };
 
+/** Format Date object → human-readable "24 Feb 2026" */
+const toDisplayFormat = (date) => {
+    if (!date) return '';
+    return date.toLocaleDateString('en-IN', {
+        day: '2-digit',
+        month: 'short',
+        year: 'numeric',
+    });
+};
+
 
 const getPresetDates = (value) => {
     const now = new Date();
@@ -112,6 +122,25 @@ const SectionHeader = ({ icon, title, accent }) => (
         </View>
         <Text style={styles.secTitle}>{title}</Text>
     </View>
+);
+
+const FilterPill = ({ label, value, icon, onPress, active, style }) => (
+    <TouchableOpacity
+        style={[styles.filterPill, active && styles.filterPillActive, style]}
+        onPress={onPress}
+        activeOpacity={0.7}
+    >
+        <View style={styles.filterPillContent}>
+            <View style={styles.filterPillLabelRow}>
+                <IonIcon name={icon} size={ms(12)} color={active ? Colors.primary : Colors.textSecondary} />
+                <Text style={styles.filterPillLabel}>{label}</Text>
+            </View>
+            <Text style={[styles.filterPillValue, active && styles.filterPillValueActive]} numberOfLines={1}>
+                {value}
+            </Text>
+        </View>
+        <IonIcon name="chevron-down" size={ms(12)} color={Colors.textTertiary} />
+    </TouchableOpacity>
 );
 
 /** Preset + call type picker modal */
@@ -239,6 +268,7 @@ const SmartCallDashboardScreen = ({ navigation }) => {
     const [showPresetPicker, setShowPresetPicker] = useState(false);
     const [showCallTypePicker, setShowCallTypePicker] = useState(false);
     const [showNativePicker, setShowNativePicker] = useState(false);
+    const [pickerMode, setPickerMode] = useState('from'); // 'from' | 'to'
 
 
     const [data, setData] = useState(null);
@@ -282,27 +312,44 @@ const SmartCallDashboardScreen = ({ navigation }) => {
         setDatePreset(opt);
         if (opt.value !== 'custom') {
             const { from, to } = getPresetDates(opt.value);
-            setFromDate(from); setToDate(to);
+            setFromDate(from);
+            setToDate(to);
             fetchData(from, to, callType);
-        } else {
-            setShowNativePicker(true);
         }
     };
-
 
     const applyCallType = (opt) => {
         setCallType(opt);
         fetchData(fromDate, toDate, opt);
     };
 
+    const openPicker = (mode) => {
+        setPickerMode(mode);
+        setShowNativePicker(true);
+    };
+
     const onNativeDateChange = (event, selectedDate) => {
         setShowNativePicker(false);
         if (selectedDate) {
             const ymd = toYMD(selectedDate);
-            setFromDate(ymd);
-            setToDate(ymd);
-            setDatePreset(DATE_PRESETS.find(d => d.value === 'custom'));
-            fetchData(ymd, ymd, callType);
+            if (pickerMode === 'from') {
+                setFromDate(ymd);
+                if (parseYMD(ymd) > parseYMD(toDate)) {
+                    setToDate(ymd);
+                    fetchData(ymd, ymd, callType);
+                } else {
+                    fetchData(ymd, toDate, callType);
+                }
+            } else {
+                if (parseYMD(ymd) < parseYMD(fromDate)) {
+                    setFromDate(ymd);
+                    setToDate(ymd);
+                    fetchData(ymd, ymd, callType);
+                } else {
+                    setToDate(ymd);
+                    fetchData(fromDate, ymd, callType);
+                }
+            }
         }
     };
 
@@ -326,9 +373,6 @@ const SmartCallDashboardScreen = ({ navigation }) => {
 
 
 
-    const dateLabel = datePreset?.value === 'custom'
-        ? `${toDisplay(fromDate)} – ${toDisplay(toDate)}`
-        : datePreset?.label;
 
     // ── Render ────────────────────────────────────────────────────────────────
 
@@ -353,21 +397,49 @@ const SmartCallDashboardScreen = ({ navigation }) => {
             </View>
 
             {/* ── Filter Bar ── */}
-            <View style={styles.filterBar}>
-                <TouchableOpacity style={styles.dateSelector} onPress={() => setShowPresetPicker(true)}>
-                    <Text style={styles.selectorText} numberOfLines={1}>{dateLabel}</Text>
-                    <IonIcon name="chevron-down" size={ms(16)} color={Colors.textSecondary} />
-                </TouchableOpacity>
+            <View style={styles.filterSection}>
+                <View style={styles.filterBar}>
+                    <FilterPill
+                        label="Period"
+                        value={datePreset.label}
+                        icon="calendar-outline"
+                        onPress={() => setShowPresetPicker(true)}
+                        active={datePreset.value !== 'today'}
+                        style={{ flex: 1 }}
+                    />
+                    <FilterPill
+                        label="Call Type"
+                        value={callType.label}
+                        icon="funnel-outline"
+                        onPress={() => setShowCallTypePicker(true)}
+                        active={callType.value !== 'all'}
+                        style={{ flex: 1 }}
+                    />
+                </View>
 
+                {datePreset.value === 'custom' && (
+                    <View style={styles.customDateRow}>
+                        <TouchableOpacity
+                            style={styles.dateRangePill}
+                            onPress={() => openPicker('from')}
+                        >
+                            <Text style={styles.dateRangeLabel}>From</Text>
+                            <Text style={styles.dateRangeValue}>{toDisplayFormat(parseYMD(fromDate))}</Text>
+                        </TouchableOpacity>
 
-                <TouchableOpacity style={styles.calendarIconBtn} onPress={() => setShowNativePicker(true)}>
-                    <IonIcon name="calendar-outline" size={ms(18)} color={Colors.textPrimary} />
-                </TouchableOpacity>
+                        <View style={styles.dateRangeSeparator}>
+                            <IonIcon name="arrow-forward" size={ms(12)} color={Colors.textTertiary} />
+                        </View>
 
-                <TouchableOpacity style={styles.callTypeSelector} onPress={() => setShowCallTypePicker(true)}>
-                    <Text style={styles.selectorText}>{callType.label}</Text>
-                    <IonIcon name="chevron-down" size={ms(16)} color={Colors.textSecondary} />
-                </TouchableOpacity>
+                        <TouchableOpacity
+                            style={styles.dateRangePill}
+                            onPress={() => openPicker('to')}
+                        >
+                            <Text style={styles.dateRangeLabel}>To</Text>
+                            <Text style={styles.dateRangeValue}>{toDisplayFormat(parseYMD(toDate))}</Text>
+                        </TouchableOpacity>
+                    </View>
+                )}
             </View>
 
 
@@ -543,7 +615,7 @@ const SmartCallDashboardScreen = ({ navigation }) => {
             />
             {showNativePicker && (
                 <DateTimePicker
-                    value={parseYMD(fromDate)}
+                    value={pickerMode === 'from' ? parseYMD(fromDate) : parseYMD(toDate)}
                     mode="date"
                     display="default"
                     onChange={onNativeDateChange}
@@ -581,32 +653,98 @@ const styles = StyleSheet.create({
         backgroundColor: Colors.primaryBackground, justifyContent: 'center', alignItems: 'center',
     },
 
-    // ── Filter ──
-    filterBar: {
-        flexDirection: 'row', alignItems: 'center', gap: ms(10),
-        paddingHorizontal: ms(14), paddingVertical: ms(12),
+    // ── Filter Bar ──
+    filterSection: {
         backgroundColor: Colors.surface,
-        borderBottomWidth: 1, borderBottomColor: Colors.surfaceBorder,
+        borderBottomWidth: 1,
+        borderBottomColor: Colors.surfaceBorder,
+        paddingBottom: ms(4),
     },
-    dateSelector: {
-        flex: 1.4, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-        paddingHorizontal: ms(14), paddingVertical: ms(8),
-        backgroundColor: '#F1F5F9', borderRadius: ms(20),
-        borderWidth: 1, borderColor: '#E2E8F0',
+    filterBar: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: ms(12),
+        paddingHorizontal: ms(14),
+        paddingVertical: ms(12),
     },
-    selectorLabel: { fontSize: ms(10), color: Colors.textTertiary, fontWeight: '700', textTransform: 'uppercase', position: 'absolute', top: -ms(7), left: ms(12), backgroundColor: Colors.surface, paddingHorizontal: ms(4) },
-    calendarIconBtn: {
-        width: ms(40), height: ms(40),
-        backgroundColor: Colors.primaryBackground, borderRadius: ms(20),
-        justifyContent: 'center', alignItems: 'center',
-        // ...Shadow.sm,
+    filterPill: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingHorizontal: ms(12),
+        paddingVertical: ms(8),
+        backgroundColor: '#F8FAFC',
+        borderRadius: ms(12),
+        borderWidth: 1,
+        borderColor: '#E2E8F0',
+        justifyContent: 'space-between',
     },
-    callTypeSelector: {
-        flex: 2, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-        paddingHorizontal: ms(14), paddingVertical: ms(8),
-        backgroundColor: '#F1F5F9', borderRadius: ms(20),
-        borderWidth: 1, borderColor: '#E2E8F0',
+    filterPillActive: {
+        borderColor: Colors.primary + '44',
+        backgroundColor: Colors.primaryBackground + '44',
     },
+    filterPillContent: {
+        flex: 1,
+        gap: ms(2),
+    },
+    filterPillLabelRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: ms(4),
+    },
+    filterPillLabel: {
+        fontSize: ms(9),
+        fontWeight: '700',
+        color: Colors.textTertiary,
+        textTransform: 'uppercase',
+        letterSpacing: 0.5,
+    },
+    filterPillValue: {
+        fontSize: ms(13),
+        fontWeight: '700',
+        color: Colors.textPrimary,
+    },
+    filterPillValueActive: {
+        color: Colors.primary,
+    },
+
+    // ── Custom Date Selection ──
+    customDateRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingHorizontal: ms(14),
+        paddingBottom: ms(10),
+        gap: ms(8),
+    },
+    dateRangePill: {
+        flex: 1,
+        backgroundColor: '#F1F5F9',
+        borderRadius: ms(10),
+        paddingHorizontal: ms(12),
+        paddingVertical: ms(6),
+        borderWidth: 0.5,
+        borderColor: '#CBD5E1',
+    },
+    dateRangeLabel: {
+        fontSize: ms(8),
+        fontWeight: '800',
+        color: Colors.textTertiary,
+        textTransform: 'uppercase',
+        marginBottom: ms(1),
+    },
+    dateRangeValue: {
+        fontSize: ms(12),
+        fontWeight: '700',
+        color: Colors.textPrimary,
+    },
+    dateRangeSeparator: {
+        width: ms(24),
+        height: ms(24),
+        borderRadius: ms(12),
+        backgroundColor: '#F1F5F9',
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+
     selectorText: { fontSize: ms(13), color: Colors.textPrimary, fontWeight: '600' },
 
 

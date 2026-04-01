@@ -23,7 +23,18 @@ import { useFocusEffect } from '@react-navigation/native';
 import { ROUTES } from '../../constants';
 
 const TaskDetailsScreen = ({ route, navigation }) => {
-  const { task: initialTask, taskId } = route.params || {};
+  const { task: initialTask, taskId, source } = route.params || {};
+  // console.log('task id ', taskId)
+  // const state = navigation.getState();
+  // const routes = state.routes;
+  // const index = state.index;
+
+  // const previousRoute = routes[index - 1];
+
+  // console.log('Previous Route:', previousRoute?.name);
+  // console.log('Source:', source);
+
+
   const [currentTask, setCurrentTask] = useState(initialTask || null);
   const [loading, setLoading] = useState(!initialTask);
   const [refreshing, setRefreshing] = useState(false);

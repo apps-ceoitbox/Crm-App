@@ -25,7 +25,7 @@ const NotificationContext = createContext(null);
  */
 export const NotificationProvider = ({ children }) => {
     const { isAuthenticated, token: authToken, user } = useAuth();
-    
+
     // State
     const [fcmToken, setFcmToken] = useState(null);
     const [deviceId, setDeviceId] = useState(null);
@@ -36,7 +36,7 @@ export const NotificationProvider = ({ children }) => {
     /** Live list of notifications (from API + FCM foreground). Used for in-app list and badge. */
     const [notifications, setNotifications] = useState([]);
     const [notificationsLoading, setNotificationsLoading] = useState(false);
-    
+
     // Refs
     const unsubscribeRef = useRef(null);
     const appStateRef = useRef(AppState.currentState);
@@ -97,7 +97,7 @@ export const NotificationProvider = ({ children }) => {
      */
     const handleForegroundNotification = useCallback((remoteMessage) => {
         const notification = parseNotificationData(remoteMessage);
-        
+
         if (notification) {
             setLastNotification(notification);
             setNotificationCount(prev => prev + 1);
@@ -121,8 +121,8 @@ export const NotificationProvider = ({ children }) => {
 
             // Show toast notification
             Toast.show({
-                type: notification.priority === 'urgent' ? 'error' : 
-                      notification.priority === 'high' ? 'info' : 'success',
+                type: notification.priority === 'urgent' ? 'error' :
+                    notification.priority === 'high' ? 'info' : 'success',
                 text1: notification.title,
                 text2: notification.body,
                 visibilityTime: 5000,
@@ -138,7 +138,7 @@ export const NotificationProvider = ({ children }) => {
      */
     const handleNotificationOpened = useCallback((remoteMessage) => {
         const notification = parseNotificationData(remoteMessage);
-        
+
         if (notification) {
             setLastNotification(notification);
             handleNotificationPress(notification);
@@ -149,8 +149,8 @@ export const NotificationProvider = ({ children }) => {
      * Handle notification press/tap
      */
     const handleNotificationPress = useCallback((notification) => {
-        console.log('[Notification] Pressed:', notification);
-        
+        // console.log('[Notification] Pressed:', notification);
+
         // You can add navigation logic here based on notification type
         // For example:
         // if (notification.type === 'lead' && notification.entityId) {
@@ -164,7 +164,7 @@ export const NotificationProvider = ({ children }) => {
     const handleTokenRefresh = useCallback(async (newToken) => {
         console.log('[Notification] Token refreshed');
         setFcmToken(newToken);
-        
+
         // Re-register with new token
         if (deviceId && authToken) {
             await registerDeviceToken(newToken, deviceId);
@@ -190,7 +190,7 @@ export const NotificationProvider = ({ children }) => {
                 setFcmToken(result.token);
                 setDeviceId(result.deviceId);
                 setIsInitialized(true);
-                
+
                 // Store unsubscribe function
                 unsubscribeRef.current = result.unsubscribe;
 
@@ -246,23 +246,23 @@ export const NotificationProvider = ({ children }) => {
         try {
             // Remove device token from backend
             await removeDeviceToken();
-            
+
             // Delete FCM token
             await deleteFCMToken();
-            
+
             // Cleanup handlers
             if (unsubscribeRef.current) {
                 unsubscribeRef.current();
                 unsubscribeRef.current = null;
             }
-            
+
             // Reset state
             setFcmToken(null);
             setIsInitialized(false);
             setNotifications([]);
             setNotificationCount(0);
             registrationAttemptedRef.current = false;
-            
+
             console.log('[Notification] Cleanup completed');
         } catch (error) {
             console.error('[Notification] Error during cleanup:', error);
@@ -284,6 +284,7 @@ export const NotificationProvider = ({ children }) => {
         setNotificationsLoading(true);
         try {
             const response = await notificationsAPI.getMy({ limit: 50 });
+            // console.log('response : ', response);
             if (response.success && response.data) {
                 const list = response.data.notifications || [];
                 const unread = response.data.unreadCount ?? list.filter(n => !n.read).length;
@@ -317,7 +318,9 @@ export const NotificationProvider = ({ children }) => {
      */
     const markAllNotificationsAsRead = useCallback(async () => {
         try {
+            // console.log('mark called');
             const res = await notificationsAPI.markAllAsRead();
+            // console.log('res : ', res);
             if (res.success) {
                 setNotifications(prev => prev.map(n => ({ ...n, read: true })));
                 setNotificationCount(0);
@@ -348,8 +351,9 @@ export const NotificationProvider = ({ children }) => {
     useEffect(() => {
         if (isAuthenticated && authToken) {
             initializeNotifications();
+            fetchNotifications();
         }
-    }, [isAuthenticated, authToken, initializeNotifications]);
+    }, [isAuthenticated, authToken, initializeNotifications, fetchNotifications]);
 
     // Handle app state changes
     useEffect(() => {

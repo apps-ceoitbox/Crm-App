@@ -28,8 +28,8 @@ const CustomDropdownModal = ({
 
   const filteredOptions = searchable
     ? options.filter(opt =>
-        opt.label.toLowerCase().includes(searchQuery.toLowerCase()),
-      )
+      opt.label.toLowerCase().includes(searchQuery.toLowerCase()),
+    )
     : options;
 
   const handleSelect = item => {
@@ -63,7 +63,7 @@ const CustomDropdownModal = ({
                   />
                   <TextInput
                     style={styles.searchInput}
-                    placeholder="Search by contact name, email or product..."
+                    placeholder="Search"
                     placeholderTextColor={Colors.textTertiary}
                     value={searchQuery}
                     onChangeText={setSearchQuery}

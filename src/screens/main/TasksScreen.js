@@ -390,9 +390,19 @@ const TasksScreen = ({ navigation, route }) => {
     const renderHeader = () => (
         <View style={styles.header}>
             <View style={styles.headerLeft}>
-                <AppText size={28} weight="extraBold" color={Colors.textPrimary} style={{ letterSpacing: -0.5 }}>
-                    Tasks
-                </AppText>
+                {navigation?.openDrawer && (
+                    <TouchableOpacity
+                        onPress={() => navigation.openDrawer()}
+                        style={styles.menuBtn}
+                    >
+                        <IonIcon name="menu-outline" size={ms(28)} color={Colors.textPrimary} />
+                    </TouchableOpacity>
+                )}
+                <View>
+                    <AppText size={28} weight="extraBold" color={Colors.textPrimary} style={{ letterSpacing: -0.5 }}>
+                        Tasks
+                    </AppText>
+                </View>
                 {tasks.length > 0 && (
                     <View style={styles.countBadge}>
                         <AppText size={13} weight="bold" color={Colors.primary}>
@@ -586,7 +596,10 @@ const styles = StyleSheet.create({
     headerLeft: {
         flexDirection: 'row',
         alignItems: 'center',
-        gap: Spacing.sm,
+        gap: Spacing.xs,
+    },
+    menuBtn: {
+        marginRight: Spacing.xs,
     },
     countBadge: {
         backgroundColor: Colors.primaryBackground,

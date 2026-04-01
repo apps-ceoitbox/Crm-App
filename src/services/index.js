@@ -7,8 +7,7 @@ export {
     configureGoogleSignIn,
     signInWithGoogle,
     signOutFromGoogle,
-    getCurrentGoogleUser,
-    revokeGoogleAccess,
+    getCurrentAuthUser,
 } from './googleSignIn';
 
 // FCM Service

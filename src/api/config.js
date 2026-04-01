@@ -4,8 +4,8 @@
  */
 
 // Base URL for the API
-// export const API_BASE_URL = 'https://crm.ceoitbox.com/api';
-export const API_BASE_URL = 'https://gsvmdl68-3001.inc1.devtunnels.ms/api';
+export const API_BASE_URL = 'https://crm.ceoitbox.com/api';
+// export const API_BASE_URL = 'https://gsvmdl68-3001.inc1.devtunnels.ms/api';
 // export const API_BASE_URL = 'https://gsvmdl68-3001.inc1.devtunnels.ms/api'; // Param for local development: http://localhost:3000/api
 
 // API Endpoints
@@ -88,7 +88,7 @@ export const API_ENDPOINTS = {
     LIST: '/notifications',
     MY: '/notifications/my',
     MARK_READ: id => `/notifications/${id}/read`,
-    MARK_ALL_READ: '/notifications/read-all',
+    MARK_ALL_READ: '/notifications/mark-all-read',
     DELETE: id => `/notifications/${id}`,
   },
 
@@ -113,13 +113,14 @@ export const API_ENDPOINTS = {
 
   // Contacts
   CONTACTS: {
-    LIST: '/crm-contacts',
-    CREATE: '/crm-contacts',
-    DETAIL: id => `/crm-contacts/${id}`,
-    UPDATE: id => `/crm-contacts/${id}`,
-    DELETE: id => `/crm-contacts/${id}`,
-    DOCUMENTS: id => `/crm-contacts/${id}/documents`,
-    DELETE_DOCUMENT: (id, docId) => `/crm-contacts/${id}/documents/${docId}`,
+    LIST: '/contacts',
+    CREATE: '/contacts',
+    DETAIL: id => `/contacts/${id}`,
+    UPDATE: id => `/contacts/${id}`,
+    DELETE: id => `/contacts/${id}`,
+    DOCUMENTS: id => `/contacts/${id}/documents`,
+    DELETE_DOCUMENT: (id, docId) => `/contacts/${id}/documents/${docId}`,
+    SCAN_VISITING_CARD: '/contacts/scan-visiting-card',
   },
 
   // Device Tokens (FCM)
@@ -188,6 +189,12 @@ export const API_ENDPOINTS = {
     UPDATE: id => `/notes/${id}`,
     DELETE: id => `/notes/${id}`,
     ADD_COMMENT: id => `/notes/${id}/comments`,
+  },
+
+  // Communication
+  COMMUNICATION: {
+    INTRO_TEMPLATES: '/intro-templates/get',
+    GROUPS_WITH_STAGES: '/templates/getAllWithStagesAndTemplates',
   },
 };
 

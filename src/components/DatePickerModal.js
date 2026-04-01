@@ -23,13 +23,14 @@ const MONTHS = [
 const getDaysInMonth = (year, month) => new Date(year, month + 1, 0).getDate();
 const getFirstDayOfMonth = (year, month) => new Date(year, month, 1).getDay();
 
-const DatePickerModal = ({ visible, onClose, onSelect, initialDate }) => {
+const DatePickerModal = ({ visible, onClose, onSelect, initialDate, minDate }) => {
   const [selectedDate, setSelectedDate] = useState(initialDate || new Date());
   const [currentMonthDate, setCurrentMonthDate] = useState(initialDate || new Date());
 
   const currentYear = currentMonthDate.getFullYear();
   const currentMonth = currentMonthDate.getMonth();
   const today = new Date();
+  today.setHours(0, 0, 0, 0);
 
   const handleMonthChange = (increment) => {
     const newDate = new Date(currentMonthDate);
@@ -39,6 +40,11 @@ const DatePickerModal = ({ visible, onClose, onSelect, initialDate }) => {
 
   const handleSelectDay = (day) => {
     const newDate = new Date(currentYear, currentMonth, day);
+    if (minDate) {
+      const min = new Date(minDate);
+      min.setHours(0, 0, 0, 0);
+      if (newDate < min) return;
+    }
     setSelectedDate(newDate);
     onSelect(newDate);
     onClose();
@@ -81,6 +87,7 @@ const DatePickerModal = ({ visible, onClose, onSelect, initialDate }) => {
                   <View key={`blank-${blank}`} style={styles.dayCell} />
                 ))}
                 {days.map((day) => {
+                  const dateObj = new Date(currentYear, currentMonth, day);
                   const isSelected = 
                     selectedDate.getDate() === day &&
                     selectedDate.getMonth() === currentMonth &&
@@ -91,20 +98,30 @@ const DatePickerModal = ({ visible, onClose, onSelect, initialDate }) => {
                     today.getMonth() === currentMonth &&
                     today.getFullYear() === currentYear;
 
+                  let isDisabled = false;
+                  if (minDate) {
+                    const min = new Date(minDate);
+                    min.setHours(0, 0, 0, 0);
+                    isDisabled = dateObj < min;
+                  }
+
                   return (
                     <TouchableOpacity
                       key={day}
                       style={[
                         styles.dayCell, 
                         isToday && styles.todayCell,
-                        isSelected && styles.selectedDayCell
+                        isSelected && styles.selectedDayCell,
+                        isDisabled && styles.disabledCell
                       ]}
-                      onPress={() => handleSelectDay(day)}
+                      onPress={() => !isDisabled && handleSelectDay(day)}
+                      disabled={isDisabled}
                     >
                       <Text style={[
                         styles.dayText, 
                         isToday && styles.todayText,
-                        isSelected && styles.selectedDayText
+                        isSelected && styles.selectedDayText,
+                        isDisabled && styles.disabledText
                       ]}>
                         {day}
                       </Text>
@@ -206,6 +223,13 @@ const styles = StyleSheet.create({
     color: Colors.primary,
     fontSize: ms(16),
     fontWeight: '600',
+  },
+  disabledCell: {
+    opacity: 0.3,
+  },
+  disabledText: {
+    color: Colors.textTertiary,
+    textDecorationLine: 'line-through',
   },
 });
 
