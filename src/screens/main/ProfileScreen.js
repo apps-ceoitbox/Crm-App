@@ -533,7 +533,7 @@ const ProfileScreen = ({ navigation }) => {
             </View>
 
             {/* AI Credits Card (Below Profile Header) */}
-            {planStatus && (() => {
+            {planStatus && Platform.OS != 'ios' && (() => {
               const { planName, usedCredits, totalCredits, remainingCredits, resetDate } = planStatus;
               const progress = Math.min(100, ((usedCredits || 0) / (totalCredits || 1)) * 100);
               const isLow = (remainingCredits || 0) < 50;
@@ -662,7 +662,7 @@ const ProfileScreen = ({ navigation }) => {
 
                 {/* delete Account Feature for iOS */}
 
-                {Platform.OS === 'ios' && (
+                {Platform.OS === 'ios' && false && (
                   <TouchableOpacity
                     style={[
                       styles.saveButton,

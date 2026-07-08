@@ -444,8 +444,7 @@ const LoginScreen = ({ navigation }) => {
                         Sign in with Google
                       </AppText>
                     </TouchableOpacity>
-
-                    {Platform.OS === 'ios' && (
+                    {/* {Platform.OS === 'ios' && (
                       <TouchableOpacity
                         style={styles.socialButton}
                         onPress={handleAppleLogin}
@@ -457,7 +456,7 @@ const LoginScreen = ({ navigation }) => {
                           color={Colors.black}
                         />
                       </TouchableOpacity>
-                    )}
+                    )} */}
                   </View>
                 </>
               ) : (

@@ -48,12 +48,48 @@ const STAGE_PAGE_LIMIT = 10;
 
 const PIPELINE_STAGES = [
   { id: 'New', name: 'New', color: '#3B82F6', bg: '#EFF6FF', icon: 'sparkles' },
-  { id: 'Contacted', name: 'Contacted', color: '#F59E0B', bg: '#FFFBEB', icon: 'chatbubble' },
-  { id: 'Proposal Sent', name: 'Proposal', color: '#8B5CF6', bg: '#F3F0FF', icon: 'document-text' },
-  { id: 'Negotiation', name: 'Negotiation', color: '#4D8733', bg: '#EEF5E6', icon: 'pie-chart' },
-  { id: 'Final Review', name: 'Review', color: '#EC4899', bg: '#FDF2F8', icon: 'eye' },
-  { id: 'Closed Won', name: 'Won', color: '#10B981', bg: '#ECFDF5', icon: 'trophy' },
-  { id: 'Closed Lost', name: 'Lost', color: '#EF4444', bg: '#FEF2F2', icon: 'close-circle' },
+  {
+    id: 'Contacted',
+    name: 'Contacted',
+    color: '#F59E0B',
+    bg: '#FFFBEB',
+    icon: 'chatbubble',
+  },
+  {
+    id: 'Proposal Sent',
+    name: 'Proposal',
+    color: '#8B5CF6',
+    bg: '#F3F0FF',
+    icon: 'document-text',
+  },
+  {
+    id: 'Negotiation',
+    name: 'Negotiation',
+    color: '#4D8733',
+    bg: '#EEF5E6',
+    icon: 'pie-chart',
+  },
+  {
+    id: 'Final Review',
+    name: 'Review',
+    color: '#EC4899',
+    bg: '#FDF2F8',
+    icon: 'eye',
+  },
+  {
+    id: 'Closed Won',
+    name: 'Won',
+    color: '#10B981',
+    bg: '#ECFDF5',
+    icon: 'trophy',
+  },
+  {
+    id: 'Closed Lost',
+    name: 'Lost',
+    color: '#EF4444',
+    bg: '#FEF2F2',
+    icon: 'close-circle',
+  },
 ];
 
 /** Default empty state for one stage */
@@ -84,7 +120,14 @@ function getInitials(name) {
 }
 
 function getAvatarColor(name) {
-  const palette = ['#4D8733', '#3B82F6', '#8B5CF6', '#EC4899', '#F59E0B', '#10B981'];
+  const palette = [
+    '#4D8733',
+    '#3B82F6',
+    '#8B5CF6',
+    '#EC4899',
+    '#F59E0B',
+    '#10B981',
+  ];
   let hash = 0;
   for (let i = 0; i < name.length; i++)
     hash = name.charCodeAt(i) + ((hash << 5) - hash);
@@ -108,7 +151,12 @@ const PipelineTab = memo(({ item, isSelected, onPress }) => (
         style={{ marginRight: 4 }}
       />
     )}
-    <Text style={[styles.pipelineTabText, isSelected && styles.pipelineTabTextSelected]}>
+    <Text
+      style={[
+        styles.pipelineTabText,
+        isSelected && styles.pipelineTabTextSelected,
+      ]}
+    >
       {item.name}
     </Text>
   </TouchableOpacity>
@@ -124,14 +172,18 @@ const LeadCard = memo(({ lead, onPress }) => {
       activeOpacity={0.85}
       onPress={() => onPress(lead)}
     >
-      <View style={[styles.leadAvatar, { backgroundColor: avatarColor + '18' }]}>
+      <View
+        style={[styles.leadAvatar, { backgroundColor: avatarColor + '18' }]}
+      >
         <Text style={[styles.leadAvatarText, { color: avatarColor }]}>
           {getInitials(name)}
         </Text>
       </View>
       <View style={styles.leadInfo}>
-        <Text style={styles.leadName} numberOfLines={1}>{name}</Text>
-        {(lead.company?.name || lead.company) ? (
+        <Text style={styles.leadName} numberOfLines={1}>
+          {name}
+        </Text>
+        {lead.company?.name || lead.company ? (
           <Text style={styles.leadCompany} numberOfLines={1}>
             {lead.company?.name || lead.company}
           </Text>
@@ -145,115 +197,76 @@ const LeadCard = memo(({ lead, onPress }) => {
   );
 });
 
-/**
- * Stage card with per-stage pagination.
- * stageState = { leads, loading, loadingMore, hasMore, total }
- */
-const StageCard = memo(({
-  stage,
-  stageState,
-  totalLeadCount,
-  isExpanded,
-  onToggle,
-  onLeadPress,
-  onLoadMore,
-}) => {
-  const { leads, loading, loadingMore, hasMore, total } = stageState;
-  const percentage = totalLeadCount > 0 ? Math.round((total / totalLeadCount) * 100) : 0;
-
-  return (
-    <View>
-      {/* ── Stage header row ── */}
-      <TouchableOpacity
-        style={styles.stageCard}
-        activeOpacity={0.85}
-        onPress={() => onToggle(stage.id)}
-      >
-        <View style={styles.stageHeader}>
-          <View style={[styles.stageIcon, { backgroundColor: stage.bg }]}>
-            <IonIcon name={stage.icon} size={ms(18)} color={stage.color} />
-          </View>
-          <View style={styles.stageInfo}>
-            <Text style={styles.stageName}>{stage.name}</Text>
-            <Text style={styles.stageCount}>
-              {loading && total === 0 ? '…' : `${total} deals`}
-            </Text>
-          </View>
-          <View style={styles.stageRight}>
-            <Text style={[styles.stageValue, { color: stage.color }]}>
-              ₹{formatValue(leads.reduce((s, l) => s + (l.value || 0), 0))}
-            </Text>
-            <Text style={styles.stagePercentage}>{percentage}%</Text>
-          </View>
-          <IonIcon
-            name={isExpanded ? 'chevron-up' : 'chevron-down'}
-            size={18}
-            color={Colors.textTertiary}
-            style={{ marginLeft: 8 }}
-          />
-        </View>
-        <View style={styles.progressBarBg}>
-          <View
-            style={[
-              styles.progressBarFill,
-              { width: `${Math.max(percentage, 2)}%`, backgroundColor: stage.color },
-            ]}
-          />
-        </View>
-      </TouchableOpacity>
-
-      {/* ── Expanded leads list ── */}
-      {isExpanded && (
-        <View style={styles.expandedLeads}>
-          {/* Initial stage loading */}
-          {loading && leads.length === 0 ? (
-            <View style={styles.stageLoadingWrap}>
-              <ActivityIndicator size="small" color={stage.color} />
-              <Text style={styles.stageLoadingText}>Loading deals…</Text>
+/** Stage card row */
+const StageCard = memo(
+  ({ stage, totalLeads, isExpanded, onToggle, onLeadPress }) => {
+    const percentage =
+      totalLeads > 0 ? Math.round((stage.leads.length / totalLeads) * 100) : 0;
+    return (
+      <View>
+        <TouchableOpacity
+          style={styles.stageCard}
+          activeOpacity={0.85}
+          onPress={() => onToggle(stage.id)}
+        >
+          <View style={styles.stageHeader}>
+            <View style={[styles.stageIcon, { backgroundColor: stage.bg }]}>
+              <IonIcon name={stage.icon} size={ms(18)} color={stage.color} />
             </View>
-          ) : leads.length === 0 ? (
-            <View style={styles.emptyStage}>
-              <Text style={styles.emptyStageText}>No deals in this stage</Text>
+            <View style={styles.stageInfo}>
+              <Text style={styles.stageName}>{stage.name}</Text>
+              <Text style={styles.stageCount}>{stage.leads.length} deals</Text>
             </View>
-          ) : (
-            <>
-              {leads.map(lead => (
-                <LeadCard
-                  key={lead._id || lead.id}
-                  lead={lead}
-                  onPress={onLeadPress}
-                />
-              ))}
+            <View style={styles.stageRight}>
+              <Text style={[styles.stageValue, { color: stage.color }]}>
+                ₹
+                {formatValue(
+                  stage.leads.reduce((s, l) => s + (l.value || 0), 0),
+                )}
+              </Text>
+              <Text style={styles.stagePercentage}>{percentage}%</Text>
+            </View>
+            <IonIcon
+              name={isExpanded ? 'chevron-up' : 'chevron-down'}
+              size={18}
+              color={Colors.textTertiary}
+              style={{ marginLeft: 8 }}
+            />
+          </View>
+          <View style={styles.progressBarBg}>
+            <View
+              style={[
+                styles.progressBarFill,
+                {
+                  width: `${Math.max(percentage, 2)}%`,
+                  backgroundColor: stage.color,
+                },
+              ]}
+            />
+          </View>
+        </TouchableOpacity>
 
-              {/* Load More button */}
-              {loadingMore ? (
-                <View style={styles.stageLoadMoreWrap}>
-                  <ActivityIndicator size="small" color={stage.color} />
-                  <Text style={styles.stageLoadingText}>Loading more…</Text>
-                </View>
-              ) : hasMore ? (
-                <TouchableOpacity
-                  style={[styles.loadMoreBtn, { borderColor: stage.color + '50' }]}
-                  onPress={() => onLoadMore(stage.id)}
-                  activeOpacity={0.7}
-                >
-                  <IonIcon name="add-circle-outline" size={ms(16)} color={stage.color} />
-                  <Text style={[styles.loadMoreText, { color: stage.color }]}>
-                    Load More
-                  </Text>
-                </TouchableOpacity>
-              ) : leads.length > 0 ? (
-                <View style={styles.allLoadedWrap}>
-                  <Text style={styles.allLoadedText}>All {total} deals loaded</Text>
-                </View>
-              ) : null}
-            </>
-          )}
-        </View>
-      )}
-    </View>
-  );
-});
+        {isExpanded && stage.leads.length > 0 && (
+          <View style={styles.expandedLeads}>
+            {stage.leads.map(lead => (
+              <LeadCard
+                key={lead._id || lead.id}
+                lead={lead}
+                onPress={onLeadPress}
+              />
+            ))}
+          </View>
+        )}
+
+        {isExpanded && stage.leads.length === 0 && (
+          <View style={styles.emptyStage}>
+            <Text style={styles.emptyStageText}>No deals in this stage</Text>
+          </View>
+        )}
+      </View>
+    );
+  },
+);
 
 // ─── Main Screen ─────────────────────────────────────────────────────────────
 
@@ -274,11 +287,9 @@ const PipelineScreen = ({ navigation }) => {
   const [searchOpen, setSearchOpen] = useState(false);
   const [expandedStage, setExpandedStage] = useState(null);
 
-  /**
-   * Per-stage in-flight guard — keyed by stageId.
-   * Prevents duplicate concurrent requests for the same stage.
-   */
-  const stageFetchingRef = useRef({});
+  const searchTimeoutRef = useRef(null);
+  const isFetchingRef = useRef(false); // true while any fetch is in-flight
+  const isInitialLoad = useRef(true); // true only on the very first fetch
 
   // ── Step 1: Fetch all pipelines on mount ─────────────────────────────────
   useEffect(() => {
@@ -290,9 +301,11 @@ const PipelineScreen = ({ navigation }) => {
     try {
       const res = await pipelineAPI.getAll();
       if (res.success) {
-        const list = Array.isArray(res.data?.data) ? res.data.data
-          : Array.isArray(res.data) ? res.data
-            : [];
+        const list = Array.isArray(res.data?.data)
+          ? res.data.data
+          : Array.isArray(res.data)
+          ? res.data
+          : [];
         setPipelineList(list);
         const defaultPipeline = list.find(p => p.isDefault) || list[0];
         if (defaultPipeline) {
@@ -312,39 +325,33 @@ const PipelineScreen = ({ navigation }) => {
     resetAndFetchAllStages(selectedPipelineId);
   }, [selectedPipelineId]);
 
-  /**
-   * Reset all stage state then fire parallel page-1 fetches for all 7 stages.
-   * Each fetch is independent — they resolve/fail independently.
-   */
-  const resetAndFetchAllStages = useCallback(async (pipelineId) => {
-    // Clear per-stage locks
-    stageFetchingRef.current = {};
+  // Debounced search
+  useEffect(() => {
+    if (!selectedPipelineId) return;
+    if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current);
+    searchTimeoutRef.current = setTimeout(() => {
+      setLeads([]);
+      setPage(1);
+      setHasMore(true);
+      fetchLeads(selectedPipelineId, 1, searchQuery.trim(), false);
+    }, 300);
+    return () => {
+      if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current);
+    };
+  }, [searchQuery]);
 
-    // Set all stages to loading=true, empty leads (shows global spinner)
-    setStagePagination(
-      Object.fromEntries(
-        PIPELINE_STAGES.map(s => [s.id, { ...initStageState(), loading: true }])
-      )
-    );
+  const fetchLeads = async (
+    pipelineId,
+    pageNum,
+    search = '',
+    isMore = false,
+  ) => {
+    // Hard guard: don't fire if already in-flight
+    if (isFetchingRef.current) return;
+    // If loading-more, also check hasMore
+    if (isMore && !hasMore) return;
 
-    // Fetch page 1 of every stage concurrently (70 items max across 7 stages)
-    await Promise.allSettled(
-      PIPELINE_STAGES.map(stage => _fetchStageLeads(pipelineId, stage.id, 1, false))
-    );
-  }, []);
-
-  /**
-   * Fetch one page of leads for a specific stage.
-   * Uses per-stage lock to prevent concurrent fetches for the same stage.
-   *
-   * @param {string} pipelineId
-   * @param {string} stageId      — maps to `status` query param
-   * @param {number} pageNum
-   * @param {boolean} isMore      — true = appending, false = replacing
-   */
-  const _fetchStageLeads = useCallback(async (pipelineId, stageId, pageNum, isMore) => {
-    if (stageFetchingRef.current[stageId]) return;
-    stageFetchingRef.current[stageId] = true;
+    isFetchingRef.current = true;
 
     // Show appropriate loader without overwriting leads
     setStagePagination(prev => ({
@@ -414,12 +421,15 @@ const PipelineScreen = ({ navigation }) => {
 
   // ── Handlers ──────────────────────────────────────────────────────────────
 
-  const handlePipelineSelect = useCallback((pipeline) => {
-    if (pipeline._id === selectedPipelineId) return;
-    setSelectedPipelineId(pipeline._id);
-    setSearchQuery('');
-    setExpandedStage(null);
-  }, [selectedPipelineId]);
+  const handlePipelineSelect = useCallback(
+    pipeline => {
+      if (pipeline._id === selectedPipelineId) return;
+      setSelectedPipelineId(pipeline._id);
+      setSearchQuery('');
+      setExpandedStage(null);
+    },
+    [selectedPipelineId],
+  );
 
   const handleRefresh = useCallback(async () => {
     setRefreshing(true);
@@ -428,163 +438,188 @@ const PipelineScreen = ({ navigation }) => {
     setRefreshing(false);
   }, [selectedPipelineId, resetAndFetchAllStages]);
 
-  const handleStageToggle = useCallback((stageId) => {
-    setExpandedStage(prev => (prev === stageId ? null : stageId));
-  }, []);
-
-  /** Trigger next-page load for a given stage */
-  const handleLoadMore = useCallback((stageId) => {
-    const st = stagePagination[stageId];
-    if (!st || !st.hasMore || st.loadingMore || stageFetchingRef.current[stageId]) return;
-    _fetchStageLeads(selectedPipelineId, stageId, st.page + 1, true);
-  }, [stagePagination, selectedPipelineId, _fetchStageLeads]);
+  const handleLoadMore = useCallback(() => {
+    // Block if: already fetching, no more pages, currently loading initial data, or pulling to refresh
+    if (
+      !hasMore ||
+      loadingMore ||
+      loading ||
+      refreshing ||
+      isFetchingRef.current
+    )
+      return;
+    const nextPage = page + 1;
+    fetchLeads(selectedPipelineId, nextPage, searchQuery.trim(), true);
+  }, [hasMore, loadingMore, loading, refreshing, page, selectedPipelineId, searchQuery]);
 
   const handleLeadPress = useCallback((lead) => {
     navigation.navigate('LeadDetails', {
       lead,
       refreshPipeline: () => resetAndFetchAllStages(selectedPipelineId),
     });
-  }, [navigation, selectedPipelineId, resetAndFetchAllStages]);
+  }, [navigation, selectedPipelineId, searchQuery]);
+
+  const handleStageToggle = useCallback(stageId => {
+    setExpandedStage(prev => (prev === stageId ? null : stageId));
+  }, []);
 
   // ── Computed stats ────────────────────────────────────────────────────────
 
-  const { stageData, totalLeads, totalValue, activeValue, convRate } = useMemo(() => {
-    const q = searchQuery.trim().toLowerCase();
+  const { stageData, totalValue, activeValue, convRate, totalLeads } =
+    useMemo(() => {
+      const filtered = searchQuery.trim()
+        ? leads.filter(
+            l =>
+              (l.title || l.name || '')
+                .toLowerCase()
+                .includes(searchQuery.toLowerCase()) ||
+              (l.company?.name || l.company || '')
+                .toLowerCase()
+                .includes(searchQuery.toLowerCase()),
+          )
+        : leads;
 
-    const stageData = PIPELINE_STAGES.map(stage => {
-      const st = stagePagination[stage.id] ?? initStageState();
+      const totalValue = filtered.reduce((s, l) => s + (l.value || 0), 0);
+      const activeValue = filtered
+        .filter(l => l.status !== 'Closed Lost')
+        .reduce((s, l) => s + (l.value || 0), 0);
+      const convWon = filtered.filter(l => l.status === 'Closed Won').length;
+      const convRate =
+        filtered.length > 0 ? Math.round((convWon / filtered.length) * 100) : 0;
+      const totalLeads = filtered.length;
 
-      // Apply client-side search filter on cached leads
-      const filteredLeads = q
-        ? st.leads.filter(l =>
-          (l.title || l.name || '').toLowerCase().includes(q) ||
-          (l.company?.name || l.company || '').toLowerCase().includes(q)
-        )
-        : st.leads;
+      const stageData = PIPELINE_STAGES.map(stage => {
+        const stageLeads = filtered.filter(l => {
+          const s = l.status || l.stage?.name || l.stage;
+          return s === stage.id || s === stage.name;
+        });
+        return { ...stage, leads: stageLeads };
+      });
 
-      return {
-        ...stage,
-        leads: filteredLeads,
-        // While searching, total = matched count; otherwise backend total
-        total: q ? filteredLeads.length : st.total,
-        loading: st.loading,
-        loadingMore: st.loadingMore,
-        // Don't show Load More while searching (client-side only)
-        hasMore: q ? false : st.hasMore,
-      };
-    });
+      return { stageData, totalValue, activeValue, convRate, totalLeads };
+    }, [leads, searchQuery]);
 
-    // Totals: counts from backend metadata, values from currently-loaded leads
-    const totalLeads = stageData.reduce((s, st) => s + st.total, 0);
-    const totalValue = stageData.reduce(
-      (s, st) => s + st.leads.reduce((a, l) => a + (l.value || 0), 0), 0
+  // ── List footer ───────────────────────────────────────────────────────────
+
+  const ListFooter = useCallback(() => {
+    if (!loadingMore) return <View style={{ height: ms(100) }} />;
+    return (
+      <View style={styles.footerLoader}>
+        <ActivityIndicator size="small" color={Colors.primary} />
+        <Text style={styles.footerLoaderText}>Loading more deals…</Text>
+      </View>
     );
-    const activeValue = stageData
-      .filter(st => st.id !== 'Closed Lost')
-      .reduce((s, st) => s + st.leads.reduce((a, l) => a + (l.value || 0), 0), 0);
-    const convWon = stagePagination['Closed Won']?.total ?? 0;
-    const convRate = totalLeads > 0 ? Math.round((convWon / totalLeads) * 100) : 0;
+  }, [loadingMore]);
 
-    return { stageData, totalLeads, totalValue, activeValue, convRate };
-  }, [stagePagination, searchQuery]);
+  // ── Prepare FlatList data ────────────────────────────────────────────────
+  // We render everything as a single FlatList with a header; each item = a stage card
 
-  /**
-   * Show full-screen spinner only when:
-   * - At least one stage is still loading its first page AND
-   * - No stage has any data yet
-   */
-  const isInitialLoading = useMemo(
-    () =>
-      PIPELINE_STAGES.some(s => stagePagination[s.id]?.loading) &&
-      PIPELINE_STAGES.every(s => (stagePagination[s.id]?.leads?.length ?? 0) === 0),
-    [stagePagination]
-  );
-
-  // ── Header component (summary + funnel chart) ─────────────────────────────
-
-  const headerComponent = useMemo(() => (
-    <View>
-      {/* Summary card */}
-      <LinearGradient
-        colors={['#4D8733', '#6BA344']}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-        style={styles.summaryCard}
-      >
-        <View style={styles.summaryGrid}>
-          {[
-            { label: 'Total Deals', value: totalLeads },
-            { label: 'Total Value', value: `₹${formatValue(totalValue)}` },
-            { label: 'Active Value', value: `₹${formatValue(activeValue)}` },
-            { label: 'Conversion', value: `${convRate}%` },
-          ].map(item => (
-            <View key={item.label} style={styles.summaryItem}>
-              <Text style={styles.summaryValue}>{item.value}</Text>
-              <Text style={styles.summaryLabel}>{item.label}</Text>
-            </View>
-          ))}
-        </View>
-      </LinearGradient>
-
-      {/* Funnel bars */}
-      <Text style={styles.sectionLabel}>PIPELINE FUNNEL</Text>
-      <View style={styles.funnelCard}>
-        {stageData.map((stage, index) => {
-          const funnelRatio = 1 - index * 0.1;
-          const barWidth = Math.max(
-            totalLeads > 0 ? Math.round((stage.total / totalLeads) * 100) : 0,
-            5
-          ) * funnelRatio;
-          return (
-            <TouchableOpacity
-              key={stage.id}
-              style={styles.funnelRow}
-              activeOpacity={0.7}
-              onPress={() => handleStageToggle(stage.id)}
-            >
-              <View style={styles.funnelLeft}>
-                <View style={[styles.funnelDot, { backgroundColor: stage.color }]} />
-                <Text style={styles.funnelLabel}>{stage.name}</Text>
+  const headerComponent = useMemo(
+    () => (
+      <View>
+        {/* Summary card */}
+        <LinearGradient
+          colors={['#4D8733', '#6BA344']}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={styles.summaryCard}
+        >
+          <View style={styles.summaryGrid}>
+            {[
+              { label: 'Total Deals', value: totalLeads },
+              { label: 'Total Value', value: `₹${formatValue(totalValue)}` },
+              { label: 'Active Value', value: `₹${formatValue(activeValue)}` },
+              { label: 'Conversion', value: `${convRate}%` },
+            ].map(item => (
+              <View key={item.label} style={styles.summaryItem}>
+                <Text style={styles.summaryValue}>{item.value}</Text>
+                <Text style={styles.summaryLabel}>{item.label}</Text>
               </View>
-              <View style={styles.funnelBarWrap}>
-                <View
-                  style={[
-                    styles.funnelBar,
-                    { width: `${Math.max(barWidth, 8)}%`, backgroundColor: stage.color + '30' },
-                  ]}
-                >
+            ))}
+          </View>
+        </LinearGradient>
+
+        {/* Funnel bars */}
+        <Text style={styles.sectionLabel}>PIPELINE FUNNEL</Text>
+        <View style={styles.funnelCard}>
+          {stageData.map((stage, index) => {
+            const funnelRatio = 1 - index * 0.1;
+            const barWidth =
+              Math.max(
+                totalLeads > 0
+                  ? Math.round((stage.leads.length / totalLeads) * 100)
+                  : 0,
+                5,
+              ) * funnelRatio;
+            return (
+              <TouchableOpacity
+                key={stage.id}
+                style={styles.funnelRow}
+                activeOpacity={0.7}
+                onPress={() => handleStageToggle(stage.id)}
+              >
+                <View style={styles.funnelLeft}>
+                  <View
+                    style={[styles.funnelDot, { backgroundColor: stage.color }]}
+                  />
+                  <Text style={styles.funnelLabel}>{stage.name}</Text>
+                </View>
+                <View style={styles.funnelBarWrap}>
                   <View
                     style={[
-                      styles.funnelBarInner,
+                      styles.funnelBar,
                       {
-                        width: `${Math.min(
-                          totalLeads > 0 ? (stage.total / totalLeads) * 100 : 0,
-                          100
-                        )}%`,
-                        backgroundColor: stage.color,
+                        width: `${Math.max(barWidth, 8)}%`,
+                        backgroundColor: stage.color + '30',
                       },
                     ]}
+                  >
+                    <View
+                      style={[
+                        styles.funnelBarInner,
+                        {
+                          width: `${Math.min(
+                            totalLeads > 0
+                              ? (stage.leads.length / totalLeads) * 100
+                              : 0,
+                            100,
+                          )}%`,
+                          backgroundColor: stage.color,
+                        },
+                      ]}
+                    />
+                  </View>
+                </View>
+                <View style={styles.funnelRight}>
+                  <Text style={[styles.funnelCount, { color: stage.color }]}>
+                    {stage.leads.length}
+                  </Text>
+                  <IonIcon
+                    name={
+                      expandedStage === stage.id ? 'chevron-up' : 'chevron-down'
+                    }
+                    size={14}
+                    color={Colors.textTertiary}
                   />
                 </View>
-              </View>
-              <View style={styles.funnelRight}>
-                <Text style={[styles.funnelCount, { color: stage.color }]}>
-                  {stage.loading && stage.total === 0 ? '…' : stage.total}
-                </Text>
-                <IonIcon
-                  name={expandedStage === stage.id ? 'chevron-up' : 'chevron-down'}
-                  size={14}
-                  color={Colors.textTertiary}
-                />
-              </View>
-            </TouchableOpacity>
-          );
-        })}
-      </View>
+              </TouchableOpacity>
+            );
+          })}
+        </View>
 
-      <Text style={styles.sectionLabel}>STAGE BREAKDOWN</Text>
-    </View>
-  ), [stageData, totalLeads, totalValue, activeValue, convRate, expandedStage, handleStageToggle]);
+        <Text style={styles.sectionLabel}>STAGE BREAKDOWN</Text>
+      </View>
+    ),
+    [
+      stageData,
+      totalLeads,
+      totalValue,
+      activeValue,
+      convRate,
+      expandedStage,
+      handleStageToggle,
+    ],
+  );
 
   // ─── Loading state (initial pipelines fetch) ─────────────────────────────
 
@@ -606,8 +641,7 @@ const PipelineScreen = ({ navigation }) => {
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
-
-      {/* ── Nav bar ── */}
+      {/* ── Header ── */}
       <View style={styles.navBar}>
         <View style={{ flexDirection: 'row', alignItems: 'center' }}>
           {navigation?.openDrawer && (
@@ -652,7 +686,11 @@ const PipelineScreen = ({ navigation }) => {
             />
             {searchQuery ? (
               <TouchableOpacity onPress={() => setSearchQuery('')}>
-                <IonIcon name="close-circle" size={17} color={Colors.textTertiary} />
+                <IonIcon
+                  name="close-circle"
+                  size={17}
+                  color={Colors.textTertiary}
+                />
               </TouchableOpacity>
             ) : null}
           </View>
@@ -748,8 +786,17 @@ const PipelineScreen = ({ navigation }) => {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.background },
-  centered: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingTop: vs(40) },
-  loadingText: { marginTop: ms(12), color: Colors.textTertiary, fontSize: ms(13) },
+  centered: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingTop: vs(40),
+  },
+  loadingText: {
+    marginTop: ms(12),
+    color: Colors.textTertiary,
+    fontSize: ms(13),
+  },
 
   // Header
   navBar: {
@@ -842,7 +889,7 @@ const styles = StyleSheet.create({
   // Summary card
   summaryCard: {
     borderRadius: BorderRadius.xl,
-    padding: Spacing.lg,
+    // padding: Spacing.lg,
     marginBottom: Spacing.lg,
     marginTop: Spacing.sm,
     ...Shadow.md,
@@ -876,10 +923,23 @@ const styles = StyleSheet.create({
     marginBottom: Spacing.md,
     ...Shadow.sm,
   },
-  funnelRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: ms(8) },
-  funnelLeft: { width: ms(100), flexDirection: 'row', alignItems: 'center', gap: 6 },
+  funnelRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: ms(8),
+  },
+  funnelLeft: {
+    width: ms(100),
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
   funnelDot: { width: 9, height: 9, borderRadius: 5 },
-  funnelLabel: { fontSize: ms(14), fontWeight: '600', color: Colors.textSecondary },
+  funnelLabel: {
+    fontSize: ms(14),
+    fontWeight: '600',
+    color: Colors.textSecondary,
+  },
   funnelBarWrap: { flex: 1, height: ms(20), justifyContent: 'center' },
   funnelBar: { height: '100%', borderRadius: ms(6), overflow: 'hidden' },
   funnelBarInner: { height: '100%', borderRadius: ms(6) },
@@ -913,7 +973,11 @@ const styles = StyleSheet.create({
   stageCount: { fontSize: ms(13), color: Colors.textTertiary, marginTop: 2 },
   stageRight: { alignItems: 'flex-end' },
   stageValue: { fontSize: ms(16), fontWeight: '800' },
-  stagePercentage: { fontSize: ms(10), color: Colors.textTertiary, marginTop: 1 },
+  stagePercentage: {
+    fontSize: ms(10),
+    color: Colors.textTertiary,
+    marginTop: 1,
+  },
   progressBarBg: {
     height: ms(4),
     backgroundColor: Colors.divider,
@@ -1006,13 +1070,33 @@ const styles = StyleSheet.create({
   leadInfo: { flex: 1, marginLeft: Spacing.sm },
   leadName: { fontSize: ms(16), fontWeight: '600', color: Colors.textPrimary },
   leadCompany: { fontSize: ms(13), color: Colors.textTertiary, marginTop: 2 },
-  leadValue: { fontSize: ms(14), fontWeight: '700', color: Colors.success, marginRight: 8 },
+  leadValue: {
+    fontSize: ms(14),
+    fontWeight: '700',
+    color: Colors.success,
+    marginRight: 8,
+  },
 
   emptyStage: {
     padding: ms(16),
     alignItems: 'center',
   },
   emptyStageText: { fontSize: ms(14), color: Colors.textTertiary },
+
+  // Footer loader — smooth, visible, not jarring
+  footerLoader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: ms(20),
+    gap: ms(10),
+    backgroundColor: Colors.background,
+  },
+  footerLoaderText: {
+    fontSize: ms(14),
+    color: Colors.textTertiary,
+    fontWeight: '500',
+  },
 
   // FAB
   floatingAction: {

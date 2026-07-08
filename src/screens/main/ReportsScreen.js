@@ -976,7 +976,7 @@ const styles = StyleSheet.create({
     kpiGrid: {
         flexDirection: 'row',
         flexWrap: 'wrap',
-        gap: ms(9),
+        gap: ms(8),
     },
     kpiCard: {
         width: (SCREEN_WIDTH - ms(28) * 2 - ms(9) * 2) / 3,

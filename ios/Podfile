@@ -10,29 +10,72 @@ prepare_react_native_project!
 
 linkage = ENV['USE_FRAMEWORKS']
 if linkage != nil
-  Pod::UI.puts "Configuring Pod withcd #{linkage}ally linked Frameworks".green
+  Pod::UI.puts "Configuring Pod with #{linkage}ally linked Frameworks".green
   use_frameworks! :linkage => linkage.to_sym
 end
 
+# Capture react_native_path at the outer scope so post_install can access it
+react_native_path = nil
+
 target 'CbxCrm' do
   config = use_native_modules!
+  react_native_path = config[:reactNativePath]
 
   # ✅ Modular headers ONLY for Firebase related pods
   pod 'FirebaseCoreInternal', :modular_headers => true
   pod 'GoogleUtilities', :modular_headers => true
 
-
   use_react_native!(
-    :path => config[:reactNativePath],
+    :path => react_native_path,
     :app_path => "#{Pod::Config.instance.installation_root}/.."
   )
+end
 
-  post_install do |installer|
-    react_native_post_install(
-      installer,
-      config[:reactNativePath],
-      :mac_catalyst_enabled => false,
-      # :ccache_enabled => true
-    )
+post_install do |installer|
+  react_native_post_install(
+    installer,
+    react_native_path,
+    :mac_catalyst_enabled => false
+  )
+
+  # Fix: Force dwarf-with-dsym for all pod targets so dSYMs are generated
+  installer.pods_project.targets.each do |target|
+    target.build_configurations.each do |config|
+      config.build_settings['DEBUG_INFORMATION_FORMAT'] = 'dwarf-with-dsym'
+    end
+  end
+
+  # Fix: Add a Run Script build phase to generate the hermesvm dSYM at archive time.
+  # hermesvm.framework is a pre-built binary with no dSYM in the pod,
+  # so we use dsymutil to generate it from the binary itself.
+  installer.aggregate_targets.each do |aggregate_target|
+    aggregate_target.user_project.targets.each do |target|
+      next unless target.name == aggregate_target.target_definition.name.to_s
+
+      # Remove any existing phase with the same name to avoid duplicates
+      target.shell_script_build_phases.each do |phase|
+        target.build_phases.delete(phase) if phase.name == "[RN] Generate Hermes dSYMs"
+      end
+
+      phase = target.project.new(Xcodeproj::Project::Object::PBXShellScriptBuildPhase)
+      phase.name = "[RN] Generate Hermes dSYMs"
+      phase.shell_script = <<~SCRIPT
+        if [ "$CONFIGURATION" != "Release" ]; then
+          exit 0
+        fi
+        HERMES_FRAMEWORK_DIR="${BUILT_PRODUCTS_DIR}/${FRAMEWORKS_FOLDER_PATH}"
+        DSYM_OUTPUT="${DWARF_DSYM_FOLDER_PATH}"
+        for FRAMEWORK in hermesvm hermes; do
+          FRAMEWORK_BINARY="${HERMES_FRAMEWORK_DIR}/${FRAMEWORK}.framework/${FRAMEWORK}"
+          DSYM_PATH="${DSYM_OUTPUT}/${FRAMEWORK}.framework.dSYM"
+          if [ -f "${FRAMEWORK_BINARY}" ] && [ ! -d "${DSYM_PATH}" ]; then
+            dsymutil "${FRAMEWORK_BINARY}" -o "${DSYM_PATH}"
+          fi
+        done
+      SCRIPT
+      phase.run_only_for_deployment_postprocessing = "1"
+      target.build_phases << phase
+      aggregate_target.user_project.save
+    end
   end
 end
